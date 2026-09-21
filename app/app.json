@@ -26,7 +26,13 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "PetBeacon uses your location to show lost and sighted pets near you and to pin your reports."
+        }
+      ]
     ],
     "scheme": "petbeacon"
   }
