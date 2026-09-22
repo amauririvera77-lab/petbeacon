@@ -1,0 +1,109 @@
+// Tipos a mano desde supabase/migrations/0001_init.sql (CLAUDE.md §4).
+// TODO Fase 3+: reemplazar por `supabase gen types typescript` cuando el CLI esté disponible.
+//
+// Nota: usar `type` (no `interface`) para las filas — supabase-js exige que cada tabla sea
+// estructuralmente asignable a Record<string, unknown>, y las interfaces no lo son sin una
+// firma de índice explícita (los alias de tipo sí). Con `interface`, TS descarta el genérico
+// `Database` y `rpc()` pierde el tipado de sus argumentos.
+
+export type ReportStatus = "lost" | "sighted" | "reunited";
+export type Species = "dog" | "cat" | "other";
+export type ResourceCategory = "food" | "foster" | "legal";
+export type MatchConfidence = "possible" | "strong";
+
+export type Profile = {
+  id: string;
+  name: string;
+  city: string;
+  alert_radius_mi: number;
+  push_notifications_enabled: boolean;
+  email_notifications_enabled: boolean;
+  push_token: string | null;
+  created_at: string;
+};
+
+export type Pet = {
+  id: string;
+  user_id: string;
+  name: string;
+  species: Species;
+  breed: string | null;
+  photo_url: string | null;
+  created_at: string;
+};
+
+export type Report = {
+  id: string;
+  user_id: string;
+  status: ReportStatus;
+  species: Species;
+  name: string | null;
+  breed: string | null;
+  photo_url: string | null;
+  features_description: string | null;
+  location_label: string | null;
+  contact_phone_or_email: string | null;
+  pet_id: string | null;
+  matched_report_id: string | null;
+  created_at: string;
+  reunited_at: string | null;
+};
+
+export type ResourceRow = {
+  id: string;
+  name: string;
+  category: ResourceCategory;
+  description: string;
+  address: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  website_url: string | null;
+  is_featured_event: boolean;
+  icon: string | null;
+  created_at: string;
+};
+
+export type MatchRow = {
+  id: string;
+  lost_report_id: string;
+  sighted_report_id: string;
+  confidence: MatchConfidence;
+  dismissed: boolean;
+  created_at: string;
+};
+
+// Forma de retorno de la función SQL reports_nearby() (0001_init.sql).
+export type ReportNearby = {
+  id: string;
+  status: ReportStatus;
+  species: Species;
+  name: string | null;
+  breed: string | null;
+  photo_url: string | null;
+  features_description: string | null;
+  location_label: string | null;
+  created_at: string;
+  lat: number;
+  lng: number;
+  distance_mi: number;
+};
+
+// supabase-js exige `Relationships` en cada tabla y `Views` en el schema (aunque estén vacíos)
+// para que el tipo cumpla su GenericSchema; si no, el cliente cae a `any` y rpc() pierde el tipado de Args.
+type Rel = { Relationships: [] };
+
+export type Database = {
+  public: {
+    Tables: {
+      profiles: { Row: Profile; Insert: Partial<Profile> & { id: string; name: string; city: string }; Update: Partial<Profile> } & Rel;
+      pets: { Row: Pet; Insert: Partial<Pet> & { user_id: string; name: string; species: Species }; Update: Partial<Pet> } & Rel;
+      reports: { Row: Report; Insert: Partial<Report> & { user_id: string; status: ReportStatus; species: Species }; Update: Partial<Report> } & Rel;
+      resources: { Row: ResourceRow; Insert: Partial<ResourceRow> & { name: string; category: ResourceCategory; description: string }; Update: Partial<ResourceRow> } & Rel;
+      matches: { Row: MatchRow; Insert: Partial<MatchRow> & { lost_report_id: string; sighted_report_id: string; confidence: MatchConfidence }; Update: Partial<MatchRow> } & Rel;
+    };
+    Views: Record<string, never>;
+    Functions: {
+      reports_nearby: { Args: { lat: number; lng: number; radius_mi: number }; Returns: ReportNearby[] };
+    };
+  };
+};

@@ -3,14 +3,15 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 
 export type Intent = "lost" | "seen" | "register" | "";
 
-type Persisted = { onboarded: boolean; intent: Intent; name: string; city: string };
+// alertRadiusMi: radio configurable en Profile (1-10 mi, CLAUDE.md §2), usado por reports_nearby (§5.4 y §6).
+type Persisted = { onboarded: boolean; intent: Intent; name: string; city: string; alertRadiusMi: number };
 type Session = Persisted & {
   hydrated: boolean;
   update: (patch: Partial<Persisted>) => void;
 };
 
 const KEY = "petbeacon.session.v1";
-const EMPTY: Persisted = { onboarded: false, intent: "", name: "", city: "" };
+const EMPTY: Persisted = { onboarded: false, intent: "", name: "", city: "", alertRadiusMi: 5 };
 const Ctx = createContext<Session | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
