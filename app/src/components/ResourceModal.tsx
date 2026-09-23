@@ -1,4 +1,4 @@
-import { Clock, Globe, Info, MapPin, MessageCircle, Navigation, Phone, ChevronRight, Heart, X, type LucideIcon } from "lucide-react-native";
+import { Clock, Globe, Info, MapPin, MessageCircle, Navigation, Phone, ChevronRight, HeartHandshake, X, type LucideIcon } from "lucide-react-native";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Alert, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -49,9 +49,9 @@ function Detail({ r, bottom, onClose, onContact }: { r: ResourceNearby; bottom: 
           {r.photo_url && !photoFailed ? (
             <Image source={{ uri: r.photo_url }} style={styles.photoImg} resizeMode="cover" accessibilityLabel={r.name}
               onError={(e) => { console.warn("resource photo failed:", e.nativeEvent.error, r.photo_url); setPhotoFailed(true); }} />
-          ) : <Heart size={36} color={C.slate500} />}
+          ) : <HeartHandshake size={36} color={C.slate500} />}
         </View>
-        <View style={styles.titleRow}><Heart size={20} color={C.info} /><Text style={styles.h}>{r.name}</Text></View>
+        <View style={styles.titleRow}><HeartHandshake size={20} color={C.info} /><Text style={styles.h}>{r.name}</Text></View>
         <Text style={styles.kind}>Community resource</Text>
         <View style={{ gap: 16, marginBottom: 24 }}>
           {r.hours ? <Row Icon={Clock} tone={C.info} strong>{r.hours}</Row> : null}

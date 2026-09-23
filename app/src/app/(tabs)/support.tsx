@@ -1,4 +1,4 @@
-import { Heart, Search, X } from "lucide-react-native";
+import { HeartHandshake, Search, X } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -72,7 +72,7 @@ export default function Support() {
           </View>
         ) : loading ? <ActivityIndicator style={{ marginTop: 24 }} color={C.teal} /> : filtered.length === 0 ? (
           <View style={styles.empty}>
-            <View style={styles.emptyIcon}><Heart size={26} color="#94A3B8" /></View>
+            <View style={styles.emptyIcon}><HeartHandshake size={26} color="#94A3B8" /></View>
             <Text style={styles.emptyT}>{resources.length === 0 ? "No resources near you yet" : "No matching resources"}</Text>
             <Text style={styles.emptyS}>{resources.length === 0 ? "We're still adding local resources in your area." : "Try a different category or search term."}</Text>
             {resources.length > 0 ? <Pressable accessibilityRole="button" onPress={reset} style={styles.emptyBtn}><Text style={styles.emptyBtnT}>Clear filters</Text></Pressable> : null}

@@ -20,7 +20,7 @@ export function buildMapHtml(token: string): string {
 (function () {
   var COLORS = ${JSON.stringify(colors)};
   var ICONS = ${JSON.stringify(PIN_ICONS)};
-  var ICON_FOR = { lost: "siren", sighted: "eye", reunited: "check", resource: "heart" };
+  var ICON_FOR = { lost: "siren", sighted: "eye", reunited: "check", resource: "heart-handshake" };
   function post(m) { window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify(m)); }
 
   if (typeof mapboxgl === "undefined") { post({ type: "error", message: "Mapbox GL JS failed to load (offline?)" }); return; }
