@@ -1,5 +1,6 @@
 import { Clock, Globe, Info, MapPin, MessageCircle, Navigation, Phone, ChevronRight, Heart, X, type LucideIcon } from "lucide-react-native";
 import { router } from "expo-router";
+import { useState } from "react";
 import { Alert, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ResourceNearby } from "../lib/database.types";
@@ -37,6 +38,7 @@ function Handle() {
 }
 
 function Detail({ r, bottom, onClose, onContact }: { r: ResourceNearby; bottom: number; onClose: () => void; onContact: () => void }) {
+  const [photoFailed, setPhotoFailed] = useState(false);
   const place = [`${r.distance_mi.toFixed(1)} mi away`, r.address].filter(Boolean).join(" · ");
   return (
     <View style={[styles.sheet, { height: "78%", paddingBottom: bottom }]}>
@@ -44,7 +46,10 @@ function Detail({ r, bottom, onClose, onContact }: { r: ResourceNearby; bottom: 
       <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={C.slate700} /></Pressable>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 }}>
         <View style={styles.photo}>
-          {r.photo_url ? <Image source={{ uri: r.photo_url }} style={styles.photoImg} accessibilityLabel={r.name} /> : <Heart size={36} color={C.slate500} />}
+          {r.photo_url && !photoFailed ? (
+            <Image source={{ uri: r.photo_url }} style={styles.photoImg} resizeMode="cover" accessibilityLabel={r.name}
+              onError={(e) => { console.warn("resource photo failed:", e.nativeEvent.error, r.photo_url); setPhotoFailed(true); }} />
+          ) : <Heart size={36} color={C.slate500} />}
         </View>
         <View style={styles.titleRow}><Heart size={20} color={C.info} /><Text style={styles.h}>{r.name}</Text></View>
         <Text style={styles.kind}>Community resource</Text>
@@ -111,7 +116,7 @@ const styles = StyleSheet.create({
   handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: C.border },
   close: { position: "absolute", top: 12, right: 12, width: 36, height: 36, borderRadius: 18, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center", zIndex: 2 },
   photo: { height: 220, borderRadius: radius.lg, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center", overflow: "hidden", marginBottom: 20 },
-  photoImg: { width: "100%", height: "100%" },
+  photoImg: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
   h: { flex: 1, fontFamily: font.displayMedium, fontSize: 26, letterSpacing: -0.26, color: C.ink },
   kind: { fontFamily: font.bodyRegular, fontSize: 15, color: C.slate700, marginBottom: 24 },

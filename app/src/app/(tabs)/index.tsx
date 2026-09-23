@@ -22,7 +22,7 @@ import { useHome } from "../../hooks/useHome";
 import { useMyMatches } from "../../hooks/useMyMatches";
 import { useMyReports } from "../../hooks/useMyReports";
 import { useNotificationsFeed } from "../../hooks/useNotificationsFeed";
-import { useResources } from "../../hooks/useResources";
+import { useResourcesState } from "../../hooks/useResources";
 import { useSession } from "../../state/session";
 import { C, FAB_SIZE, font, radius } from "../../theme/tokens";
 
@@ -41,7 +41,7 @@ export default function Home() {
   const uid = useAuthUser();
   const center = useHome();
   const { reports, loading, error, refresh } = useFeed(alertRadiusMi, center.lat, center.lng);
-  const resources = useResources(alertRadiusMi, center.lat, center.lng);
+  const { resources, refresh: refreshResources } = useResourcesState(alertRadiusMi, center.lat, center.lng);
   const { matches, refresh: refreshMatches, dismiss } = useMyMatches();
   const banner = matches.find((m) => !m.dismissed);
   const featured = resources.find((r) => r.is_featured_event) ?? null;
@@ -53,7 +53,7 @@ export default function Home() {
   const { items, unread } = useNotificationsFeed(others, matches, uid, notifSeenAt);
 
   // Al volver de publicar un reporte, el feed se actualiza sin tener que reiniciar la app.
-  useFocusEffect(useCallback(() => { refresh(); refreshMatches(); refreshMine(); }, [refresh, refreshMatches, refreshMine]));
+  useFocusEffect(useCallback(() => { refresh(); refreshMatches(); refreshMine(); refreshResources(); }, [refresh, refreshMatches, refreshMine, refreshResources]));
 
   const selReport = selected?.kind === "report" ? reports.find((r) => r.id === selected.id) : undefined;
 
