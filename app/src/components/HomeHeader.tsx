@@ -7,7 +7,7 @@ import { Logo } from "./Logo";
 export function HomeHeader({ unread, onBell }: { unread: number; onBell: () => void }) {
   return (
     <View style={styles.bar}>
-      <Logo width={68} tight />
+      <Logo width={100} />
       <Pressable accessibilityRole="button" accessibilityLabel={unread > 0 ? `Notifications, ${unread} new` : "Notifications"} onPress={onBell} style={styles.bell}>
         <Bell size={22} color={C.slate700} />
         {unread > 0 ? (
