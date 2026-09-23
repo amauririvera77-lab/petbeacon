@@ -62,6 +62,8 @@ export type ResourceRow = {
   website_url: string | null;
   is_featured_event: boolean;
   icon: string | null;
+  hours: string | null;
+  photo_url: string | null;
   created_at: string;
 };
 
@@ -90,7 +92,7 @@ export type ReportNearby = {
   distance_mi: number;
 };
 
-// Forma de retorno de resources_nearby() (0002_resources_nearby.sql).
+// Forma de retorno de resources_nearby() (0002, ampliada en 0006_resource_details.sql).
 export type ResourceNearby = {
   id: string;
   name: string;
@@ -101,6 +103,8 @@ export type ResourceNearby = {
   website_url: string | null;
   is_featured_event: boolean;
   icon: string | null;
+  hours: string | null;
+  photo_url: string | null;
   lat: number;
   lng: number;
   distance_mi: number;

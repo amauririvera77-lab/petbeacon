@@ -10,9 +10,12 @@ import { MatchBanner } from "../../components/MatchBanner";
 import { MapboxWebView, MapSelection } from "../../components/map/MapboxWebView";
 import { NotificationsSheet } from "../../components/NotificationsSheet";
 import { OfflineBanner } from "../../components/OfflineBanner";
+import { FeaturedResourceCard } from "../../components/ResourceCard";
+import { ResourceModal, ResourceSheetMode } from "../../components/ResourceModal";
 import { ReportCard } from "../../components/ReportCard";
 import { SetupNotice } from "../../components/SetupNotice";
 import { Placeholder } from "../../components/TabScreen";
+import type { ResourceNearby } from "../../lib/database.types";
 import { useAuthUser } from "../../hooks/useAuthUser";
 import { useFeed } from "../../hooks/useFeed";
 import { useHome } from "../../hooks/useHome";
@@ -31,6 +34,9 @@ export default function Home() {
   const [view, setView] = useState<"list" | "map">("list");
   const [selected, setSelected] = useState<MapSelection>(null);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [sheetResource, setSheetResource] = useState<ResourceNearby | null>(null);
+  const [sheetMode, setSheetMode] = useState<ResourceSheetMode>("detail");
+  const openResource = (r: ResourceNearby) => { setSheetMode("detail"); setSheetResource(r); };
   const { alertRadiusMi, notifSeenAt, update } = useSession();
   const uid = useAuthUser();
   const center = useHome();
@@ -38,6 +44,7 @@ export default function Home() {
   const resources = useResources(alertRadiusMi, center.lat, center.lng);
   const { matches, refresh: refreshMatches, dismiss } = useMyMatches();
   const banner = matches.find((m) => !m.dismissed);
+  const featured = resources.find((r) => r.is_featured_event) ?? null;
   const { reports: myReports, refresh: refreshMine } = useMyReports();
 
   // Solo novedades de otros usuarios (lo propio no es una notificación).
@@ -49,7 +56,6 @@ export default function Home() {
   useFocusEffect(useCallback(() => { refresh(); refreshMatches(); refreshMine(); }, [refresh, refreshMatches, refreshMine]));
 
   const selReport = selected?.kind === "report" ? reports.find((r) => r.id === selected.id) : undefined;
-  const selResource = selected?.kind === "resource" ? resources.find((r) => r.id === selected.id) : undefined;
 
   // Abrir la hoja limpia el badge (CLAUDE.md §2).
   const openNotifs = () => { setNotifOpen(true); update({ notifSeenAt: Date.now() }); };
@@ -85,17 +91,10 @@ export default function Home() {
             <View style={styles.pad}><SetupNotice /></View>
           ) : (
             <>
-              <MapboxWebView token={MAPBOX_TOKEN} reports={reports} resources={resources} center={center} radiusMi={alertRadiusMi} onSelect={setSelected} />
+              <MapboxWebView token={MAPBOX_TOKEN} reports={reports} resources={resources} center={center} radiusMi={alertRadiusMi} onSelect={(sel) => { if (sel?.kind === "resource") { const r = resources.find((x) => x.id === sel.id); if (r) return openResource(r); } setSelected(sel); }} />
               <MapRadiusChip value={alertRadiusMi} onChange={(mi) => { setSelected(null); update({ alertRadiusMi: mi }); }} />
               {selReport ? (
                 <View style={styles.sheet}><ReportCard report={selReport} /></View>
-              ) : selResource ? (
-                <View style={[styles.sheet, styles.resCard]}>
-                  <Text style={styles.resKind}>Community resource</Text>
-                  <Text style={styles.resName}>{selResource.name}</Text>
-                  <Text style={styles.resDesc} numberOfLines={2}>{selResource.description}</Text>
-                  <Text style={styles.resMeta}>{selResource.distance_mi.toFixed(1)} mi away</Text>
-                </View>
               ) : null}
             </>
           )}
@@ -118,11 +117,16 @@ export default function Home() {
           ) : reports.length === 0 ? (
             <Placeholder text={`No activity within ${alertRadiusMi} mi yet.`} />
           ) : (
-            reports.map((r) => <ReportCard key={r.id} report={r} />)
+            <>
+              {reports.slice(0, 2).map((r) => <ReportCard key={r.id} report={r} />)}
+              {featured ? <FeaturedResourceCard resource={featured} onPress={() => openResource(featured)} /> : null}
+              {reports.slice(2).map((r) => <ReportCard key={r.id} report={r} />)}
+            </>
           )}
         </ScrollView>
       )}
 
+      <ResourceModal resource={sheetResource} mode={sheetMode} onMode={setSheetMode} onClose={() => setSheetResource(null)} />
       <NotificationsSheet visible={notifOpen} items={items} onClose={() => setNotifOpen(false)} onPick={(n) => pickNotif(n.reportId)} />
     </View>
   );
@@ -139,11 +143,6 @@ const styles = StyleSheet.create({
   pad: { padding: 16 },
   // Deja libre la esquina inferior derecha para el FAB (73px + 16px de margen).
   sheet: { position: "absolute", left: 12, right: FAB_SIZE + 28, bottom: 12, backgroundColor: C.white, borderRadius: radius.lg, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4 },
-  resCard: { padding: 14, gap: 3 },
-  resKind: { fontFamily: font.bodyBold, fontSize: 11, color: C.info, textTransform: "uppercase", letterSpacing: 0.5 },
-  resName: { fontFamily: font.head, fontSize: 16, color: C.ink },
-  resDesc: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700 },
-  resMeta: { fontFamily: font.bodySemi, fontSize: 12, color: C.slate500 },
   errBox: { gap: 8 },
   errT: { fontFamily: font.body, fontSize: 14, color: C.sosDark },
   retry: { alignSelf: "flex-start", paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: C.ink },
