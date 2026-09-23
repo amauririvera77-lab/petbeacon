@@ -8,7 +8,7 @@ import { SetupNotice } from "../../components/SetupNotice";
 import { Placeholder, TabScreen } from "../../components/TabScreen";
 import { useFeed } from "../../hooks/useFeed";
 import { useResources } from "../../hooks/useResources";
-import { DEFAULT_CENTER } from "../../lib/geo";
+import { useHome } from "../../hooks/useHome";
 import { useSession } from "../../state/session";
 import { C, FAB_SIZE, font, radius } from "../../theme/tokens";
 
@@ -19,8 +19,9 @@ export default function Home() {
   const [view, setView] = useState<"list" | "map">("list");
   const [selected, setSelected] = useState<MapSelection>(null);
   const { alertRadiusMi, update } = useSession();
-  const { reports, loading, error, refresh } = useFeed(alertRadiusMi);
-  const resources = useResources(alertRadiusMi);
+  const center = useHome();
+  const { reports, loading, error, refresh } = useFeed(alertRadiusMi, center.lat, center.lng);
+  const resources = useResources(alertRadiusMi, center.lat, center.lng);
 
   // Al volver de publicar un reporte, el feed se actualiza sin tener que reiniciar la app.
   useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
@@ -54,7 +55,7 @@ export default function Home() {
                 token={MAPBOX_TOKEN}
                 reports={reports}
                 resources={resources}
-                center={DEFAULT_CENTER}
+                center={center}
                 radiusMi={alertRadiusMi}
                 onSelect={setSelected}
               />

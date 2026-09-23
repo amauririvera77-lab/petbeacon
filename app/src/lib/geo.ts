@@ -1,3 +1,4 @@
 // Centro por defecto del feed y del mapa (White Plains, NY — donde está el seed).
-// Se reemplaza por la posición real del usuario cuando haya datos reales fuera de esa zona.
-export const DEFAULT_CENTER = { lat: 41.034, lng: -73.7629 } as const;
+// Solo es el respaldo: el centro real sale de useHome() (GPS o ciudad del usuario).
+export type LatLng = { lat: number; lng: number };
+export const DEFAULT_CENTER: LatLng = { lat: 41.034, lng: -73.7629 };

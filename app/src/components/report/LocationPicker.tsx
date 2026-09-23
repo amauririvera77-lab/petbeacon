@@ -2,13 +2,14 @@ import * as Location from "expo-location";
 import { LocateFixed, MapPin } from "lucide-react-native";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { LatLng } from "../../lib/geo";
 import { geocode, Place, reverseGeocode } from "../../lib/geocode";
 import { C, MIN_HIT, font, radius } from "../../theme/tokens";
 import { Button } from "../Button";
 import { TextField } from "../TextField";
 
 // GPS con fallback manual. Label específico del flujo de Report (distinto del "City or ZIP code" del onboarding).
-export function LocationPicker({ value, onChange, city }: { value: Place | null; onChange: (p: Place | null) => void; city?: string }) {
+export function LocationPicker({ value, onChange, city, center }: { value: Place | null; onChange: (p: Place | null) => void; city?: string; center: LatLng }) {
   const [manual, setManual] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Place[] | null>(null);
@@ -34,7 +35,7 @@ export function LocationPicker({ value, onChange, city }: { value: Place | null;
     if (!query.trim()) return;
     setBusy(true); setError(null); setResults(null);
     try {
-      const r = await geocode(query.trim(), city);
+      const r = await geocode(query.trim(), city, center);
       setResults(r);
       if (r.length === 0) setError("We couldn't find that spot. Try adding a street name or nearby landmark.");
     } catch (e) {

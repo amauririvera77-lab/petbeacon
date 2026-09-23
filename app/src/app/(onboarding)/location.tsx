@@ -19,7 +19,8 @@ export default function LocationPriming() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") return fallback("We couldn't read your location automatically.");
-      await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      s.update({ home: { lat: pos.coords.latitude, lng: pos.coords.longitude } });
       router.push("/notifications");
     } catch {
       fallback("We couldn't read your location automatically.");

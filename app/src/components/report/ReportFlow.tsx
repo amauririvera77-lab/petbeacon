@@ -6,6 +6,7 @@ import { Place } from "../../lib/geocode";
 import { publishReport } from "../../lib/publish";
 import { validateContact } from "../../lib/validation";
 import type { Species } from "../../lib/database.types";
+import { useHome } from "../../hooks/useHome";
 import { useSession } from "../../state/session";
 import { C, font, radius } from "../../theme/tokens";
 import { TextField } from "../TextField";
@@ -30,6 +31,7 @@ const ORDER: Record<Kind, Step[]> = {
 
 export function ReportFlow({ kind }: { kind: Kind }) {
   const { name: userName, city, alertRadiusMi } = useSession();
+  const center = useHome();
   const steps = ORDER[kind];
   const [i, setI] = useState(0);
   const step = steps[i];
@@ -114,7 +116,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
           onPress: () => { if (isLost && !checkContact().ok) return; next(); },
           disabled: !place || (isLost && !contact.trim()), tone,
         }}>
-        <LocationPicker value={place} onChange={setPlace} city={city} />
+        <LocationPicker value={place} onChange={setPlace} city={city} center={center} />
         {isLost ? (
           <TextField label="Phone or email" placeholder="(914) 555-0100" value={contact} onChangeText={(t) => { setContact(t); setContactError(null); }}
             onBlur={() => contact.trim() && checkContact()} keyboardType="email-address" autoCapitalize="none" autoComplete="off"
@@ -165,7 +167,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
       title={isLost ? "Your alert is live" : "Thanks for helping"}
       subtitle={isLost ? "Nearby users have been notified. We'll alert you the moment there's a match." : "Your sighting has been posted to the map."}
       onClose={close}
-      cta={{ label: isLost ? "View on map" : "Back to map", onPress: () => router.dismissTo("/(tabs)"), tone: "neutral" }}
+      cta={{ label: "View on List", onPress: () => router.dismissTo("/(tabs)"), tone: "neutral" }}
       secondary={{ label: "Pet care can get expensive. Free local resources", onPress: () => { router.dismissTo("/(tabs)/support"); } }}>
       <View style={styles.okCircle}><Check size={40} color={C.ok} /></View>
     </StepShell>
