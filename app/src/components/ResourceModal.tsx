@@ -63,7 +63,7 @@ function Detail({ r, bottom, onClose, onContact }: { r: ResourceNearby; bottom: 
         <Pressable accessibilityRole="button" onPress={onContact} style={styles.primary}>
           <Phone size={18} color={C.white} /><Text style={styles.primaryT}>Contact</Text>
         </Pressable>
-        <Pressable accessibilityRole="link" onPress={() => { onClose(); router.navigate("/(tabs)/support"); }} style={styles.viewAll}>
+        <Pressable accessibilityRole="link" onPress={() => { onClose(); setTimeout(() => router.navigate("/(tabs)/support"), 400); }} style={styles.viewAll}>
           <Text style={styles.viewAllT}>View all local resources</Text><ChevronRight size={14} color={C.slate500} />
         </Pressable>
       </View>

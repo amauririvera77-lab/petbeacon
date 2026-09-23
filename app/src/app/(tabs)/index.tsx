@@ -6,8 +6,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EnableAlertsCard } from "../../components/EnableAlertsCard";
 import { HomeHeader } from "../../components/HomeHeader";
 import { MapRadiusChip } from "../../components/MapRadiusChip";
+import { PinDetailSheet } from "../../components/PinDetailSheet";
 import { MatchBanner } from "../../components/MatchBanner";
-import { MapboxWebView, MapSelection } from "../../components/map/MapboxWebView";
+import { MapboxWebView } from "../../components/map/MapboxWebView";
 import { NotificationsSheet } from "../../components/NotificationsSheet";
 import { OfflineBanner } from "../../components/OfflineBanner";
 import { FeaturedResourceCard } from "../../components/ResourceCard";
@@ -15,7 +16,7 @@ import { ResourceModal, ResourceSheetMode } from "../../components/ResourceModal
 import { ReportCard } from "../../components/ReportCard";
 import { SetupNotice } from "../../components/SetupNotice";
 import { Placeholder } from "../../components/TabScreen";
-import type { ResourceNearby } from "../../lib/database.types";
+import type { ReportNearby, ResourceNearby } from "../../lib/database.types";
 import { useAuthUser } from "../../hooks/useAuthUser";
 import { useFeed } from "../../hooks/useFeed";
 import { useHome } from "../../hooks/useHome";
@@ -24,7 +25,7 @@ import { useMyReports } from "../../hooks/useMyReports";
 import { useNotificationsFeed } from "../../hooks/useNotificationsFeed";
 import { useResourcesState } from "../../hooks/useResources";
 import { useSession } from "../../state/session";
-import { C, FAB_SIZE, font, radius } from "../../theme/tokens";
+import { C, font, radius } from "../../theme/tokens";
 
 const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN;
 
@@ -32,7 +33,7 @@ const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN;
 export default function Home() {
   const insets = useSafeAreaInsets();
   const [view, setView] = useState<"list" | "map">("list");
-  const [selected, setSelected] = useState<MapSelection>(null);
+  const [pinReport, setPinReport] = useState<ReportNearby | null>(null);
   const [notifOpen, setNotifOpen] = useState(false);
   const [sheetResource, setSheetResource] = useState<ResourceNearby | null>(null);
   const [sheetMode, setSheetMode] = useState<ResourceSheetMode>("detail");
@@ -55,11 +56,16 @@ export default function Home() {
   // Al volver de publicar un reporte, el feed se actualiza sin tener que reiniciar la app.
   useFocusEffect(useCallback(() => { refresh(); refreshMatches(); refreshMine(); refreshResources(); }, [refresh, refreshMatches, refreshMine, refreshResources]));
 
-  const selReport = selected?.kind === "report" ? reports.find((r) => r.id === selected.id) : undefined;
 
   // Abrir la hoja limpia el badge (CLAUDE.md §2).
   const openNotifs = () => { setNotifOpen(true); update({ notifSeenAt: Date.now() }); };
-  const pickNotif = (reportId: string) => { setNotifOpen(false); setSelected({ kind: "report", id: reportId }); setView("map"); };
+  // iOS ignora un Modal que se abre mientras otro aún se está cerrando: se espera a que termine la animación.
+  const pickNotif = (reportId: string) => {
+    setNotifOpen(false);
+    setView("map");
+    const r = reports.find((x) => x.id === reportId);
+    if (r) setTimeout(() => setPinReport(r), 400);
+  };
 
   const switcher = (
     <View style={styles.segBar} accessibilityRole="tablist">
@@ -91,11 +97,12 @@ export default function Home() {
             <View style={styles.pad}><SetupNotice /></View>
           ) : (
             <>
-              <MapboxWebView token={MAPBOX_TOKEN} reports={reports} resources={resources} center={center} radiusMi={alertRadiusMi} onSelect={(sel) => { if (sel?.kind === "resource") { const r = resources.find((x) => x.id === sel.id); if (r) return openResource(r); } setSelected(sel); }} />
-              <MapRadiusChip value={alertRadiusMi} onChange={(mi) => { setSelected(null); update({ alertRadiusMi: mi }); }} />
-              {selReport ? (
-                <View style={styles.sheet}><ReportCard report={selReport} /></View>
-              ) : null}
+              <MapboxWebView token={MAPBOX_TOKEN} reports={reports} resources={resources} center={center} radiusMi={alertRadiusMi} onSelect={(sel) => {
+                if (!sel) return;
+                if (sel.kind === "resource") { const r = resources.find((x) => x.id === sel.id); if (r) openResource(r); }
+                else { const r = reports.find((x) => x.id === sel.id); if (r) setPinReport(r); }
+              }} />
+              <MapRadiusChip value={alertRadiusMi} onChange={(mi) => update({ alertRadiusMi: mi })} />
             </>
           )}
         </View>
@@ -118,14 +125,15 @@ export default function Home() {
             <Placeholder text={`No activity within ${alertRadiusMi} mi yet.`} />
           ) : (
             <>
-              {reports.slice(0, 2).map((r) => <ReportCard key={r.id} report={r} />)}
+              {reports.slice(0, 2).map((r) => <ReportCard key={r.id} report={r} onPress={() => setPinReport(r)} />)}
               {featured ? <FeaturedResourceCard resource={featured} onPress={() => openResource(featured)} /> : null}
-              {reports.slice(2).map((r) => <ReportCard key={r.id} report={r} />)}
+              {reports.slice(2).map((r) => <ReportCard key={r.id} report={r} onPress={() => setPinReport(r)} />)}
             </>
           )}
         </ScrollView>
       )}
 
+      <PinDetailSheet report={pinReport} onClose={() => setPinReport(null)} />
       <ResourceModal resource={sheetResource} mode={sheetMode} onMode={setSheetMode} onClose={() => setSheetResource(null)} />
       <NotificationsSheet visible={notifOpen} items={items} onClose={() => setNotifOpen(false)} onPick={(n) => pickNotif(n.reportId)} />
     </View>
@@ -141,8 +149,6 @@ const styles = StyleSheet.create({
   listC: { padding: 16, paddingBottom: 200, gap: 10 },
   mapWrap: { flex: 1 },
   pad: { padding: 16 },
-  // Deja libre la esquina inferior derecha para el FAB (73px + 16px de margen).
-  sheet: { position: "absolute", left: 12, right: FAB_SIZE + 28, bottom: 12, backgroundColor: C.white, borderRadius: radius.lg, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4 },
   errBox: { gap: 8 },
   errT: { fontFamily: font.body, fontSize: 14, color: C.sosDark },
   retry: { alignSelf: "flex-start", paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: C.ink },

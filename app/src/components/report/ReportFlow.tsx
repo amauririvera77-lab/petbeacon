@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Check } from "lucide-react-native";
 import { useState } from "react";
 import { Alert, Image, StyleSheet, Text, View } from "react-native";
@@ -39,7 +39,8 @@ export function ReportFlow({ kind }: { kind: Kind }) {
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [petName, setPetName] = useState("");
-  const [species, setSpecies] = useState<Species | null>(null);
+  const { species: speciesParam } = useLocalSearchParams<{ species?: string }>();
+  const [species, setSpecies] = useState<Species | null>(speciesParam === "dog" || speciesParam === "cat" || speciesParam === "other" ? speciesParam : null);
   const [breed, setBreed] = useState("");
   const [features, setFeatures] = useState("");
   const [condition, setCondition] = useState<Condition | null>(null);
