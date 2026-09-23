@@ -44,7 +44,8 @@
           "photosPermission": "PetBeacon needs your photos so you can attach a picture of the pet to a report.",
           "cameraPermission": "PetBeacon uses the camera so you can take a picture of the pet for a report."
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "scheme": "petbeacon",
     "extra": {

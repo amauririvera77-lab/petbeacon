@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PetBeacon report</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="/style.css">
+</head><body><main>
+<header class="brand">PetBeacon</header>
+<div id="app" class="hero"><p class="sub">Loading…</p></div>
+<script src="/config.js"></script>
+<script>
+(function () {
+  // Página pública de un reporte, la que abre el QR del flyer (/r/<id>).
+  // Solo lee columnas públicas; el teléfono/email de contacto NUNCA se pide ni se muestra aquí.
+  var app = document.getElementById("app");
+  var COLORS = { lost: "#EC4832", sighted: "#0094D8", reunited: "#429D64" };
+  var LABEL = { lost: "Lost", sighted: "Sighted", reunited: "Reunited" };
+  var id = (location.pathname.match(/\/r\/([0-9a-f-]{36})/i) || [])[1] || new URLSearchParams(location.search).get("id");
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function fail(msg) { app.replaceChildren(); var d = el("div", "error"); d.appendChild(el("p", "", msg)); app.appendChild(d); }
+  function when(iso) {
+    var d = new Date(iso), n = new Date(), y = new Date(n); y.setDate(n.getDate() - 1);
+    var t = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    var day = d.toDateString() === n.toDateString() ? "Today" : d.toDateString() === y.toDateString() ? "Yesterday" : d.toLocaleDateString([], { month: "short", day: "numeric" });
+    return day + ", " + t;
+  }
+
+  if (!id) return fail("This link is missing a report.");
+  var cfg = window.PETBEACON;
+  var cols = "id,status,species,name,breed,photo_url,photo_focus_x,photo_focus_y,features_description,location_label,created_at";
+  fetch(cfg.SUPABASE_URL + "/rest/v1/reports?select=" + cols + "&id=eq." + encodeURIComponent(id), { headers: { apikey: cfg.SUPABASE_KEY } })
+    .then(function (r) { return r.json(); })
+    .then(function (rows) {
+      if (!Array.isArray(rows) || !rows.length) return fail("We couldn't find this report. It may have been removed.");
+      var r = rows[0], title = (r.name && r.name.trim()) || "Unknown " + r.species;
+      document.title = title + " — PetBeacon";
+      app.replaceChildren();
+
+      var photo = el("div", "photo");
+      if (r.photo_url) { photo.style.backgroundImage = "url(" + JSON.stringify(r.photo_url) + ")"; photo.style.backgroundPosition = (r.photo_focus_x == null ? 50 : r.photo_focus_x) + "% " + (r.photo_focus_y == null ? 30 : r.photo_focus_y) + "%"; }
+      app.appendChild(photo);
+
+      var row = el("div", "row"); row.appendChild(el("h1", "", title));
+      var pill = el("span", "pill", LABEL[r.status]); pill.style.background = COLORS[r.status]; row.appendChild(pill);
+      app.appendChild(row);
+      if (r.breed) app.appendChild(el("p", "sub", r.breed));
+
+      var meta = el("div", "meta");
+      meta.appendChild(el("b", "", when(r.created_at) + (r.location_label ? " · " + r.location_label : "")));
+      meta.appendChild(el("span", "", r.status === "sighted" ? "Spotted" : "Last seen"));
+      app.appendChild(meta);
+      if (r.features_description) app.appendChild(el("div", "card", r.features_description));
+
+      if (r.status === "reunited") {
+        app.appendChild(el("div", "closed", "Great news — this case is closed."));
+      } else {
+        var msg = r.status === "lost" ? "Have you seen this pet? Open PetBeacon and tap “I’ve seen this pet” to alert the owner right away." : "Recognize this pet? Open PetBeacon to notify the owner.";
+        app.appendChild(el("div", "card", msg));
+        var a = el("a", "cta", "Open in PetBeacon"); a.href = "petbeacon://"; app.appendChild(a);
+        app.appendChild(el("p", "note", "The app isn't in the store yet — if it doesn't open, PetBeacon is coming soon."));
+      }
+    })
+    .catch(function () { fail("Something went wrong loading this report. Please try again."); });
+})();
+</script>
+</main></body></html>

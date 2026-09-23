@@ -48,6 +48,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   const [contact, setContact] = useState("");
   const [contactError, setContactError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [publishedId, setPublishedId] = useState<string | null>(null);
 
   const isLost = kind === "lost";
   const tone = isLost ? "lost" : "sighted";
@@ -66,7 +67,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
     if (!c.ok || !place || !species) return;
     setPublishing(true);
     try {
-      await publishReport({
+      const { id } = await publishReport({
         status: kind,
         species,
         name: isLost ? petName.trim() : null,
@@ -77,6 +78,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         photoUri,
         profile: { name: userName, city, alertRadiusMi, home },
       });
+      setPublishedId(id);
       setI(steps.indexOf("done"));
     } catch (e) {
       Alert.alert("We couldn't publish your report", e instanceof Error ? e.message : "Something went wrong. Please try again.");
@@ -162,14 +164,15 @@ export function ReportFlow({ kind }: { kind: Kind }) {
     );
   }
 
-  // done
+  // done: "Share flyer" / "Share sighting" genera la imagen real del reporte recién publicado
   return (
     <StepShell
       title={isLost ? "Your alert is live" : "Thanks for helping"}
       subtitle={isLost ? "Nearby users have been notified. We'll alert you the moment there's a match." : "Your sighting has been posted to the map."}
       onClose={close}
-      cta={{ label: "View on List", onPress: () => router.dismissTo("/(tabs)"), tone: "neutral" }}
-      secondary={{ label: "Pet care can get expensive. Free local resources", onPress: () => { router.dismissTo("/(tabs)/support"); } }}>
+      cta={{ label: isLost ? "Share flyer" : "Share sighting", onPress: () => publishedId && router.push({ pathname: "/flyer", params: { id: publishedId } }), disabled: !publishedId, tone }}
+      secondary={{ label: "View on List", onPress: () => router.dismissTo("/(tabs)") }}
+      links={[{ label: "Pet care can get expensive. Free local resources", onPress: () => router.dismissTo("/(tabs)/support") }]}>
       <View style={styles.okCircle}><Check size={40} color={C.ok} /></View>
     </StepShell>
   );

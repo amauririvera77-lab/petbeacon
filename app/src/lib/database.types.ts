@@ -149,6 +149,7 @@ export type Database = {
     Views: Record<string, never>;
     Functions: {
       reports_nearby: { Args: { lat: number; lng: number; radius_mi: number }; Returns: ReportNearby[] };
+      my_report_contact: { Args: { report_id: string }; Returns: string | null };
       my_matches: { Args: Record<PropertyKey, never>; Returns: MyMatch[] };
       resources_nearby: { Args: { lat: number; lng: number; radius_mi: number }; Returns: ResourceNearby[] };
     };

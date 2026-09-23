@@ -5,6 +5,7 @@ import { Alert, Modal, Pressable, ScrollView, Share, StyleSheet, Text, View } fr
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ReportNearby } from "../lib/database.types";
 import { C, font, radius } from "../theme/tokens";
+import { reportUrl } from "../lib/flyer";
 import { Badge } from "./Badge";
 import { FocusImage } from "./FocusImage";
 
@@ -31,14 +32,21 @@ export function PinDetailSheet({ report, onClose }: { report: ReportNearby | nul
   const title = r ? (r.name?.trim() || `Unknown ${r.species}`) : "";
   const Fallback = r?.species === "cat" ? Cat : Dog;
 
-  // Mensaje de texto para compartir. Interino: el flyer como imagen (PNG) llega en el siguiente paso.
+  // Texto para "Report to network" (compartir con tu red). Incluye el enlace a la página pública del reporte.
   // Nunca incluye el contacto del dueño (columna protegida).
   const shareText = () => {
     if (!r) return "";
     const seen = `${whenLabel(r.created_at)}${r.location_label ? ` · ${r.location_label}` : ""}`;
+    const link = reportUrl(r.id);
     return r.status === "lost"
-      ? `MISSING ${r.species}: ${title}${r.breed ? ` (${r.breed})` : ""}. Last seen ${seen}. ${r.features_description ?? ""}\nReported via PetBeacon`
-      : `Have you seen this pet? A ${r.breed ?? r.species} was spotted ${seen}. ${r.features_description ?? ""}\nReported via PetBeacon`;
+      ? `MISSING ${r.species}: ${title}${r.breed ? ` (${r.breed})` : ""}. Last seen ${seen}. ${r.features_description ?? ""}${link ? `\n${link}` : ""}\nReported via PetBeacon`
+      : `Have you seen this pet? A ${r.breed ?? r.species} was spotted ${seen}. ${r.features_description ?? ""}${link ? `\n${link}` : ""}\nReported via PetBeacon`;
+  };
+  // "Share flyer" / "Share sighting": abre la pantalla que genera la imagen real (tras cerrar el modal, iOS).
+  const openFlyer = () => {
+    if (!r) return;
+    onClose();
+    setTimeout(() => router.push({ pathname: "/flyer", params: { id: r.id } }), 400);
   };
   const share = () => Share.share({ message: shareText() }).catch(() => Alert.alert("Couldn't open sharing"));
 
@@ -99,7 +107,7 @@ export function PinDetailSheet({ report, onClose }: { report: ReportNearby | nul
                     {status === "lost" ? <Eye size={18} color={C.white} /> : <Share2 size={18} color={C.white} />}
                     <Text style={styles.ctaT}>{status === "lost" ? "I've seen this pet" : "Report to network"}</Text>
                   </Pressable>
-                  <Pressable accessibilityRole="button" onPress={share} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: "#F1F5F9" }]}>
+                  <Pressable accessibilityRole="button" onPress={openFlyer} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: "#F1F5F9" }]}>
                     <Share2 size={16} color={C.ink} />
                     <Text style={styles.secondaryT}>{status === "sighted" ? "Share sighting" : "Share flyer"}</Text>
                   </Pressable>

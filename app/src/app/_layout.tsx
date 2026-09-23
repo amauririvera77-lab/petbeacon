@@ -18,7 +18,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <SessionProvider>
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.white } }} />
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.white } }}>
+          <Stack.Screen name="flyer" options={{ presentation: "modal" }} />
+        </Stack>
       </SessionProvider>
     </SafeAreaProvider>
   );

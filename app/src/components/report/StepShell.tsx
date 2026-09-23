@@ -16,9 +16,10 @@ type Props = {
   children: ReactNode;
   cta: { label: string; onPress: () => void; disabled?: boolean; tone?: "lost" | "sighted" | "neutral" };
   secondary?: { label: string; onPress: () => void };
+  links?: { label: string; onPress: () => void }[]; // enlaces adicionales bajo el CTA
 };
 
-export function StepShell({ title, subtitle, step, total, onBack, onClose, children, cta, secondary }: Props) {
+export function StepShell({ title, subtitle, step, total, onBack, onClose, children, cta, secondary, links }: Props) {
   const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -42,9 +43,9 @@ export function StepShell({ title, subtitle, step, total, onBack, onClose, child
         {cta.tone === "lost" ? <Button label={cta.label} variant="primaryLost" onPress={cta.onPress} disabled={cta.disabled} />
           : cta.tone === "sighted" ? <Button label={cta.label} variant="primarySighted" onPress={cta.onPress} disabled={cta.disabled} />
           : <Primary label={cta.label} onPress={cta.onPress} disabled={cta.disabled} />}
-        {secondary ? (
-          <Pressable accessibilityRole="button" onPress={secondary.onPress} style={styles.link}><Text style={styles.linkT}>{secondary.label}</Text></Pressable>
-        ) : null}
+        {[...(secondary ? [secondary] : []), ...(links ?? [])].map((l) => (
+          <Pressable key={l.label} accessibilityRole="button" onPress={l.onPress} style={styles.link}><Text style={styles.linkT}>{l.label}</Text></Pressable>
+        ))}
       </View>
     </KeyboardAvoidingView>
   );
