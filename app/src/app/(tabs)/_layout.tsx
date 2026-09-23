@@ -3,6 +3,7 @@ import { Tabs } from "expo-router";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Fab } from "../../components/Fab";
+import { useSyncRadius } from "../../hooks/useSyncRadius";
 import { C, font } from "../../theme/tokens";
 
 const TAB_HEIGHT = 56;
@@ -10,6 +11,7 @@ const TAB_HEIGHT = 56;
 // 4 ítems; activo = negro (C.teal) en TODOS, sin color especial para Support (CLAUDE.md §7).
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  useSyncRadius();
   const barHeight = TAB_HEIGHT + insets.bottom;
   return (
     <View style={{ flex: 1 }}>

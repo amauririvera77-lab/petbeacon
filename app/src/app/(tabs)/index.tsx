@@ -2,6 +2,7 @@ import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { MapboxWebView, MapSelection } from "../../components/map/MapboxWebView";
+import { MatchBanner } from "../../components/MatchBanner";
 import { MapRadiusChip } from "../../components/MapRadiusChip";
 import { ReportCard } from "../../components/ReportCard";
 import { SetupNotice } from "../../components/SetupNotice";
@@ -9,6 +10,7 @@ import { Placeholder, TabScreen } from "../../components/TabScreen";
 import { useFeed } from "../../hooks/useFeed";
 import { useResources } from "../../hooks/useResources";
 import { useHome } from "../../hooks/useHome";
+import { useMyMatches } from "../../hooks/useMyMatches";
 import { useSession } from "../../state/session";
 import { C, FAB_SIZE, font, radius } from "../../theme/tokens";
 
@@ -22,9 +24,11 @@ export default function Home() {
   const center = useHome();
   const { reports, loading, error, refresh } = useFeed(alertRadiusMi, center.lat, center.lng);
   const resources = useResources(alertRadiusMi, center.lat, center.lng);
+  const { matches, refresh: refreshMatches, dismiss } = useMyMatches();
+  const banner = matches.find((m) => !m.dismissed);
 
   // Al volver de publicar un reporte, el feed se actualiza sin tener que reiniciar la app.
-  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+  useFocusEffect(useCallback(() => { refresh(); refreshMatches(); }, [refresh, refreshMatches]));
 
   const selReport = selected?.kind === "report" ? reports.find((r) => r.id === selected.id) : undefined;
   const selResource = selected?.kind === "resource" ? resources.find((r) => r.id === selected.id) : undefined;
@@ -80,6 +84,12 @@ export default function Home() {
   return (
     <TabScreen title="Home">
       {switcher}
+      {banner ? (
+        <View style={{ marginTop: 12 }}>
+          <MatchBanner match={banner} onDismiss={() => dismiss(banner.id)}
+            onView={() => { setSelected({ kind: "report", id: banner.sighted_report_id }); setView("map"); }} />
+        </View>
+      ) : null}
       {error === "supabase-not-configured" ? (
         <SetupNotice />
       ) : error ? (
