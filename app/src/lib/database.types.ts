@@ -41,6 +41,7 @@ export type Report = {
   breed: string | null;
   photo_url: string | null;
   features_description: string | null;
+  location: string; // geography: EWKT al insertar ('SRID=4326;POINT(lng lat)'), hex EWKB al leer
   location_label: string | null;
   contact_phone_or_email: string | null;
   pet_id: string | null;
@@ -113,7 +114,7 @@ export type Database = {
     Tables: {
       profiles: { Row: Profile; Insert: Partial<Profile> & { id: string; name: string; city: string }; Update: Partial<Profile> } & Rel;
       pets: { Row: Pet; Insert: Partial<Pet> & { user_id: string; name: string; species: Species }; Update: Partial<Pet> } & Rel;
-      reports: { Row: Report; Insert: Partial<Report> & { user_id: string; status: ReportStatus; species: Species }; Update: Partial<Report> } & Rel;
+      reports: { Row: Report; Insert: Partial<Report> & { user_id: string; status: ReportStatus; species: Species; location: string }; Update: Partial<Report> } & Rel;
       resources: { Row: ResourceRow; Insert: Partial<ResourceRow> & { name: string; category: ResourceCategory; description: string }; Update: Partial<ResourceRow> } & Rel;
       matches: { Row: MatchRow; Insert: Partial<MatchRow> & { lost_report_id: string; sighted_report_id: string; confidence: MatchConfidence }; Update: Partial<MatchRow> } & Rel;
     };

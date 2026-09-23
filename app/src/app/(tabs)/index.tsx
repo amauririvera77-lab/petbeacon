@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { MapboxWebView, MapSelection } from "../../components/map/MapboxWebView";
 import { MapRadiusChip } from "../../components/MapRadiusChip";
@@ -20,6 +21,9 @@ export default function Home() {
   const { alertRadiusMi, update } = useSession();
   const { reports, loading, error, refresh } = useFeed(alertRadiusMi);
   const resources = useResources(alertRadiusMi);
+
+  // Al volver de publicar un reporte, el feed se actualiza sin tener que reiniciar la app.
+  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
   const selReport = selected?.kind === "report" ? reports.find((r) => r.id === selected.id) : undefined;
   const selResource = selected?.kind === "resource" ? resources.find((r) => r.id === selected.id) : undefined;
