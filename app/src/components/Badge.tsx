@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
 import { C, font, radius } from "../theme/tokens";
 
 export type BadgeStatus = "lost" | "sighted" | "reunited";
@@ -10,10 +10,10 @@ const VARIANTS: Record<BadgeStatus, { label: string; bg: string }> = {
   reunited: { label: "Reunited", bg: C.ok },
 };
 
-export function Badge({ status }: { status: BadgeStatus }) {
+export function Badge({ status, style }: { status: BadgeStatus; style?: StyleProp<ViewStyle> }) {
   const v = VARIANTS[status];
   return (
-    <View style={[styles.badge, { backgroundColor: v.bg }]}>
+    <View style={[styles.badge, { backgroundColor: v.bg }, style]}>
       <Text style={styles.text}>{v.label}</Text>
     </View>
   );

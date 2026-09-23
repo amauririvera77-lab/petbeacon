@@ -66,7 +66,7 @@ export function PinDetailSheet({ report, onClose }: { report: ReportNearby | nul
 
               <View style={styles.titleRow}>
                 <Text style={styles.h} numberOfLines={2}>{title}</Text>
-                <Badge status={r.status} />
+                <Badge status={r.status} style={{ alignSelf: "baseline" }} />
               </View>
               {r.breed ? <Text style={styles.breed}>{r.breed}</Text> : <View style={{ height: 24 }} />}
 
@@ -121,7 +121,8 @@ const styles = StyleSheet.create({
   close: { position: "absolute", top: 12, right: 12, width: 36, height: 36, borderRadius: 18, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center", zIndex: 2 },
   photo: { height: 220, borderRadius: radius.lg, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center", overflow: "hidden", marginBottom: 20 },
   photoImg: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
-  titleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
+  // baseline: la píldora se alinea con la línea base del nombre (no centrada ni arriba).
+  titleRow: { flexDirection: "row", alignItems: "baseline", gap: 8, marginBottom: 4 },
   h: { flexShrink: 1, fontFamily: font.displayMedium, fontSize: 26, letterSpacing: -0.26, color: C.ink },
   breed: { fontFamily: font.bodyRegular, fontSize: 15, color: C.slate700, marginBottom: 24 },
   row: { flexDirection: "row", gap: 12 },
