@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase, supabaseConfigured } from "../lib/supabase";
 import type { ReportNearby } from "../lib/database.types";
+import { DEFAULT_CENTER } from "../lib/geo";
 
-// Coordenadas por defecto (White Plains, NY) hasta que el mapa/onboarding capturen la posición real (Fase 4).
-const DEFAULT_LAT = 41.034;
-const DEFAULT_LNG = -73.7629;
 
 type FeedState = {
   reports: ReportNearby[];
@@ -15,7 +13,7 @@ type FeedState = {
 
 // Orden y retención ya resueltos en SQL (reports_nearby / active_reports, CLAUDE.md §6):
 // Lost prioritario en 72h y sin expirar; Sighted se retira a las 48h; Reunited a las 24h.
-export function useFeed(radiusMi: number, lat = DEFAULT_LAT, lng = DEFAULT_LNG): FeedState {
+export function useFeed(radiusMi: number, lat: number = DEFAULT_CENTER.lat, lng: number = DEFAULT_CENTER.lng): FeedState {
   const [reports, setReports] = useState<ReportNearby[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

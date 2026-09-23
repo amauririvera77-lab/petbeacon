@@ -88,6 +88,22 @@ export type ReportNearby = {
   distance_mi: number;
 };
 
+// Forma de retorno de resources_nearby() (0002_resources_nearby.sql).
+export type ResourceNearby = {
+  id: string;
+  name: string;
+  category: ResourceCategory;
+  description: string;
+  address: string | null;
+  phone: string | null;
+  website_url: string | null;
+  is_featured_event: boolean;
+  icon: string | null;
+  lat: number;
+  lng: number;
+  distance_mi: number;
+};
+
 // supabase-js exige `Relationships` en cada tabla y `Views` en el schema (aunque estén vacíos)
 // para que el tipo cumpla su GenericSchema; si no, el cliente cae a `any` y rpc() pierde el tipado de Args.
 type Rel = { Relationships: [] };
@@ -104,6 +120,7 @@ export type Database = {
     Views: Record<string, never>;
     Functions: {
       reports_nearby: { Args: { lat: number; lng: number; radius_mi: number }; Returns: ReportNearby[] };
+      resources_nearby: { Args: { lat: number; lng: number; radius_mi: number }; Returns: ResourceNearby[] };
     };
   };
 };
