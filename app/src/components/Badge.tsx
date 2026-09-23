@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
 import { C, font, radius } from "../theme/tokens";
 
@@ -10,16 +11,22 @@ const VARIANTS: Record<BadgeStatus, { label: string; bg: string }> = {
   reunited: { label: "Reunited", bg: C.ok },
 };
 
-export function Badge({ status, style }: { status: BadgeStatus; style?: StyleProp<ViewStyle> }) {
+const PAD_V = 4;
+
+// sitOnBaseline: el BORDE INFERIOR de la píldora queda sobre la línea base del texto vecino (p. ej. el nombre de la mascota).
+// Con `alignSelf: "baseline"` el texto de la píldora comparte esa línea y la píldora sobresale por debajo
+// (padding inferior + descendente de su tipografía). Se mide el descendente real (onTextLayout) y se sube ese tramo.
+export function Badge({ status, style, sitOnBaseline }: { status: BadgeStatus; style?: StyleProp<ViewStyle>; sitOnBaseline?: boolean }) {
   const v = VARIANTS[status];
+  const [descender, setDescender] = useState(3.6); // valor inicial estimado para Manrope 12px; se reemplaza al medir
   return (
-    <View style={[styles.badge, { backgroundColor: v.bg }, style]}>
-      <Text style={styles.text}>{v.label}</Text>
+    <View style={[styles.badge, { backgroundColor: v.bg }, sitOnBaseline && { alignSelf: "baseline", transform: [{ translateY: -(PAD_V + descender) }] }, style]}>
+      <Text style={styles.text} onTextLayout={sitOnBaseline ? (e) => { const d = e.nativeEvent.lines[0]?.descender; if (d != null && Math.abs(d - descender) > 0.1) setDescender(d); } : undefined}>{v.label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  badge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },
+  badge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: PAD_V, borderRadius: radius.pill },
   text: { fontFamily: font.bodyBold, fontSize: 12, color: C.white },
 });
