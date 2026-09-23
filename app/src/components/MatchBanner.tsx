@@ -1,7 +1,8 @@
 import { Sparkles, X } from "lucide-react-native";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { MyMatch } from "../lib/database.types";
 import { C, MIN_HIT, font, radius } from "../theme/tokens";
+import { FocusImage } from "./FocusImage";
 
 // "Possible match" (especie y zona coinciden) o "Strong match" (además coincide la raza) — §6.
 export function MatchBanner({ match, onView, onDismiss }: { match: MyMatch; onView: () => void; onDismiss: () => void }) {
@@ -9,7 +10,7 @@ export function MatchBanner({ match, onView, onDismiss }: { match: MyMatch; onVi
   const title = `${strong ? "Strong" : "Possible"} match for ${match.lost_name ?? "your pet"}`;
   return (
     <View style={styles.box} accessibilityRole="alert">
-      {match.sighted_photo_url ? <Image source={{ uri: match.sighted_photo_url }} style={styles.photo} /> : (
+      {match.sighted_photo_url ? <FocusImage uri={match.sighted_photo_url} focusX={match.sighted_focus_x} focusY={match.sighted_focus_y} zoom={(match.sighted_zoom ?? 100) / 100} style={styles.photo} /> : (
         <View style={[styles.photo, styles.icon]}><Sparkles size={22} color={C.warn} /></View>
       )}
       <View style={styles.body}>

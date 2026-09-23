@@ -1,7 +1,8 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { MyReport } from "../hooks/useMyReports";
 import { C, MIN_HIT, font, radius } from "../theme/tokens";
 import { Badge } from "./Badge";
+import { FocusImage } from "./FocusImage";
 
 function ago(iso: string) {
   const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3_600_000);
@@ -15,7 +16,7 @@ export function MyReportCard({ report, matchCount, onMarkReunited }: { report: M
   return (
     <View style={styles.card}>
       <View style={styles.row}>
-        {report.photo_url ? <Image source={{ uri: report.photo_url }} style={styles.photo} /> : (
+        {report.photo_url ? <FocusImage uri={report.photo_url} focusX={report.photo_focus_x} focusY={report.photo_focus_y} zoom={(report.photo_zoom ?? 100) / 100} style={styles.photo} /> : (
           <View style={[styles.photo, styles.fallback]}><Text style={styles.fallbackT}>{title[0]?.toUpperCase()}</Text></View>
         )}
         <View style={styles.body}>

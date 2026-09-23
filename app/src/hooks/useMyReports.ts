@@ -4,8 +4,8 @@ import { supabase } from "../lib/supabase";
 import { useAuthUser } from "./useAuthUser";
 
 // Sin `contact_phone_or_email`: esa columna solo la lee el dueño vía my_report_contact() (migración 0003).
-export type MyReport = Pick<Report, "id" | "status" | "species" | "name" | "breed" | "photo_url" | "features_description" | "location_label" | "created_at" | "reunited_at">;
-const COLS = "id,status,species,name,breed,photo_url,features_description,location_label,created_at,reunited_at";
+export type MyReport = Pick<Report, "id" | "status" | "species" | "name" | "breed" | "photo_url" | "photo_focus_x" | "photo_focus_y" | "photo_zoom" | "features_description" | "location_label" | "created_at" | "reunited_at">;
+const COLS = "id,status,species,name,breed,photo_url,photo_focus_x,photo_focus_y,photo_zoom,features_description,location_label,created_at,reunited_at";
 
 export function useMyReports() {
   const uid = useAuthUser();

@@ -1,11 +1,12 @@
 import { router } from "expo-router";
 import { Cat, Check, Dog, Eye, MapPin, PawPrint, Share2, X } from "lucide-react-native";
 import { useState } from "react";
-import { Alert, Image, Modal, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { Alert, Modal, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ReportNearby } from "../lib/database.types";
 import { C, font, radius } from "../theme/tokens";
 import { Badge } from "./Badge";
+import { FocusImage } from "./FocusImage";
 
 const COLOR = { lost: C.sos, sighted: C.warn, reunited: C.ok } as const;
 
@@ -60,7 +61,7 @@ export function PinDetailSheet({ report, onClose }: { report: ReportNearby | nul
             <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 }}>
               <View style={styles.photo}>
                 {r.photo_url && !photoFailed ? (
-                  <Image source={{ uri: r.photo_url }} style={styles.photoImg} resizeMode="cover" accessibilityLabel={title} onError={() => setPhotoFailed(true)} />
+                  <FocusImage uri={r.photo_url} focusX={r.photo_focus_x} focusY={r.photo_focus_y} style={styles.photoImg} accessibilityLabel={title} onError={() => setPhotoFailed(true)} />
                 ) : <Fallback size={56} color={C.slate500} />}
               </View>
 

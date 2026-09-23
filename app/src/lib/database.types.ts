@@ -41,6 +41,9 @@ export type Report = {
   name: string | null;
   breed: string | null;
   photo_url: string | null;
+  photo_focus_x: number | null; // % (0-100): dónde está la cabeza, para no cortarla al recortar
+  photo_focus_y: number | null;
+  photo_zoom: number | null; // % (100 = sin zoom) para miniaturas
   features_description: string | null;
   location: string; // geography: EWKT al insertar ('SRID=4326;POINT(lng lat)'), hex EWKB al leer
   location_label: string | null;
@@ -84,6 +87,9 @@ export type ReportNearby = {
   name: string | null;
   breed: string | null;
   photo_url: string | null;
+  photo_focus_x: number | null;
+  photo_focus_y: number | null;
+  photo_zoom: number | null;
   features_description: string | null;
   location_label: string | null;
   created_at: string;
@@ -122,6 +128,9 @@ export type MyMatch = {
   sighted_photo_url: string | null;
   sighted_label: string | null;
   sighted_breed: string | null;
+  sighted_focus_x: number | null;
+  sighted_focus_y: number | null;
+  sighted_zoom: number | null;
 };
 
 // supabase-js exige `Relationships` en cada tabla y `Views` en el schema (aunque estén vacíos)

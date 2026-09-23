@@ -1,6 +1,6 @@
-import { Image } from "react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Badge, BadgeStatus } from "./Badge";
+import { FocusImage } from "./FocusImage";
 import { C, font, radius } from "../theme/tokens";
 import type { ReportNearby } from "../lib/database.types";
 
@@ -11,7 +11,7 @@ export function ReportCard({ report, onPress }: { report: ReportNearby; onPress?
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}>
       {report.photo_url ? (
-        <Image source={{ uri: report.photo_url }} style={styles.photo} accessibilityIgnoresInvertColors />
+        <FocusImage uri={report.photo_url} focusX={report.photo_focus_x} focusY={report.photo_focus_y} zoom={(report.photo_zoom ?? 100) / 100} style={styles.photo} />
       ) : (
         <View style={[styles.photo, styles.photoFallback]}>
           <Text style={styles.photoFallbackT}>{title[0]?.toUpperCase()}</Text>
