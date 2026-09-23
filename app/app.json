@@ -18,7 +18,12 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "app.petbeacon.mobile"
+      "package": "app.petbeacon.mobile",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -41,6 +46,13 @@
         }
       ]
     ],
-    "scheme": "petbeacon"
+    "scheme": "petbeacon",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "04276a7c-6447-48cb-a17b-facf9821ef8a"
+      }
+    },
+    "owner": "amauririvera"
   }
 }

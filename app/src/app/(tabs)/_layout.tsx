@@ -3,6 +3,7 @@ import { Tabs } from "expo-router";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Fab } from "../../components/Fab";
+import { usePushNotifications } from "../../hooks/usePushNotifications";
 import { useSyncRadius } from "../../hooks/useSyncRadius";
 import { C, font } from "../../theme/tokens";
 
@@ -12,6 +13,7 @@ const TAB_HEIGHT = 56;
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   useSyncRadius();
+  usePushNotifications();
   const barHeight = TAB_HEIGHT + insets.bottom;
   return (
     <View style={{ flex: 1 }}>

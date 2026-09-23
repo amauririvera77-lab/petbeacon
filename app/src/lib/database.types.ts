@@ -19,6 +19,7 @@ export type Profile = {
   push_notifications_enabled: boolean;
   email_notifications_enabled: boolean;
   push_token: string | null;
+  home: string | null; // geography (EWKT al escribir)
   created_at: string;
 };
 

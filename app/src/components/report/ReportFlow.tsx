@@ -30,7 +30,7 @@ const ORDER: Record<Kind, Step[]> = {
 };
 
 export function ReportFlow({ kind }: { kind: Kind }) {
-  const { name: userName, city, alertRadiusMi } = useSession();
+  const { name: userName, city, alertRadiusMi, home } = useSession();
   const center = useHome();
   const steps = ORDER[kind];
   const [i, setI] = useState(0);
@@ -74,7 +74,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         contact: c.value,
         location: place,
         photoUri,
-        profile: { name: userName, city, alertRadiusMi },
+        profile: { name: userName, city, alertRadiusMi, home },
       });
       setI(steps.indexOf("done"));
     } catch (e) {

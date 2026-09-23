@@ -1,4 +1,6 @@
 import { File } from "expo-file-system";
+import type { LatLng } from "./geo";
+import { registerPush } from "./push";
 import { supabase } from "./supabase";
 import type { ReportStatus, Species } from "./database.types";
 
@@ -11,7 +13,7 @@ export type PublishInput = {
   contact: string | null;
   location: { lat: number; lng: number; label: string };
   photoUri: string | null;
-  profile: { name: string; city: string; alertRadiusMi: number };
+  profile: { name: string; city: string; alertRadiusMi: number; home: LatLng | null };
 };
 
 // Sesión anónima (Signup no pide contraseña): se crea al primer publish y se reutiliza después.
@@ -41,6 +43,8 @@ export async function publishReport(input: PublishInput): Promise<{ id: string }
     id: uid, name: input.profile.name || "Neighbor", city: input.profile.city || "—", alert_radius_mi: input.profile.alertRadiusMi,
   });
   if (pErr) throw new Error(`Couldn't save your profile: ${pErr.message}`);
+
+  await registerPush(uid, input.profile.home); // best-effort: el perfil ya existe; guarda token y ubicación base del usuario
 
   const photo_url = input.photoUri ? await uploadPhoto(uid, input.photoUri) : null;
 
