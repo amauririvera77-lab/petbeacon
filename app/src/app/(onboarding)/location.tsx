@@ -8,7 +8,7 @@ import { Heading, OnboardingScreen, Sub } from "../../components/Screen";
 import { Primary } from "../../components/Primary";
 import { useSession } from "../../state/session";
 import { C } from "../../theme/tokens";
-import { finishOnboarding } from "./finish";
+import { finishOnboarding } from "../../lib/onboarding";
 
 export default function LocationPriming() {
   const s = useSession();

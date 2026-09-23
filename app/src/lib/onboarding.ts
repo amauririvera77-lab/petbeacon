@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useSession } from "../../state/session";
+import { useSession } from "../state/session";
 
 type S = ReturnType<typeof useSession>;
 

@@ -7,7 +7,7 @@ import { Heading, OnboardingScreen, Sub } from "../../components/Screen";
 import { Primary } from "../../components/Primary";
 import { useSession } from "../../state/session";
 import { C } from "../../theme/tokens";
-import { finishOnboarding } from "./finish";
+import { finishOnboarding } from "../../lib/onboarding";
 import { styles } from "./location";
 
 export default function NotificationsPriming() {

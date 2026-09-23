@@ -5,7 +5,7 @@ import { Heading, OnboardingScreen, Sub } from "../../components/Screen";
 import { Primary } from "../../components/Primary";
 import { TextField } from "../../components/TextField";
 import { useSession } from "../../state/session";
-import { finishOnboarding } from "./finish";
+import { finishOnboarding } from "../../lib/onboarding";
 
 export default function LocationManual() {
   const s = useSession();

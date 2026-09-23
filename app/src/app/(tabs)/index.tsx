@@ -2,6 +2,7 @@ import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { MapboxWebView, MapSelection } from "../../components/map/MapboxWebView";
+import { EnableAlertsCard } from "../../components/EnableAlertsCard";
 import { MatchBanner } from "../../components/MatchBanner";
 import { MapRadiusChip } from "../../components/MapRadiusChip";
 import { ReportCard } from "../../components/ReportCard";
@@ -84,6 +85,7 @@ export default function Home() {
   return (
     <TabScreen title="Home">
       {switcher}
+      <View style={{ marginTop: 12 }}><EnableAlertsCard /></View>
       {banner ? (
         <View style={{ marginTop: 12 }}>
           <MatchBanner match={banner} onDismiss={() => dismiss(banner.id)}
