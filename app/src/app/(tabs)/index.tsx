@@ -1,17 +1,25 @@
 import { useFocusEffect } from "expo-router";
+import { List, Map as MapIcon } from "lucide-react-native";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
-import { MapboxWebView, MapSelection } from "../../components/map/MapboxWebView";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EnableAlertsCard } from "../../components/EnableAlertsCard";
-import { MatchBanner } from "../../components/MatchBanner";
+import { HomeHeader } from "../../components/HomeHeader";
 import { MapRadiusChip } from "../../components/MapRadiusChip";
+import { MatchBanner } from "../../components/MatchBanner";
+import { MapboxWebView, MapSelection } from "../../components/map/MapboxWebView";
+import { NotificationsSheet } from "../../components/NotificationsSheet";
+import { OfflineBanner } from "../../components/OfflineBanner";
 import { ReportCard } from "../../components/ReportCard";
 import { SetupNotice } from "../../components/SetupNotice";
-import { Placeholder, TabScreen } from "../../components/TabScreen";
+import { Placeholder } from "../../components/TabScreen";
+import { useAuthUser } from "../../hooks/useAuthUser";
 import { useFeed } from "../../hooks/useFeed";
-import { useResources } from "../../hooks/useResources";
 import { useHome } from "../../hooks/useHome";
 import { useMyMatches } from "../../hooks/useMyMatches";
+import { useMyReports } from "../../hooks/useMyReports";
+import { useNotificationsFeed } from "../../hooks/useNotificationsFeed";
+import { useResources } from "../../hooks/useResources";
 import { useSession } from "../../state/session";
 import { C, FAB_SIZE, font, radius } from "../../theme/tokens";
 
@@ -19,36 +27,57 @@ const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN;
 
 // List (default) y Map con igual jerarquía (CLAUDE.md §7); ambos leen los mismos datos y el mismo radio.
 export default function Home() {
+  const insets = useSafeAreaInsets();
   const [view, setView] = useState<"list" | "map">("list");
   const [selected, setSelected] = useState<MapSelection>(null);
-  const { alertRadiusMi, update } = useSession();
+  const [notifOpen, setNotifOpen] = useState(false);
+  const { alertRadiusMi, notifSeenAt, update } = useSession();
+  const uid = useAuthUser();
   const center = useHome();
   const { reports, loading, error, refresh } = useFeed(alertRadiusMi, center.lat, center.lng);
   const resources = useResources(alertRadiusMi, center.lat, center.lng);
   const { matches, refresh: refreshMatches, dismiss } = useMyMatches();
   const banner = matches.find((m) => !m.dismissed);
+  const { reports: myReports, refresh: refreshMine } = useMyReports();
+
+  // Solo novedades de otros usuarios (lo propio no es una notificación).
+  const mineIds = new Set(myReports.map((r) => r.id));
+  const others = reports.filter((r) => !mineIds.has(r.id));
+  const { items, unread } = useNotificationsFeed(others, matches, uid, notifSeenAt);
 
   // Al volver de publicar un reporte, el feed se actualiza sin tener que reiniciar la app.
-  useFocusEffect(useCallback(() => { refresh(); refreshMatches(); }, [refresh, refreshMatches]));
+  useFocusEffect(useCallback(() => { refresh(); refreshMatches(); refreshMine(); }, [refresh, refreshMatches, refreshMine]));
 
   const selReport = selected?.kind === "report" ? reports.find((r) => r.id === selected.id) : undefined;
   const selResource = selected?.kind === "resource" ? resources.find((r) => r.id === selected.id) : undefined;
 
+  // Abrir la hoja limpia el badge (CLAUDE.md §2).
+  const openNotifs = () => { setNotifOpen(true); update({ notifSeenAt: Date.now() }); };
+  const pickNotif = (reportId: string) => { setNotifOpen(false); setSelected({ kind: "report", id: reportId }); setView("map"); };
+
   const switcher = (
-    <View style={styles.seg} accessibilityRole="tablist">
-      {(["list", "map"] as const).map((v) => (
-        <Pressable key={v} accessibilityRole="tab" accessibilityState={{ selected: view === v }} onPress={() => setView(v)}
-          style={[styles.segItem, view === v && styles.segOn]}>
-          <Text style={[styles.segT, view === v && { color: C.white }]}>{v === "list" ? "List" : "Map"}</Text>
-        </Pressable>
-      ))}
+    <View style={styles.segBar} accessibilityRole="tablist">
+      {([["list", "List", List], ["map", "Map", MapIcon]] as const).map(([v, label, Icon]) => {
+        const on = view === v;
+        return (
+          <Pressable key={v} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => setView(v)} style={[styles.segItem, on && styles.segOn]}>
+            <Icon size={16} color={on ? C.white : C.slate700} />
+            <Text style={[styles.segT, on && { color: C.white }]}>{label}</Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 
-  if (view === "map") {
-    return (
-      <TabScreen title="Home" scroll={false}>
-        <View style={styles.segRow}>{switcher}</View>
+  return (
+    <View style={styles.root}>
+      <View style={{ paddingTop: insets.top, backgroundColor: C.white }}>
+        <HomeHeader unread={unread} onBell={openNotifs} />
+        {switcher}
+      </View>
+      <OfflineBanner />
+
+      {view === "map" ? (
         <View style={styles.mapWrap}>
           {!MAPBOX_TOKEN ? (
             <View style={styles.pad}><SetupNotice what="Mapbox" vars="EXPO_PUBLIC_MAPBOX_TOKEN" /></View>
@@ -56,14 +85,7 @@ export default function Home() {
             <View style={styles.pad}><SetupNotice /></View>
           ) : (
             <>
-              <MapboxWebView
-                token={MAPBOX_TOKEN}
-                reports={reports}
-                resources={resources}
-                center={center}
-                radiusMi={alertRadiusMi}
-                onSelect={setSelected}
-              />
+              <MapboxWebView token={MAPBOX_TOKEN} reports={reports} resources={resources} center={center} radiusMi={alertRadiusMi} onSelect={setSelected} />
               <MapRadiusChip value={alertRadiusMi} onChange={(mi) => { setSelected(null); update({ alertRadiusMi: mi }); }} />
               {selReport ? (
                 <View style={styles.sheet}><ReportCard report={selReport} /></View>
@@ -78,47 +100,41 @@ export default function Home() {
             </>
           )}
         </View>
-      </TabScreen>
-    );
-  }
-
-  return (
-    <TabScreen title="Home">
-      {switcher}
-      <View style={{ marginTop: 12 }}><EnableAlertsCard /></View>
-      {banner ? (
-        <View style={{ marginTop: 12 }}>
-          <MatchBanner match={banner} onDismiss={() => dismiss(banner.id)}
-            onView={() => { setSelected({ kind: "report", id: banner.sighted_report_id }); setView("map"); }} />
-        </View>
-      ) : null}
-      {error === "supabase-not-configured" ? (
-        <SetupNotice />
-      ) : error ? (
-        <View style={styles.errBox}>
-          <Text style={styles.errT}>Couldn't load the feed: {error}</Text>
-          <Pressable accessibilityRole="button" onPress={refresh} style={styles.retry}><Text style={styles.retryT}>Retry</Text></Pressable>
-        </View>
-      ) : loading ? (
-        <ActivityIndicator style={{ marginTop: 24 }} color={C.teal} />
-      ) : reports.length === 0 ? (
-        <Placeholder text={`No activity within ${alertRadiusMi} mi yet.`} />
       ) : (
-        <View style={styles.list}>
-          {reports.map((r) => <ReportCard key={r.id} report={r} />)}
-        </View>
+        <ScrollView contentContainerStyle={styles.listC}>
+          <EnableAlertsCard />
+          {banner ? (
+            <MatchBanner match={banner} onDismiss={() => dismiss(banner.id)} onView={() => pickNotif(banner.sighted_report_id)} />
+          ) : null}
+          {error === "supabase-not-configured" ? (
+            <SetupNotice />
+          ) : error ? (
+            <View style={styles.errBox}>
+              <Text style={styles.errT}>Couldn't load the feed: {error}</Text>
+              <Pressable accessibilityRole="button" onPress={refresh} style={styles.retry}><Text style={styles.retryT}>Retry</Text></Pressable>
+            </View>
+          ) : loading ? (
+            <ActivityIndicator style={{ marginTop: 24 }} color={C.teal} />
+          ) : reports.length === 0 ? (
+            <Placeholder text={`No activity within ${alertRadiusMi} mi yet.`} />
+          ) : (
+            reports.map((r) => <ReportCard key={r.id} report={r} />)
+          )}
+        </ScrollView>
       )}
-    </TabScreen>
+
+      <NotificationsSheet visible={notifOpen} items={items} onClose={() => setNotifOpen(false)} onPick={(n) => pickNotif(n.reportId)} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  seg: { flexDirection: "row", backgroundColor: C.border, borderRadius: radius.pill, padding: 3, marginTop: 8, alignSelf: "flex-start" },
-  segRow: { paddingHorizontal: 16, paddingBottom: 8 },
-  segItem: { minHeight: 40, minWidth: 80, borderRadius: radius.pill, alignItems: "center", justifyContent: "center", paddingHorizontal: 16 },
+  root: { flex: 1, backgroundColor: C.surface },
+  segBar: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
+  segItem: { flex: 1, height: 40, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", borderRadius: radius.md, backgroundColor: "#F1F5F9" },
   segOn: { backgroundColor: C.teal },
   segT: { fontFamily: font.bodyBold, fontSize: 14, color: C.slate700 },
-  list: { marginTop: 16, gap: 10 },
+  listC: { padding: 16, paddingBottom: 200, gap: 10 },
   mapWrap: { flex: 1 },
   pad: { padding: 16 },
   // Deja libre la esquina inferior derecha para el FAB (73px + 16px de margen).
@@ -128,7 +144,7 @@ const styles = StyleSheet.create({
   resName: { fontFamily: font.head, fontSize: 16, color: C.ink },
   resDesc: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700 },
   resMeta: { fontFamily: font.bodySemi, fontSize: 12, color: C.slate500 },
-  errBox: { marginTop: 16, gap: 8 },
+  errBox: { gap: 8 },
   errT: { fontFamily: font.body, fontSize: 14, color: C.sosDark },
   retry: { alignSelf: "flex-start", paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: C.ink },
   retryT: { fontFamily: font.bodyBold, fontSize: 13, color: C.white },

@@ -1,9 +1,11 @@
 // GENERADO desde assets/logo/petbeacon-logo.svg — colores fijos de la marca, no recolorear ni enlazar al tema.
 import Svg, { G, Path, Rect } from "react-native-svg";
 
-export function Logo({ width = 160 }: { width?: number }) {
+// tight: recorta el margen del lienzo (el contenido real mide 363×232 dentro de 792×612) para usarlo en headers.
+export function Logo({ width = 160, tight = false }: { width?: number; tight?: boolean }) {
+  const vb = tight ? { x: 210, y: 250, w: 363, h: 232 } : { x: 0, y: 0, w: 792, h: 612 };
   return (
-    <Svg width={width} height={(width * 612) / 792} viewBox="0 0 792 612" accessibilityLabel="PetBeacon">
+    <Svg width={width} height={(width * vb.h) / vb.w} viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`} accessibilityLabel="PetBeacon">
 
   <Path fill="#f9dfde" d="M512.96,361.99c-30.87,0-55.99-25.12-55.99-55.99s25.12-55.99,55.99-55.99,55.99,25.12,55.99,55.99-25.12,55.99-55.99,55.99ZM512.96,254.46c-28.42,0-51.54,23.13-51.54,51.54s23.13,51.54,51.54,51.54,51.54-23.13,51.54-51.54-23.13-51.54-51.54-51.54Z"/>
   <Path fill="#efaea8" d="M512.96,341.39c-19.44,0-35.24-15.82-35.24-35.24s15.82-35.24,35.24-35.24,35.24,15.82,35.24,35.24-15.82,35.24-35.24,35.24ZM512.96,275.32c-16.99,0-30.82,13.82-30.82,30.81s13.82,30.82,30.82,30.82,30.82-13.82,30.82-30.82-13.82-30.81-30.82-30.81Z"/>
