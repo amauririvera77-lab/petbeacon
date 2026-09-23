@@ -1,5 +1,6 @@
 import { File } from "expo-file-system";
 import type { LatLng } from "./geo";
+import { ensureAccount } from "./account";
 import { registerPush } from "./push";
 import { supabase } from "./supabase";
 import type { ReportStatus, Species } from "./database.types";
@@ -16,16 +17,6 @@ export type PublishInput = {
   profile: { name: string; city: string; alertRadiusMi: number; home: LatLng | null };
 };
 
-// Sesión anónima (Signup no pide contraseña): se crea al primer publish y se reutiliza después.
-async function ensureUser(): Promise<string> {
-  if (!supabase) throw new Error("Supabase isn't configured.");
-  const { data } = await supabase.auth.getSession();
-  if (data.session) return data.session.user.id;
-  const { data: created, error } = await supabase.auth.signInAnonymously();
-  if (error || !created.user) throw new Error(`Couldn't start a session (${error?.message ?? "unknown"}). Enable anonymous sign-ins in Supabase.`);
-  return created.user.id;
-}
-
 async function uploadPhoto(uid: string, uri: string): Promise<string> {
   if (!supabase) throw new Error("Supabase isn't configured.");
   const bytes = await new File(uri).arrayBuffer();
@@ -37,12 +28,7 @@ async function uploadPhoto(uid: string, uri: string): Promise<string> {
 
 export async function publishReport(input: PublishInput): Promise<{ id: string }> {
   if (!supabase) throw new Error("Supabase isn't configured.");
-  const uid = await ensureUser();
-
-  const { error: pErr } = await supabase.from("profiles").upsert({
-    id: uid, name: input.profile.name || "Neighbor", city: input.profile.city || "—", alert_radius_mi: input.profile.alertRadiusMi,
-  });
-  if (pErr) throw new Error(`Couldn't save your profile: ${pErr.message}`);
+  const uid = await ensureAccount(input.profile);
 
   await registerPush(uid, input.profile.home); // best-effort: el perfil ya existe; guarda token y ubicación base del usuario
 
