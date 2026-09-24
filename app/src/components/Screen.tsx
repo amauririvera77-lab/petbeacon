@@ -1,42 +1,32 @@
 import { ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StyleSheet, Text, View } from "react-native";
 import { C, font } from "../theme/tokens";
+import { OnboardingHeader } from "./layout/Headers";
+import { ScreenLayout } from "./layout/ScreenLayout";
 
-// Contenedor de pantalla de onboarding: safe area, "Skip" opcional, CTA fijo abajo.
-export function OnboardingScreen({
-  children, footer, onSkip,
-}: { children: ReactNode; footer?: ReactNode; onSkip?: () => void }) {
-  const insets = useSafeAreaInsets();
+// Pantallas del onboarding (prototipo): barra superior de 56 px con "Skip", contenido que mide lo que ocupa y el CTA justo debajo.
+export function OnboardingScreen({ children, cta, onSkip }: { children: ReactNode; cta?: ReactNode; onSkip?: () => void }) {
+  return <ScreenLayout header={<OnboardingHeader onSkip={onSkip} />} cta={cta}>{children}</ScreenLayout>;
+}
+
+// Bloque centrado de las pantallas de permisos (ubicación, notificaciones): círculo de 80 con ícono de 36 → título → texto.
+export function PrimingBlock({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
-    <View style={[styles.root, { paddingTop: insets.top, paddingBottom: Math.max(insets.bottom, 16) }]}>
-      <View style={styles.top}>
-        {onSkip ? (
-          <Pressable accessibilityRole="button" onPress={onSkip} hitSlop={8} style={styles.skip}>
-            <Text style={styles.skipText}>Skip</Text>
-          </Pressable>
-        ) : null}
-      </View>
-      <View style={styles.body}>{children}</View>
-      {footer ? <View style={styles.footer}>{footer}</View> : null}
+    <View style={styles.priming}>
+      <View style={styles.circle}>{icon}</View>
+      <Text style={[ob.h1, { textAlign: "center", marginBottom: 8 }]} accessibilityRole="header">{title}</Text>
+      <Text style={[ob.p, { textAlign: "center" }]}>{children}</Text>
     </View>
   );
 }
 
-export function Heading({ children }: { children: ReactNode }) {
-  return <Text style={styles.h1} accessibilityRole="header">{children}</Text>;
-}
-export function Sub({ children }: { children: ReactNode }) {
-  return <Text style={styles.sub}>{children}</Text>;
-}
+// Tipografía del onboarding: h1 26/1.2 (Geist 600, -0.01em), texto de apoyo 15/1.5 en #475569.
+export const ob = StyleSheet.create({
+  h1: { fontFamily: font.displayMedium, fontSize: 26, lineHeight: 31.2, letterSpacing: -0.26, color: C.ink },
+  p: { fontFamily: font.bodyRegular, fontSize: 15, lineHeight: 22.5, color: C.slate600 },
+});
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.white },
-  top: { height: 48, alignItems: "flex-end", justifyContent: "center", paddingHorizontal: 24 },
-  skip: { minHeight: 44, minWidth: 44, alignItems: "center", justifyContent: "center" },
-  skipText: { fontFamily: font.bodySemi, fontSize: 15, color: C.slate500 },
-  body: { flex: 1, paddingHorizontal: 24 },
-  footer: { paddingHorizontal: 24, gap: 8 },
-  h1: { fontFamily: font.displayMedium, fontSize: 26, lineHeight: 31, letterSpacing: -0.26, color: C.ink },
-  sub: { fontFamily: font.bodyRegular, fontSize: 15, lineHeight: 22, color: C.slate700 },
+  priming: { alignItems: "center", paddingTop: 40, paddingHorizontal: 24, paddingBottom: 24 },
+  circle: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.border, alignItems: "center", justifyContent: "center", marginBottom: 32 },
 });

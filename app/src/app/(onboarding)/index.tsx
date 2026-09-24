@@ -1,12 +1,11 @@
-// 1 · Welcome
-
+// 1 · Welcome — contenido centrado; sin CTA: las salidas son los botones de intención y dos enlaces.
+import { Bell, Eye } from "lucide-react-native";
 import { router } from "expo-router";
-import { StyleSheet, View } from "react-native";
-import { Button } from "../../components/Button";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Logo } from "../../components/Logo";
-import { Heading, OnboardingScreen, Sub } from "../../components/Screen";
-import { LinkButton } from "../../components/Primary";
+import { OnboardingScreen } from "../../components/Screen";
 import { Intent, useSession } from "../../state/session";
+import { C, font, radius } from "../../theme/tokens";
 
 export default function Welcome() {
   const { update } = useSession();
@@ -15,30 +14,40 @@ export default function Welcome() {
     router.push("/signup");
   };
   return (
-    <OnboardingScreen
-      footer={
-        <>
-          <LinkButton label="Just setting up — I'll register my pet now" onPress={() => pick("register")} />
-          <LinkButton
-            label={"Struggling to care for your pet right now?\nSee local support"}
-            onPress={() => router.push("/(tabs)/support")}
-          />
-        </>
-      }
-    >
-      <View style={styles.logo}><Logo width={150} /></View>
-      <Sub>Reunite pets with their people.</Sub>
-      <View style={{ height: 24 }} />
-      <Heading>What brings you here today?</Heading>
-      <View style={styles.btns}>
-        <Button label="I lost my pet" variant="primaryLost" onPress={() => pick("lost")} />
-        <Button label="I see a pet" variant="primarySighted" onPress={() => pick("seen")} />
+    <OnboardingScreen>
+      <View style={styles.wrap}>
+        <View style={styles.hero}>
+          <Logo width={150} />
+          <Text style={styles.tagline}>Reunite pets with their people.</Text>
+          <Text style={styles.h1} accessibilityRole="header">What brings you here today?</Text>
+        </View>
+        <View style={styles.buttons}>
+          <Pressable accessibilityRole="button" onPress={() => pick("lost")} style={({ pressed }) => [styles.intent, { backgroundColor: C.sos }, pressed && { opacity: 0.9 }]}>
+            <Bell size={20} color={C.white} /><Text style={styles.intentT}>I lost my pet</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => pick("seen")} style={({ pressed }) => [styles.intent, { backgroundColor: C.warn }, pressed && { opacity: 0.9 }]}>
+            <Eye size={20} color={C.white} /><Text style={styles.intentT}>I see a pet</Text>
+          </Pressable>
+        </View>
+        <Pressable accessibilityRole="link" onPress={() => pick("register")} style={styles.link}>
+          <Text style={styles.linkT}>Just setting up — I'll register my pet now</Text>
+        </Pressable>
+        <Pressable accessibilityRole="link" onPress={() => router.push("/(tabs)/support")} style={[styles.link, { marginTop: 18 }]}>
+          <Text style={[styles.linkT, { lineHeight: 20.3 }]}>{"Struggling to care for your pet right now?\nSee local support"}</Text>
+        </Pressable>
       </View>
     </OnboardingScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  logo: { alignItems: "flex-start", marginBottom: 12, marginLeft: -6 },
-  btns: { gap: 12, marginTop: 28 },
+  wrap: { padding: 24 },
+  hero: { alignItems: "center", marginBottom: 40 },
+  tagline: { fontFamily: font.bodyRegular, fontSize: 14, lineHeight: 19.6, color: C.slate600, marginTop: 8, textAlign: "center" },
+  h1: { fontFamily: font.displayMedium, fontSize: 28, lineHeight: 32.2, letterSpacing: -0.28, color: C.ink, marginTop: 32, textAlign: "center" },
+  buttons: { gap: 12, marginBottom: 24 },
+  intent: { height: 64, borderRadius: radius.md, flexDirection: "row", gap: 10, alignItems: "center", justifyContent: "center" },
+  intentT: { fontFamily: font.bodyBold, fontSize: 17, color: C.white },
+  link: { minHeight: 44, paddingHorizontal: 18, paddingVertical: 9, alignItems: "center", justifyContent: "center" },
+  linkT: { fontFamily: font.bodySemi, fontSize: 14, color: C.slate700, textAlign: "center" },
 });

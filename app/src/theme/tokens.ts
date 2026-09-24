@@ -7,6 +7,8 @@ export const C = {
   info: "#1D4ED8", infoTint: "#E4EAFB", // Recurso comunitario
   ink: "#0F172A", slate700: "#334155", slate500: "#64748B",
   border: "#E2E8F0", border2: "#CBD5E1", surface: "#F8FAFC", white: "#FFFFFF",
+  // Colores que el prototipo usa en línea y no estaban en `C` (texto secundario, estado seleccionado y aviso de alerta):
+  slate600: "#475569", selectBg: "#EEF2F6", sosBorder: "#F7C9B4", sosInk: "#7C2D12",
 } as const;
 
 export const font = {

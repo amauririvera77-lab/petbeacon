@@ -3,7 +3,7 @@ import { LatLng } from "./geo";
 const TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN;
 const BASE = "https://api.mapbox.com/search/geocode/v6";
 
-export type Place = { label: string; lat: number; lng: number };
+export type Place = { label: string; lat: number; lng: number; source?: "gps" | "manual" };
 
 // Caja de ~25 mi alrededor del centro del usuario: sin ella, "Elm St & Maple Ave" resuelve a Illinois.
 const D = 0.4;

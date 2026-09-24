@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { Check } from "lucide-react-native";
+import { ChevronRight, Dog, Mail, MapPin, Phone, Share2 } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Image, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Place } from "../../lib/geocode";
 import { publishReport } from "../../lib/publish";
 import { supabase } from "../../lib/supabase";
@@ -10,18 +10,19 @@ import type { Species } from "../../lib/database.types";
 import { useHome } from "../../hooks/useHome";
 import { useSession } from "../../state/session";
 import { C, font, radius } from "../../theme/tokens";
+import { Cta } from "../Cta";
 import { TextField } from "../TextField";
-import { Chips } from "./Chips";
+import { ConditionGrid, CONDITION_LABEL, TypeButtons, type Condition } from "../flow/OptionButtons";
+import { PhotoDropzone } from "../flow/PhotoDropzone";
+import { FlowHeader } from "../layout/Headers";
+import { ScreenLayout } from "../layout/ScreenLayout";
+import { SuccessBlock, successText } from "../layout/Success";
 import { LocationPicker } from "./LocationPicker";
-import { PhotoPicker } from "./PhotoPicker";
-import { StepShell } from "./StepShell";
 
 type Kind = "lost" | "sighted";
 type Step = "photo" | "details" | "where" | "review" | "done";
-type Condition = "calm" | "scared" | "injured" | "unsure";
 
-const SPECIES = [{ value: "dog", label: "Dog" }, { value: "cat", label: "Cat" }, { value: "other", label: "Other" }] as const;
-const CONDITIONS = [{ value: "calm", label: "Calm" }, { value: "scared", label: "Scared" }, { value: "injured", label: "Injured" }, { value: "unsure", label: "Not sure" }] as const;
+const SPECIES_LABEL = { dog: "Dog", cat: "Cat", other: "Other" } as const;
 
 // Lost:    foto → detalles → ubicación + contacto (obligatorio) → revisión → confirmación (§2)
 // Sighted: foto → ubicación → condición + contacto (opcional)  → confirmación
@@ -36,7 +37,6 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   const steps = ORDER[kind];
   const [i, setI] = useState(0);
   const step = steps[i];
-  const total = steps.length - 1; // la confirmación no cuenta como paso
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [petPhotoUrl, setPetPhotoUrl] = useState<string | null>(null); // foto de la mascota registrada (ya subida)
@@ -69,7 +69,8 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   const isLost = kind === "lost";
   const tone = isLost ? "lost" : "sighted";
   const close = () => router.back();
-  const back = i > 0 && step !== "done" ? () => setI(i - 1) : undefined;
+  // Back del encabezado (prototipo): en el primer paso y en la confirmación cierra el flujo; en el resto vuelve un paso.
+  const back = i > 0 && step !== "done" ? () => setI(i - 1) : close;
   const next = () => setI(i + 1);
 
   const checkContact = () => {
@@ -88,7 +89,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         species,
         name: isLost ? petName.trim() : null,
         breed: breed.trim() || null,
-        features: [!isLost && condition ? `Condition: ${CONDITIONS.find((x) => x.value === condition)!.label}.` : "", features.trim()].filter(Boolean).join(" ") || null,
+        features: [!isLost && condition ? `Condition: ${CONDITION_LABEL[condition]}.` : "", features.trim()].filter(Boolean).join(" ") || null,
         contact: c.value,
         location: place,
         photoUri,
@@ -109,110 +110,168 @@ export function ReportFlow({ kind }: { kind: Kind }) {
     return <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: C.white }}><ActivityIndicator color={C.teal} /></View>;
   }
 
+  // ── Encabezado (prototipo) ──────────────────────────────────────────────────────────────────────────────────────
+  // Lost: fila Back · título · "n/3" siempre visible; las 3 barras solo en los pasos 1–3. Sighted: todo el encabezado solo en 1–3.
+  const n = i + 1;
+  const accent = isLost ? C.sos : C.warn;
+  const inSteps = n <= 3;
+  const header = (
+    <FlowHeader title={isLost ? "Report lost pet" : "Report a sighting"} step={n} accent={accent} onBack={back}
+      showRow={isLost ? true : inSteps} showBars={inSteps} />
+  );
+  const pad = { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 24 } as const;
+  const publishGuard = () => { if (!publishing) publish(); };
+
   if (step === "photo") {
     return (
-      <StepShell title={isLost ? "Add a photo of your pet" : "Snap a quick photo"} step={1} total={total} onClose={close}
-        subtitle={isLost ? "Helps others recognize them fast. You can skip this." : "Optional, but it helps the owner confirm it's their pet."}
-        cta={{ label: photoUri || petPhotoUrl ? "Continue" : "Skip for now", onPress: next, tone: photoUri || petPhotoUrl ? tone : "neutral" }}>
-        <PhotoPicker uri={photoUri ?? petPhotoUrl} onChange={(u) => { setPhotoUri(u); if (!u) setPetPhotoUrl(null); }} />
-      </StepShell>
+      <ScreenLayout header={header} contentStyle={pad} cta={<Cta label="Continue" tone={tone} onPress={next} />}>
+        <Text style={[st.h2, { marginBottom: 8 }]}>{isLost ? "Add a photo of your pet" : "Snap a quick photo"}</Text>
+        <Text style={st.sub}>{isLost ? "Helps others recognize them fast. You can skip this." : "Optional, but it helps the owner confirm it's their pet."}</Text>
+        <PhotoDropzone uri={photoUri ?? petPhotoUrl} onChange={(u) => { setPhotoUri(u); if (!u) setPetPhotoUrl(null); }} />
+      </ScreenLayout>
     );
   }
 
   if (isLost && step === "details") {
     return (
-      <StepShell title="Tell us about your pet" step={2} total={total} onBack={back} onClose={close}
-        cta={{ label: "Continue", onPress: next, disabled: !petName.trim() || !species, tone }}>
-        <TextField label="Pet's name" placeholder="Max" value={petName} onChangeText={setPetName} />
-        <Chips label="Type" options={SPECIES} value={species} onChange={setSpecies} />
-        <TextField label="Breed (optional)" placeholder="Golden Retriever" value={breed} onChangeText={setBreed} />
-        <TextField label="Distinctive features (optional)" placeholder="Blue collar, limps on left leg" value={features} onChangeText={setFeatures} multiline />
-      </StepShell>
+      <ScreenLayout header={header} contentStyle={pad} cta={<Cta label="Continue" tone={tone} onPress={next} disabled={!petName.trim() || !species} />}>
+        <Text style={[st.h2, { marginBottom: 24 }]}>Tell us about your pet</Text>
+        <View style={st.field}><TextField variant="form" label="Pet's name" placeholder="Max" value={petName} onChangeText={setPetName} /></View>
+        <Text style={st.label}>Type</Text>
+        <View style={st.field}><TypeButtons value={species} onChange={setSpecies} /></View>
+        <View style={st.field}><TextField variant="form" label="Breed" labelSuffix="(optional)" placeholder="Golden Retriever" value={breed} onChangeText={setBreed} /></View>
+        <TextField variant="form" label="Distinctive features" labelSuffix="(optional)" placeholder="Blue collar, limps on left leg"
+          value={features} onChangeText={setFeatures} multiline maxLength={100} />
+        <Text style={st.counter}>{features.length}/100</Text>
+      </ScreenLayout>
     );
   }
 
   if (step === "where") {
-    const n = isLost ? 3 : 2;
     return (
-      <StepShell title={isLost ? "Where did you last see them?" : "Confirm the exact spot"} step={n} total={total} onBack={back} onClose={close}
-        subtitle={isLost ? "Use your location or enter the spot manually." : "Use your current location or enter the spot manually."}
-        cta={{
-          label: isLost ? "Review alert" : "Continue",
-          onPress: () => { if (isLost && !checkContact().ok) return; next(); },
-          disabled: !place || (isLost && !contact.trim()), tone,
-        }}>
-        <LocationPicker value={place} onChange={setPlace} city={city} center={center} />
+      <ScreenLayout header={header} contentStyle={pad}
+        cta={<Cta label={isLost ? "Review & publish" : "Continue"} tone={tone} disabled={!place || (isLost && !contact.trim())}
+          onPress={() => { if (isLost && !checkContact().ok) return; next(); }} />}>
+        <Text style={[st.h2, { marginBottom: 8 }]}>{isLost ? "Where did you last see them?" : "Confirm the exact spot"}</Text>
+        <Text style={st.sub}>{isLost ? "Use your location or enter the spot manually." : "Use your current location or enter the spot manually."}</Text>
+        <LocationPicker variant="flow" value={place} onChange={setPlace} city={city} center={center} />
         {isLost ? (
-          <TextField label="Phone or email" placeholder="(914) 555-0100" value={contact} onChangeText={(t) => { setContact(t); setContactError(null); }}
-            onBlur={() => contact.trim() && checkContact()} keyboardType="email-address" autoCapitalize="none" autoComplete="off"
-            helper={contactError ?? "Required so people who find your pet can reach you. It appears on your flyer."} />
+          <View style={{ marginTop: 24 }}>
+            <TextField variant="ds" label="Phone or email" placeholder="(914) 555-0142 or you@email.com" value={contact}
+              onChangeText={(t) => { setContact(t); setContactError(null); }} onBlur={() => contact.trim() && checkContact()}
+              keyboardType="email-address" autoCapitalize="none" autoComplete="off"
+              helper="This appears on your flyer so people can reach you directly." error={contactError ?? undefined} />
+          </View>
         ) : null}
-      </StepShell>
+      </ScreenLayout>
     );
   }
 
   if (!isLost && step === "details") {
     return (
-      <StepShell title="How do they seem?" step={3} total={total} onBack={back} onClose={close}
-        cta={{ label: publishing ? "Posting…" : "Post sighting", onPress: publish, disabled: !species || !condition || !place || publishing, tone }}>
-        <Chips label="Type" options={SPECIES} value={species} onChange={setSpecies} />
-        <Chips label="Condition" options={CONDITIONS} value={condition} onChange={setCondition} />
-        <TextField label="Breed or description (optional)" placeholder="Beagle mix, no collar" value={features} onChangeText={setFeatures} multiline />
-        <View style={{ gap: 6 }}>
-          <Text style={styles.h2}>Want updates on this pet? (optional)</Text>
-          <TextField label="Phone or email" placeholder="(914) 555-0100" value={contact} onChangeText={(t) => { setContact(t); setContactError(null); }}
-            keyboardType="email-address" autoCapitalize="none" autoComplete="off"
-            helper={contactError ?? "No account needed — this just lets us notify you if there's a match."} />
+      <ScreenLayout header={header} contentStyle={pad}
+        cta={<Cta label={publishing ? "Submitting…" : "Submit sighting"} tone={tone} loading={publishing} disabled={!species || !condition || !place} onPress={publishGuard} />}>
+        <Text style={[st.h2, { marginBottom: 24 }]}>How do they seem?</Text>
+        {/* "Type" no está en el prototipo, pero el matching exige especie exacta: se conserva con el mismo estilo de botones. */}
+        <Text style={st.label}>Type</Text>
+        <View style={st.field}><TypeButtons value={species} onChange={setSpecies} /></View>
+        <View style={{ marginBottom: 32 }}><ConditionGrid value={condition} onChange={setCondition} /></View>
+        <View style={st.field}>
+          <TextField variant="form" label="Breed or description" labelSuffix="(optional)" placeholder="Beagle mix, no collar" value={features} onChangeText={setFeatures} multiline />
         </View>
-      </StepShell>
+        <Text style={st.label}>Want updates on this pet? <Text style={st.optional}>(optional)</Text></Text>
+        <View style={[st.iconField, !!contactError && { borderColor: C.sosDark }]}>
+          <Mail size={18} color={C.slate500} />
+          <TextInput value={contact} onChangeText={(t) => { setContact(t); setContactError(null); }} placeholder="Phone or email" placeholderTextColor={C.slate500}
+            accessibilityLabel="Phone or email" keyboardType="email-address" autoCapitalize="none" autoComplete="off" style={st.iconInput} />
+        </View>
+        <Text style={[st.help, !!contactError && { color: C.sosDark }]}>{contactError ?? "No account needed — this just lets us notify you if there's a match."}</Text>
+      </ScreenLayout>
     );
   }
 
   if (isLost && step === "review") {
+    const photo = photoUri ?? petPhotoUrl;
     return (
-      <StepShell title="Review alert" onBack={back} onClose={close}
-        subtitle="This publishes immediately and notifies nearby users. You can edit or delete it later."
-        cta={{ label: publishing ? "Publishing…" : "Publish alert", onPress: publish, disabled: publishing, tone: "lost" }}>
-        <View style={styles.card}>
-          {photoUri ?? petPhotoUrl ? <Image source={{ uri: (photoUri ?? petPhotoUrl)! }} style={styles.thumb} /> : null}
-          <Row k="Name" v={petName} />
-          <Row k="Type" v={species ?? ""} />
-          {breed ? <Row k="Breed" v={breed} /> : null}
-          {features ? <Row k="Features" v={features} /> : null}
-          <Row k="Last seen" v={place?.label ?? ""} />
-          <Row k="Contact" v={contact} />
+      <ScreenLayout header={header} contentStyle={pad}
+        cta={<Cta label={publishing ? "Publishing…" : "Publish alert"} tone="lost" loading={publishing} onPress={publishGuard} />}>
+        <Text style={[st.h2, { marginBottom: 24 }]}>Review alert</Text>
+        <View style={st.reviewTop}>
+          <View style={st.thumb}>{photo ? <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : <Dog size={30} color={C.slate500} />}</View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={st.rName}>{petName || "Unnamed pet"}</Text>
+            <Text style={st.rType}>{species ? SPECIES_LABEL[species] : "Type not set"}</Text>
+            {features ? <Text style={st.rFeat}>{features}</Text> : null}
+          </View>
         </View>
-      </StepShell>
+        <View style={[st.rRow, { marginBottom: 12 }]}><MapPin size={16} color={C.sos} /><Text style={st.rRowT}>{place?.label ?? ""}</Text></View>
+        <View style={[st.rRow, { marginBottom: 24 }]}><Phone size={16} color={C.sos} /><Text style={st.rRowT}>{contact}</Text></View>
+        <View style={st.warnBox}><Text style={st.warnT}>This publishes immediately and notifies nearby users. You can edit or delete it later.</Text></View>
+      </ScreenLayout>
     );
   }
 
-  // done: "Share flyer" / "Share sighting" genera la imagen real del reporte recién publicado
+  // done — círculo con ícono ARRIBA → título → texto de apoyo → botones (SuccessBlock). "Share flyer/sighting" genera la imagen real.
+  const goFlyer = () => publishedId && router.push({ pathname: "/flyer", params: { id: publishedId } });
+  const supportLink = (
+    <Pressable accessibilityRole="button" onPress={() => router.dismissTo("/(tabs)/support")} style={st.supportLink}>
+      <Text style={st.supportT}>Pet care can get expensive. Free local resources</Text>
+      <ChevronRight size={14} color={C.slate500} />
+    </Pressable>
+  );
   return (
-    <StepShell
-      title={isLost ? "Your alert is live" : "Thanks for helping"}
-      subtitle={isLost ? "Nearby users have been notified. We'll alert you the moment there's a match." : "Your sighting has been posted to the map."}
-      onClose={close}
-      cta={{ label: isLost ? "Share flyer" : "Share sighting", onPress: () => publishedId && router.push({ pathname: "/flyer", params: { id: publishedId } }), disabled: !publishedId, tone }}
-      secondary={{ label: "View on List", onPress: () => router.dismissTo("/(tabs)") }}
-      links={[{ label: "Pet care can get expensive. Free local resources", chevron: true, onPress: () => router.dismissTo("/(tabs)/support") }]}>
-      <View style={styles.okCircle}><Check size={40} color={C.ok} /></View>
-    </StepShell>
+    <ScreenLayout header={header}>
+      {isLost ? (
+        <SuccessBlock title="Your alert is live">
+          <Text style={[successText.p, { marginBottom: 8 }]}>{"Nearby users have been notified.\nWe'll alert you the moment there's a match."}</Text>
+          <Text style={[successText.strong, { marginBottom: 24 }]}>{"Share this with your neighborhood\nto reach more people"}</Text>
+          <View style={st.fullW}>
+            <Cta label="Share flyer" tone="lost" icon={<Share2 size={18} color={C.white} />} disabled={!publishedId} onPress={goFlyer} />
+            <Pressable accessibilityRole="button" onPress={() => router.dismissTo("/(tabs)")} style={st.textBtn}><Text style={st.textBtnT}>View on List</Text></Pressable>
+            {supportLink}
+          </View>
+        </SuccessBlock>
+      ) : (
+        <SuccessBlock title="Thanks for helping">
+          <Text style={[successText.p, { marginBottom: 24 }]}>Your sighting has been posted to the map.</Text>
+          <View style={st.fullW}>
+            <Pressable accessibilityRole="button" onPress={goFlyer} disabled={!publishedId} style={[st.outlineBtn, !publishedId && { opacity: 0.5 }]}>
+              <Share2 size={16} color={C.ink} /><Text style={st.outlineT}>Share sighting</Text>
+            </Pressable>
+            <Cta label="View on List" tone="sighted" onPress={() => router.dismissTo("/(tabs)")} />
+            {supportLink}
+          </View>
+        </SuccessBlock>
+      )}
+    </ScreenLayout>
   );
 }
 
-function Row({ k, v }: { k: string; v: string }) {
-  return (
-    <View style={styles.row}><Text style={styles.k}>{k}</Text><Text style={styles.v}>{v}</Text></View>
-  );
-}
-
-const styles = StyleSheet.create({
-  err: { fontFamily: font.body, fontSize: 13, color: C.sosDark },
-  h2: { fontFamily: font.head, fontSize: 17, color: C.ink },
-  card: { borderRadius: radius.lg, borderWidth: 1, borderColor: C.border, padding: 16, gap: 12 },
-  thumb: { width: "100%", aspectRatio: 4 / 3, borderRadius: radius.md, backgroundColor: C.surface },
-  row: { gap: 2 },
-  k: { fontFamily: font.bodySemi, fontSize: 12, color: C.slate500, textTransform: "uppercase", letterSpacing: 0.4 },
-  v: { fontFamily: font.body, fontSize: 15, color: C.ink },
-  okCircle: { alignSelf: "center", width: 88, height: 88, borderRadius: 44, backgroundColor: C.okTint, alignItems: "center", justifyContent: "center", marginTop: 8 },
+// Estilos del prototipo: h2 24/1.2 (Geist 600), subtítulo 14/1.5, etiquetas 13/700, contador 12.
+const st = StyleSheet.create({
+  h2: { fontFamily: font.displayMedium, fontSize: 24, lineHeight: 28.8, letterSpacing: -0.24, color: C.ink },
+  sub: { fontFamily: font.bodyRegular, fontSize: 14, lineHeight: 21, color: C.slate600, marginBottom: 24 },
+  label: { fontFamily: font.bodyBold, fontSize: 13, color: C.slate700, marginBottom: 8 },
+  optional: { fontFamily: font.body, color: C.slate500 },
+  field: { marginBottom: 24 },
+  counter: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate500, textAlign: "right", marginTop: 8 },
+  iconField: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, height: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2, marginBottom: 8 },
+  iconInput: { flex: 1, fontFamily: font.body, fontSize: 16, color: C.ink },
+  help: { fontFamily: font.bodyRegular, fontSize: 12, lineHeight: 18, color: C.slate500 },
+  reviewTop: { flexDirection: "row", gap: 16, marginBottom: 24 },
+  thumb: { width: 80, height: 80, borderRadius: radius.md, backgroundColor: "#F1F5F9", overflow: "hidden", alignItems: "center", justifyContent: "center" },
+  rName: { fontFamily: font.head, fontSize: 20, color: C.ink, marginBottom: 4 },
+  rType: { fontFamily: font.bodyRegular, fontSize: 14, color: C.slate600 },
+  rFeat: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 18, color: C.slate500, marginTop: 4 },
+  rRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  rRowT: { flex: 1, fontFamily: font.bodySemi, fontSize: 14, color: C.ink },
+  warnBox: { backgroundColor: C.sosTint, borderWidth: 1, borderColor: C.sosBorder, borderRadius: radius.md, padding: 16 },
+  warnT: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 19.5, color: C.sosInk },
+  fullW: { width: "100%", alignItems: "center" },
+  textBtn: { height: 48, paddingHorizontal: 16, justifyContent: "center" },
+  textBtnT: { fontFamily: font.bodyBold, fontSize: 15, color: C.slate600 },
+  outlineBtn: { width: "100%", height: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2, backgroundColor: C.white, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", marginBottom: 8 },
+  outlineT: { fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
+  supportLink: { height: 40, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", paddingHorizontal: 12, marginTop: 8 },
+  supportT: { fontFamily: font.body, fontSize: 13, color: C.slate500 },
 });
