@@ -11,7 +11,7 @@ function ago(iso: string) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-export function MyReportCard({ report, matchCount, onMarkReunited }: { report: MyReport; matchCount: number; onMarkReunited?: () => void }) {
+export function MyReportCard({ report, matchCount, onEdit, onMarkReunited }: { report: MyReport; matchCount: number; onEdit?: () => void; onMarkReunited?: () => void }) {
   const title = report.name?.trim() || `Unknown ${report.species}`;
   return (
     <View style={styles.card}>
@@ -32,7 +32,10 @@ export function MyReportCard({ report, matchCount, onMarkReunited }: { report: M
       {report.status === "reunited" ? (
         <View style={styles.closed}><Text style={styles.closedT}>Case closed — thanks for updating it.</Text></View>
       ) : onMarkReunited ? (
-        <Pressable accessibilityRole="button" onPress={onMarkReunited} style={styles.action}><Text style={styles.actionT}>Mark reunited</Text></Pressable>
+        <View style={styles.actions}>
+          {onEdit ? <Pressable accessibilityRole="button" onPress={onEdit} style={[styles.action, { flex: 1 }]}><Text style={styles.actionT}>Edit report</Text></Pressable> : null}
+          <Pressable accessibilityRole="button" onPress={onMarkReunited} style={[styles.action, styles.reunite, { flex: 1 }]}><Text style={[styles.actionT, { color: C.white }]}>Mark reunited</Text></Pressable>
+        </View>
       ) : null}
     </View>
   );
@@ -54,6 +57,8 @@ const styles = StyleSheet.create({
   matchT: { fontFamily: font.bodyBold, fontSize: 12, color: C.warn },
   closed: { padding: 10, borderRadius: radius.md, backgroundColor: C.okTint },
   closedT: { fontFamily: font.bodySemi, fontSize: 13, color: C.ok },
+  actions: { flexDirection: "row", gap: 8 },
+  reunite: { backgroundColor: C.ok, borderColor: C.ok },
   action: { minHeight: MIN_HIT, alignItems: "center", justifyContent: "center", borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2 },
   actionT: { fontFamily: font.bodyBold, fontSize: 14, color: C.ink },
 });

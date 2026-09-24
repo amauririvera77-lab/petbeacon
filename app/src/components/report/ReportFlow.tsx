@@ -194,7 +194,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
       onClose={close}
       cta={{ label: isLost ? "Share flyer" : "Share sighting", onPress: () => publishedId && router.push({ pathname: "/flyer", params: { id: publishedId } }), disabled: !publishedId, tone }}
       secondary={{ label: "View on List", onPress: () => router.dismissTo("/(tabs)") }}
-      links={[{ label: "Pet care can get expensive. Free local resources", onPress: () => router.dismissTo("/(tabs)/support") }]}>
+      links={[{ label: "Pet care can get expensive. Free local resources", chevron: true, onPress: () => router.dismissTo("/(tabs)/support") }]}>
       <View style={styles.okCircle}><Check size={40} color={C.ok} /></View>
     </StepShell>
   );

@@ -1,4 +1,4 @@
-import { ChevronLeft, X } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, X } from "lucide-react-native";
 import { ReactNode } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,7 +16,7 @@ type Props = {
   children: ReactNode;
   cta: { label: string; onPress: () => void; disabled?: boolean; tone?: "lost" | "sighted" | "neutral" };
   secondary?: { label: string; onPress: () => void };
-  links?: { label: string; onPress: () => void }[]; // enlaces adicionales bajo el CTA
+  links?: { label: string; onPress: () => void; chevron?: boolean }[]; // enlaces adicionales bajo el CTA (chevron: flecha a la derecha)
 };
 
 export function StepShell({ title, subtitle, step, total, onBack, onClose, children, cta, secondary, links }: Props) {
@@ -44,7 +44,10 @@ export function StepShell({ title, subtitle, step, total, onBack, onClose, child
           : cta.tone === "sighted" ? <Button label={cta.label} variant="primarySighted" onPress={cta.onPress} disabled={cta.disabled} />
           : <Primary label={cta.label} onPress={cta.onPress} disabled={cta.disabled} />}
         {[...(secondary ? [secondary] : []), ...(links ?? [])].map((l) => (
-          <Pressable key={l.label} accessibilityRole="button" onPress={l.onPress} style={styles.link}><Text style={styles.linkT}>{l.label}</Text></Pressable>
+          <Pressable key={l.label} accessibilityRole="button" onPress={l.onPress} style={styles.link}>
+            <Text style={styles.linkT}>{l.label}</Text>
+            {"chevron" in l && l.chevron ? <ChevronRight size={14} color={C.slate500} /> : null}
+          </Pressable>
         ))}
       </View>
     </KeyboardAvoidingView>
@@ -61,6 +64,6 @@ const styles = StyleSheet.create({
   h: { fontFamily: font.displayMedium, fontSize: 26, lineHeight: 31, letterSpacing: -0.26, color: C.ink },
   s: { fontFamily: font.bodyRegular, fontSize: 15, lineHeight: 22, color: C.slate700, marginTop: 8 },
   footer: { paddingHorizontal: 24, paddingTop: 12, gap: 4, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.white },
-  link: { minHeight: MIN_HIT, alignItems: "center", justifyContent: "center" },
+  link: { minHeight: MIN_HIT, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center" },
   linkT: { fontFamily: font.bodySemi, fontSize: 14, color: C.slate700, textAlign: "center" },
 });

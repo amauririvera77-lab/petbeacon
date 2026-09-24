@@ -1,4 +1,4 @@
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useCallback } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 import { MyReportCard } from "../../components/MyReportCard";
@@ -34,7 +34,7 @@ export default function Reports() {
           <Text style={styles.h}>Active reports</Text>
           {active.length === 0 ? <Placeholder text="No active reports. When you publish an alert it shows up here." /> : (
             <View style={styles.list}>
-              {active.map((r) => <MyReportCard key={r.id} report={r} matchCount={countFor(r.id)} onMarkReunited={() => confirmReunited(r.id)} />)}
+              {active.map((r) => <MyReportCard key={r.id} report={r} matchCount={countFor(r.id)} onEdit={() => router.push({ pathname: "/edit-report", params: { id: r.id } })} onMarkReunited={() => confirmReunited(r.id)} />)}
             </View>
           )}
           <Text style={[styles.h, { marginTop: 20 }]}>Sightings you've logged</Text>
