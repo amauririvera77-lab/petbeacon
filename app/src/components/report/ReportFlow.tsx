@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { Check } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Alert, Image, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, StyleSheet, Text, View } from "react-native";
 import { Place } from "../../lib/geocode";
 import { publishReport } from "../../lib/publish";
 import { supabase } from "../../lib/supabase";
@@ -52,14 +52,19 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   const [publishing, setPublishing] = useState(false);
   const [publishedId, setPublishedId] = useState<string | null>(null);
 
-  // "Report lost" desde Pet profile: prellena nombre, tipo, raza y foto de la mascota registrada.
+  // "Report lost" desde Pet profile: prellena nombre, tipo, raza y foto de la mascota registrada y, como esos pasos ya
+  // están completos, arranca directo en "Where did you last see them?". Con "Back" se puede volver a editarlos.
+  const [petLoading, setPetLoading] = useState(!!petId);
   useEffect(() => {
-    if (!petId || !supabase) return;
+    if (!petId || !supabase) { setPetLoading(false); return; }
     supabase.from("pets").select("name,species,breed,photo_url").eq("id", petId).maybeSingle().then(({ data }) => {
-      if (!data) return;
-      setPetName(data.name); setSpecies(data.species as Species); setBreed(data.breed ?? ""); setPetPhotoUrl(data.photo_url);
+      if (data) {
+        setPetName(data.name); setSpecies(data.species as Species); setBreed(data.breed ?? ""); setPetPhotoUrl(data.photo_url);
+        if (kind === "lost" && data.name?.trim() && data.species) setI(ORDER.lost.indexOf("where"));
+      }
+      setPetLoading(false);
     });
-  }, [petId]);
+  }, [petId, kind]);
 
   const isLost = kind === "lost";
   const tone = isLost ? "lost" : "sighted";
@@ -99,6 +104,10 @@ export function ReportFlow({ kind }: { kind: Kind }) {
       setPublishing(false);
     }
   };
+
+  if (petLoading) {
+    return <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: C.white }}><ActivityIndicator color={C.teal} /></View>;
+  }
 
   if (step === "photo") {
     return (
