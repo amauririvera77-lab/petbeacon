@@ -13,6 +13,7 @@ export default function Done() {
   const subtitle =
     s.intent === "lost" ? "We'll open your lost pet report next."
     : s.intent === "seen" ? "We'll open a sighting report next."
+    : s.intent === "register" ? "We'll open your pet's profile next."
     : "Your neighborhood feed is ready.";
   return (
     <OnboardingScreen footer={<Primary label="Go to Home" onPress={() => finishOnboarding(s)} />}>

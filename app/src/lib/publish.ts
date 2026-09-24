@@ -1,6 +1,6 @@
-import { File } from "expo-file-system";
 import type { LatLng } from "./geo";
 import { ensureAccount } from "./account";
+import { uploadPhoto } from "./photos";
 import { registerPush } from "./push";
 import { supabase } from "./supabase";
 import type { ReportStatus, Species } from "./database.types";
@@ -13,18 +13,11 @@ export type PublishInput = {
   features: string | null;
   contact: string | null;
   location: { lat: number; lng: number; label: string };
-  photoUri: string | null;
+  photoUri: string | null; // foto local recién elegida (se sube)
+  photoUrl?: string | null; // foto ya subida (p. ej. la de la mascota registrada): se reutiliza sin subirla otra vez
+  petId?: string | null;
   profile: { name: string; city: string; alertRadiusMi: number; home: LatLng | null };
 };
-
-async function uploadPhoto(uid: string, uri: string): Promise<string> {
-  if (!supabase) throw new Error("Supabase isn't configured.");
-  const bytes = await new File(uri).arrayBuffer();
-  const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-  const { error } = await supabase.storage.from("report-photos").upload(path, bytes, { contentType: "image/jpeg" });
-  if (error) throw new Error(`Photo upload failed: ${error.message}`);
-  return supabase.storage.from("report-photos").getPublicUrl(path).data.publicUrl;
-}
 
 export async function publishReport(input: PublishInput): Promise<{ id: string }> {
   if (!supabase) throw new Error("Supabase isn't configured.");
@@ -32,7 +25,7 @@ export async function publishReport(input: PublishInput): Promise<{ id: string }
 
   await registerPush(uid, input.profile.home); // best-effort: el perfil ya existe; guarda token y ubicación base del usuario
 
-  const photo_url = input.photoUri ? await uploadPhoto(uid, input.photoUri) : null;
+  const photo_url = input.photoUri ? await uploadPhoto(uid, input.photoUri) : (input.photoUrl ?? null);
 
   const { data, error } = await supabase
     .from("reports")
@@ -48,6 +41,7 @@ export async function publishReport(input: PublishInput): Promise<{ id: string }
       location: `SRID=4326;POINT(${input.location.lng} ${input.location.lat})`,
       location_label: input.location.label,
       contact_phone_or_email: input.contact,
+      pet_id: input.petId ?? null,
     })
     .select("id")
     .single();

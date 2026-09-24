@@ -9,7 +9,7 @@ const THUMB = 28;
 // Slider propio (PanResponder, sin módulo nativo) — evita depender de una lib incompatible con Expo Go.
 // El PanResponder se crea una sola vez, así que lee ancho/posición/onChange desde refs (no desde el render)
 // y usa coordenadas de pantalla (pageX), que no cambian de referencia al tocar el thumb como locationX.
-export function RadiusSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+export function RadiusSlider({ value, onChange, showValue = true }: { value: number; onChange: (v: number) => void; showValue?: boolean }) {
   const [width, setWidth] = useState(0);
   const trackRef = useRef<View>(null);
   const widthRef = useRef(0);
@@ -72,7 +72,7 @@ export function RadiusSlider({ value, onChange }: { value: number; onChange: (v:
       </View>
       <View style={styles.labels}>
         <Text style={styles.labelT}>{MIN} mi</Text>
-        <Text style={styles.value}>{value} mi</Text>
+        {showValue ? <Text style={styles.value}>{value} mi</Text> : null}
         <Text style={styles.labelT}>{MAX} mi</Text>
       </View>
     </View>

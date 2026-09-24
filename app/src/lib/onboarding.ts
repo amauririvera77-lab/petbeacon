@@ -9,4 +9,5 @@ export function finishOnboarding(s: S) {
   router.replace("/(tabs)");
   if (s.intent === "lost") router.push("/report/lost");
   else if (s.intent === "seen") router.push("/report/sighted");
+  else if (s.intent === "register") router.push({ pathname: "/pet", params: { id: "new" } });
 }

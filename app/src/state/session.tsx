@@ -9,6 +9,7 @@ type Persisted = { onboarded: boolean; intent: Intent; name: string; city: strin
 type Session = Persisted & {
   hydrated: boolean;
   update: (patch: Partial<Persisted>) => void;
+  reset: () => void; // vuelve al estado inicial (Log out): el onboarding se muestra de nuevo
 };
 
 const KEY = "petbeacon.session.v1";
@@ -34,7 +35,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const value = useMemo(() => ({ ...state, hydrated, update }), [state, hydrated, update]);
+  const reset = useCallback(() => {
+    setState(EMPTY);
+    AsyncStorage.removeItem(KEY).catch(() => {});
+  }, []);
+
+  const value = useMemo(() => ({ ...state, hydrated, update, reset }), [state, hydrated, update, reset]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

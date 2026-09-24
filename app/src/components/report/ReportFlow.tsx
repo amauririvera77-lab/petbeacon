@@ -1,9 +1,10 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { Check } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Image, StyleSheet, Text, View } from "react-native";
 import { Place } from "../../lib/geocode";
 import { publishReport } from "../../lib/publish";
+import { supabase } from "../../lib/supabase";
 import { validateContact } from "../../lib/validation";
 import type { Species } from "../../lib/database.types";
 import { useHome } from "../../hooks/useHome";
@@ -38,8 +39,9 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   const total = steps.length - 1; // la confirmación no cuenta como paso
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [petPhotoUrl, setPetPhotoUrl] = useState<string | null>(null); // foto de la mascota registrada (ya subida)
   const [petName, setPetName] = useState("");
-  const { species: speciesParam } = useLocalSearchParams<{ species?: string }>();
+  const { species: speciesParam, petId } = useLocalSearchParams<{ species?: string; petId?: string }>();
   const [species, setSpecies] = useState<Species | null>(speciesParam === "dog" || speciesParam === "cat" || speciesParam === "other" ? speciesParam : null);
   const [breed, setBreed] = useState("");
   const [features, setFeatures] = useState("");
@@ -49,6 +51,15 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   const [contactError, setContactError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishedId, setPublishedId] = useState<string | null>(null);
+
+  // "Report lost" desde Pet profile: prellena nombre, tipo, raza y foto de la mascota registrada.
+  useEffect(() => {
+    if (!petId || !supabase) return;
+    supabase.from("pets").select("name,species,breed,photo_url").eq("id", petId).maybeSingle().then(({ data }) => {
+      if (!data) return;
+      setPetName(data.name); setSpecies(data.species as Species); setBreed(data.breed ?? ""); setPetPhotoUrl(data.photo_url);
+    });
+  }, [petId]);
 
   const isLost = kind === "lost";
   const tone = isLost ? "lost" : "sighted";
@@ -76,6 +87,8 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         contact: c.value,
         location: place,
         photoUri,
+        photoUrl: petPhotoUrl,
+        petId: petId ?? null,
         profile: { name: userName, city, alertRadiusMi, home },
       });
       setPublishedId(id);
@@ -91,8 +104,8 @@ export function ReportFlow({ kind }: { kind: Kind }) {
     return (
       <StepShell title={isLost ? "Add a photo of your pet" : "Snap a quick photo"} step={1} total={total} onClose={close}
         subtitle={isLost ? "Helps others recognize them fast. You can skip this." : "Optional, but it helps the owner confirm it's their pet."}
-        cta={{ label: photoUri ? "Continue" : "Skip for now", onPress: next, tone: photoUri ? tone : "neutral" }}>
-        <PhotoPicker uri={photoUri} onChange={setPhotoUri} />
+        cta={{ label: photoUri || petPhotoUrl ? "Continue" : "Skip for now", onPress: next, tone: photoUri || petPhotoUrl ? tone : "neutral" }}>
+        <PhotoPicker uri={photoUri ?? petPhotoUrl} onChange={(u) => { setPhotoUri(u); if (!u) setPetPhotoUrl(null); }} />
       </StepShell>
     );
   }
@@ -152,7 +165,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         subtitle="This publishes immediately and notifies nearby users. You can edit or delete it later."
         cta={{ label: publishing ? "Publishing…" : "Publish alert", onPress: publish, disabled: publishing, tone: "lost" }}>
         <View style={styles.card}>
-          {photoUri ? <Image source={{ uri: photoUri }} style={styles.thumb} /> : null}
+          {photoUri ?? petPhotoUrl ? <Image source={{ uri: (photoUri ?? petPhotoUrl)! }} style={styles.thumb} /> : null}
           <Row k="Name" v={petName} />
           <Row k="Type" v={species ?? ""} />
           {breed ? <Row k="Breed" v={breed} /> : null}
