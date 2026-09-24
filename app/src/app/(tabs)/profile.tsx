@@ -26,13 +26,14 @@ export default function Profile() {
   useFocusEffect(useCallback(() => { refreshPets(); }, [refreshPets]));
 
   // La cuenta es anónima (sin contraseña): cerrar sesión no se puede deshacer. Se avisa antes.
+  // Se navega a "/(onboarding)" explícito: "/" es ambigua (index, (tabs)/index y (onboarding)/index resuelven todos a esa ruta).
   const confirmLogout = () =>
     Alert.alert(
       "Log out?",
       "PetBeacon doesn't use passwords yet, so once you log out you won't be able to get back to your reports and registered pets on this account.",
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Log out", style: "destructive", onPress: async () => { try { await logout(); } finally { reset(); router.replace("/"); } } },
+        { text: "Log out", style: "destructive", onPress: async () => { try { await logout(); } finally { reset(); router.replace("/(onboarding)"); } } },
       ],
     );
 
