@@ -33,11 +33,13 @@ export default function Reports() {
   const sightings = reports.filter((r) => r.status === "sighted");
   const countFor = (id: string) => matches.filter((m) => m.lost_report_id === id).length;
 
-  const confirmReunited = (id: string) =>
-    Alert.alert("Mark as reunited?", "This closes the active alert and removes it from the public map.", [
+  const confirmReunited = (id: string) => {
+    const name = reports.find((r) => r.id === id)?.name?.trim() || "your pet";
+    Alert.alert(`Did you find ${name}?`, undefined, [
       { text: "Cancel", style: "cancel" },
-      { text: "Confirm", onPress: () => markReunited(id).catch((e) => Alert.alert("Couldn't update", e.message)) },
+      { text: "Yes, we're reunited", onPress: () => markReunited(id).catch((e) => Alert.alert("Couldn't update", e.message)) },
     ]);
+  };
 
   return (
     <TabScreen title="My reports" subtitle="Manage your active alerts and logged sightings">

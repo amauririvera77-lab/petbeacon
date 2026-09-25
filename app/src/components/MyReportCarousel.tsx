@@ -4,7 +4,7 @@ import type { MyMatch } from "../lib/database.types";
 import { MyReportStatusCard } from "./MyReportStatusCard";
 
 type Handlers = {
-  onOpen: (r: MyReport) => void; onViewSighting: (m: MyMatch) => void; onDismiss: (m: MyMatch) => void; onViewAll: (r: MyReport) => void;
+  onOpen: (r: MyReport) => void; onViewSighting: (m: MyMatch) => void; onDismiss: (m: MyMatch) => void; onViewAll: (r: MyReport) => void; onShare: (r: MyReport) => void;
 };
 
 // Uno o varios reportes Lost activos: uno = tarjeta a todo el ancho; varios = carrusel horizontal compacto con la siguiente asomando.
@@ -13,7 +13,7 @@ export function MyReportCarousel({ reports, matches, ...h }: { reports: MyReport
   if (reports.length === 0) return null;
   const card = (r: MyReport, w?: number) => (
     <MyReportStatusCard key={r.id} report={r} width={w} matches={matches.filter((m) => m.lost_report_id === r.id)}
-      onOpen={() => h.onOpen(r)} onViewSighting={h.onViewSighting} onDismiss={h.onDismiss} onViewAll={() => h.onViewAll(r)} />
+      onOpen={() => h.onOpen(r)} onViewSighting={h.onViewSighting} onDismiss={h.onDismiss} onViewAll={() => h.onViewAll(r)} onShare={() => h.onShare(r)} />
   );
   if (reports.length === 1) return <View>{card(reports[0])}</View>;
   const w = width - 32 - 32; // 16 de margen a cada lado del feed + 32 de la tarjeta siguiente asomando

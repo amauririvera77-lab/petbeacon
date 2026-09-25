@@ -1,7 +1,7 @@
 import { router, useFocusEffect } from "expo-router";
 import { List, Map as MapIcon } from "lucide-react-native";
 import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EnableAlertsCard } from "../../components/EnableAlertsCard";
 import { HomeHeader } from "../../components/HomeHeader";
@@ -12,6 +12,7 @@ import { MatchesSheet } from "../../components/MatchesSheet";
 import { MyReportCarousel } from "../../components/MyReportCarousel";
 import { MapboxWebView } from "../../components/map/MapboxWebView";
 import { useSnackbar } from "../../components/Snackbar";
+import { ReunitedCelebration } from "../../components/ReunitedCelebration";
 import { NotificationsSheet } from "../../components/NotificationsSheet";
 import { OfflineBanner } from "../../components/OfflineBanner";
 import { CommunityResourceCard } from "../../components/ResourceCard";
@@ -30,6 +31,7 @@ import { useMyMatches } from "../../hooks/useMyMatches";
 import { useMyReports } from "../../hooks/useMyReports";
 import { useNotificationsFeed } from "../../hooks/useNotificationsFeed";
 import { useResourcesState } from "../../hooks/useResources";
+import { reportShareText } from "../../lib/shareText";
 import { sortReports } from "../../lib/sort";
 import { useHomePrefs } from "../../state/homePrefs";
 import { useSession } from "../../state/session";
@@ -63,7 +65,9 @@ export default function Home() {
   const sorted = useMemo(() => sortReports(reports, prefs.sort), [reports, prefs.sort]);
   // El recurso comunitario va al final del feed o, como máximo, tras 9 reportes: nunca entre los primeros resultados.
   const resourceAt = Math.min(9, sorted.length);
-  const { reports: myReports, refresh: refreshMine } = useMyReports();
+  const { reports: myReports, refresh: refreshMine, markReunited } = useMyReports();
+  const [celebrate, setCelebrate] = useState<{ id: string; name: string } | null>(null);
+  const endCelebration = useCallback(() => setCelebrate(null), []);
   const activeLost = useMemo(() => myReports.filter((r) => r.status === "lost"), [myReports]);
   const mineIds = useMemo(() => myReports.map((r) => r.id), [myReports]);
   const [matchesFor, setMatchesFor] = useState<{ id: string; name: string } | null>(null);
@@ -77,6 +81,18 @@ export default function Home() {
 
 
   // Abrir la hoja limpia el badge (CLAUDE.md §2).
+  // El dueño confirmó que se reunieron: el reporte pasa a `reunited` (deja de ser Lost en feed y mapa; el matching y los avisos solo
+  // consideran Lost activos, así que se detienen) y la tarjeta de estado muestra una celebración antes de desaparecer.
+  const onMarkReunited = async (r: ReportNearby) => {
+    try {
+      await markReunited(r.id);
+      setCelebrate({ id: r.id, name: r.name?.trim() || "your pet" });
+      refresh();
+    } catch (e) {
+      Alert.alert("Couldn't update your report", e instanceof Error ? e.message : "Something went wrong. Please try again.");
+    }
+  };
+
   // "View sighting": abre el detalle del avistamiento (del feed, o buscándolo si está fuera de él).
   const viewSighting = async (id: string) => {
     const r = reports.find((x) => x.id === id) ?? (await fetchReportNearby(id, center.lat, center.lng));
@@ -134,7 +150,9 @@ export default function Home() {
       ) : (
         <ScrollView contentContainerStyle={styles.listC}>
           <EnableAlertsCard />
+          {celebrate ? <ReunitedCelebration name={celebrate.name} onDone={endCelebration} /> : null}
           <MyReportCarousel reports={activeLost} matches={matches}
+            onShare={(r) => Share.share({ message: reportShareText({ ...r }) }).catch(() => {})}
             onOpen={(r) => viewSighting(r.id)}
             onViewSighting={(m) => viewSighting(m.sighted_report_id)}
             onDismiss={(m) => { dismiss(m.id); snackbar.show({ message: "Match dismissed", actionLabel: "Undo", onAction: () => restore(m.id) }); }}
@@ -161,7 +179,7 @@ export default function Home() {
         </ScrollView>
       )}
 
-      <PinDetailSheet report={pinReport} mine={!!pinReport && mineIds.includes(pinReport.id)} onClose={() => setPinReport(null)} />
+      <PinDetailSheet report={pinReport} mine={!!pinReport && mineIds.includes(pinReport.id)} onMarkReunited={onMarkReunited} onClose={() => setPinReport(null)} />
       <MatchesSheet lostName={matchesFor?.name ?? ""} matches={matchesFor ? matches.filter((m) => m.lost_report_id === matchesFor.id) : null}
         onClose={() => setMatchesFor(null)} onView={(m) => { setMatchesFor(null); setTimeout(() => viewSighting(m.sighted_report_id), 400); }} onDismiss={dismiss} onRestore={restore} />
       <ResourceModal resource={sheetResource} mode={sheetMode} onMode={setSheetMode} onClose={() => setSheetResource(null)} />

@@ -34,3 +34,11 @@ export function eventWhen(eventDate?: string | null, hours?: string | null, now 
   const time = hours && hours.includes(",") ? hours.replace(/^[^,]*,\s*/, "") : null; // "This Saturday, 9am–1pm" → "9am–1pm"
   return `${rel}, ${MONTHS[day.getMonth()]} ${day.getDate()}${time ? ` · ${time}` : ""}`;
 }
+
+// "Today, 8:40 AM" / "Yesterday, 6:30 PM" / "Oct 3, 9:15 AM": momento concreto de un reporte.
+export function whenLabel(iso: string, now = new Date()): string {
+  const d = new Date(iso), y = new Date(now); y.setDate(now.getDate() - 1);
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const same = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+  return `${same(d, now) ? "Today" : same(d, y) ? "Yesterday" : d.toLocaleDateString([], { month: "short", day: "numeric" })}, ${time}`;
+}

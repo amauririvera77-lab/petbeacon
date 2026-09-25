@@ -5,25 +5,21 @@ import { Alert, Modal, Pressable, ScrollView, Share, StyleSheet, Text, View } fr
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ReportNearby } from "../lib/database.types";
 import { C, font, radius } from "../theme/tokens";
-import { reportUrl } from "../lib/flyer";
+import { FLYERS_READY } from "../lib/flyer";
+import { reportShareText } from "../lib/shareText";
+import { whenLabel } from "../lib/time";
 import { Badge } from "./Badge";
 import { FocusImage } from "./FocusImage";
 
 const COLOR = { lost: C.sos, sighted: C.warn, reunited: C.ok } as const;
 
-function whenLabel(iso: string) {
-  const d = new Date(iso), now = new Date();
-  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  const same = (a: Date, b: Date) => a.toDateString() === b.toDateString();
-  const y = new Date(now); y.setDate(now.getDate() - 1);
-  return `${same(d, now) ? "Today" : same(d, y) ? "Yesterday" : d.toLocaleDateString([], { month: "short", day: "numeric" })}, ${time}`;
-}
-
 // Tres estados distintos (CLAUDE.md §2), no uno con texto condicional:
 //  · Lost      → "I've seen this pet" + "Share flyer"
 //  · Sighted   → "Report to network" + "Share sighting"
 //  · Reunited  → caja verde de cierre, sin botones de acción
-export function PinDetailSheet({ report, onClose, mine }: { report: ReportNearby | null; onClose: () => void; mine?: boolean }) {
+export function PinDetailSheet({ report, onClose, mine, onMarkReunited }: {
+  report: ReportNearby | null; onClose: () => void; mine?: boolean; onMarkReunited?: (r: ReportNearby) => void | Promise<void>;
+}) {
   const insets = useSafeAreaInsets();
   const [photoFailed, setPhotoFailed] = useState(false);
   const r = report;
@@ -32,23 +28,16 @@ export function PinDetailSheet({ report, onClose, mine }: { report: ReportNearby
   const title = r ? (r.name?.trim() || `Unknown ${r.species}`) : "";
   const Fallback = r?.species === "cat" ? Cat : Dog;
 
-  // Texto para "Report to network" (compartir con tu red). Incluye el enlace a la página pública del reporte.
-  // Nunca incluye el contacto del dueño (columna protegida).
-  const shareText = () => {
-    if (!r) return "";
-    const seen = `${whenLabel(r.created_at)}${r.location_label ? ` · ${r.location_label}` : ""}`;
-    const link = reportUrl(r.id);
-    return r.status === "lost"
-      ? `MISSING ${r.species}: ${title}${r.breed ? ` (${r.breed})` : ""}. Last seen ${seen}. ${r.features_description ?? ""}${link ? `\n${link}` : ""}\nReported via PetBeacon`
-      : `Have you seen this pet? A ${r.breed ?? r.species} was spotted ${seen}. ${r.features_description ?? ""}${link ? `\n${link}` : ""}\nReported via PetBeacon`;
-  };
+  // Texto para "Report to network" (compartir con tu red): incluye el enlace público cuando existe y nunca el contacto del dueño.
+  const shareText = () => (r ? reportShareText(r) : "");
+  const share = () => Share.share({ message: shareText() }).catch(() => Alert.alert("Couldn't open sharing"));
+
   // "Share flyer" / "Share sighting": abre la pantalla que genera la imagen real (tras cerrar el modal, iOS).
   const openFlyer = () => {
     if (!r) return;
     onClose();
     setTimeout(() => router.push({ pathname: "/flyer", params: { id: r.id } }), 400);
   };
-  const share = () => Share.share({ message: shareText() }).catch(() => Alert.alert("Couldn't open sharing"));
 
   // Reporte propio: en vez de "I've seen this pet" (que sería absurdo para el dueño) se ofrece editarlo.
   const editOwn = () => {
@@ -57,6 +46,15 @@ export function PinDetailSheet({ report, onClose, mine }: { report: ReportNearby
     setTimeout(() => router.push({ pathname: "/edit-report", params: { id: r.id } }), 400);
   };
   const ownLost = !!mine && status === "lost";
+
+  // "Mark as reunited": confirmación explícita antes de cerrar el caso (acción con consecuencias: sale de Lost y se detienen alertas y coincidencias).
+  const confirmReunited = () => {
+    if (!r || !onMarkReunited) return;
+    Alert.alert(`Did you find ${r.name?.trim() || "your pet"}?`, undefined, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Yes, we're reunited", onPress: () => { onClose(); onMarkReunited(r); } },
+    ]);
+  };
 
   // "I've seen this pet": abre el flujo de avistamiento con la especie ya elegida. Al publicarse, el matching
   // avisa al dueño (no es un toast: registra un avistamiento real).
@@ -115,10 +113,27 @@ export function PinDetailSheet({ report, onClose, mine }: { report: ReportNearby
                     {ownLost ? <Pencil size={18} color={C.white} /> : status === "lost" ? <Eye size={18} color={C.white} /> : <Share2 size={18} color={C.white} />}
                     <Text style={styles.ctaT}>{ownLost ? "Edit report" : status === "lost" ? "I've seen this pet" : "Report to network"}</Text>
                   </Pressable>
-                  <Pressable accessibilityRole="button" onPress={openFlyer} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: "#F1F5F9" }]}>
-                    <Share2 size={16} color={C.ink} />
-                    <Text style={styles.secondaryT}>{status === "sighted" ? "Share sighting" : "Share flyer"}</Text>
-                  </Pressable>
+                  {ownLost ? (
+                    // Modo dueño: cerrar el caso. "Share flyer" se oculta mientras el flyer no funcione (FLYERS_READY).
+                    <>
+                      {onMarkReunited ? (
+                        <Pressable accessibilityRole="button" onPress={confirmReunited} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: C.okTint }]}>
+                          <Check size={16} color={C.ok} />
+                          <Text style={styles.secondaryT}>Mark as reunited</Text>
+                        </Pressable>
+                      ) : null}
+                      {FLYERS_READY ? (
+                        <Pressable accessibilityRole="button" onPress={openFlyer} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: "#F1F5F9" }]}>
+                          <Share2 size={16} color={C.ink} /><Text style={styles.secondaryT}>Share flyer</Text>
+                        </Pressable>
+                      ) : null}
+                    </>
+                  ) : (
+                    <Pressable accessibilityRole="button" onPress={openFlyer} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: "#F1F5F9" }]}>
+                      <Share2 size={16} color={C.ink} />
+                      <Text style={styles.secondaryT}>{status === "sighted" ? "Share sighting" : "Share flyer"}</Text>
+                    </Pressable>
+                  )}
                 </View>
               )}
             </ScrollView>
