@@ -1,10 +1,11 @@
 import { useFocusEffect } from "expo-router";
 import { List, Map as MapIcon } from "lucide-react-native";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EnableAlertsCard } from "../../components/EnableAlertsCard";
 import { HomeHeader } from "../../components/HomeHeader";
+import { ALL_FILTERS, MapFilters, type MapFilterState } from "../../components/MapFilters";
 import { MapRadiusChip } from "../../components/MapRadiusChip";
 import { PinDetailSheet } from "../../components/PinDetailSheet";
 import { MatchBanner } from "../../components/MatchBanner";
@@ -36,6 +37,7 @@ export default function Home() {
   const [view, setView] = useState<"list" | "map">("list");
   const [pinReport, setPinReport] = useState<ReportNearby | null>(null);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [filters, setFilters] = useState<MapFilterState>(ALL_FILTERS);
   const [sheetResource, setSheetResource] = useState<ResourceNearby | null>(null);
   const [sheetMode, setSheetMode] = useState<ResourceSheetMode>("detail");
   const openResource = (r: ResourceNearby) => { setSheetMode("detail"); setSheetResource(r); };
@@ -47,6 +49,8 @@ export default function Home() {
   const { resources, refresh: refreshResources } = useResourcesState(alertRadiusMi, center.lat, center.lng);
   const { matches, refresh: refreshMatches, dismiss } = useMyMatches();
   const banner = matches.find((m) => !m.dismissed);
+  // Los filtros solo afectan a los pines del mapa (memoizado: un array nuevo en cada render reenviaría los datos al WebView).
+  const mapReports = useMemo(() => reports.filter((r) => filters[r.status]), [reports, filters]);
   const featured = resources.find((r) => r.is_featured_event) ?? null;
   const { reports: myReports, refresh: refreshMine } = useMyReports();
 
@@ -88,6 +92,7 @@ export default function Home() {
       <View style={{ paddingTop: insets.top, backgroundColor: C.white }}>
         <HomeHeader unread={unread} onBell={openNotifs} />
         {switcher}
+        {view === "map" ? <MapFilters value={filters} onChange={setFilters} /> : null}
       </View>
       <OfflineBanner />
 
@@ -99,7 +104,7 @@ export default function Home() {
             <View style={styles.pad}><SetupNotice /></View>
           ) : (
             <>
-              <MapboxWebView token={MAPBOX_TOKEN} reports={reports} resources={resources} center={center} radiusMi={alertRadiusMi} me={me} onSelect={(sel) => {
+              <MapboxWebView token={MAPBOX_TOKEN} reports={mapReports} resources={resources} center={center} radiusMi={alertRadiusMi} me={me} onSelect={(sel) => {
                 if (!sel) return;
                 if (sel.kind === "resource") { const r = resources.find((x) => x.id === sel.id); if (r) openResource(r); }
                 else { const r = reports.find((x) => x.id === sel.id); if (r) setPinReport(r); }
