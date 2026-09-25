@@ -13,11 +13,12 @@ type Props = {
   resources: ResourceNearby[];
   center: { lat: number; lng: number };
   radiusMi: number;
+  me?: { lat: number; lng: number } | null; // ubicación actual del dispositivo (punto negro pulsante)
   onSelect: (s: MapSelection) => void;
 };
 
 // Mapbox GL JS dentro de un WebView (funciona en Expo Go; el SDK nativo requeriría development build).
-export function MapboxWebView({ token, reports, resources, center, radiusMi, onSelect }: Props) {
+export function MapboxWebView({ token, reports, resources, center, radiusMi, me, onSelect }: Props) {
   const ref = useRef<WebView>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,11 +28,12 @@ export function MapboxWebView({ token, reports, resources, center, radiusMi, onS
     const payload = {
       center: [center.lng, center.lat],
       radiusMi,
+      me: me ? { lat: me.lat, lng: me.lng } : null,
       reports: reports.map((r) => ({ id: r.id, status: r.status, lat: r.lat, lng: r.lng })),
       resources: resources.map((r) => ({ id: r.id, lat: r.lat, lng: r.lng })),
     };
     ref.current?.injectJavaScript(`window.__update(${JSON.stringify(payload)}); true;`);
-  }, [reports, resources, center.lat, center.lng, radiusMi]);
+  }, [reports, resources, center.lat, center.lng, radiusMi, me?.lat, me?.lng]);
 
   useEffect(() => { if (ready) push(); }, [ready, push]);
 

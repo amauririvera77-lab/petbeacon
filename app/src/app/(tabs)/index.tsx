@@ -20,6 +20,7 @@ import type { ReportNearby, ResourceNearby } from "../../lib/database.types";
 import { useAuthUser } from "../../hooks/useAuthUser";
 import { useFeed } from "../../hooks/useFeed";
 import { useHome } from "../../hooks/useHome";
+import { useMyPosition } from "../../hooks/useMyPosition";
 import { useMyMatches } from "../../hooks/useMyMatches";
 import { useMyReports } from "../../hooks/useMyReports";
 import { useNotificationsFeed } from "../../hooks/useNotificationsFeed";
@@ -41,6 +42,7 @@ export default function Home() {
   const { alertRadiusMi, notifSeenAt, update } = useSession();
   const uid = useAuthUser();
   const center = useHome();
+  const me = useMyPosition(view === "map");
   const { reports, loading, error, refresh } = useFeed(alertRadiusMi, center.lat, center.lng);
   const { resources, refresh: refreshResources } = useResourcesState(alertRadiusMi, center.lat, center.lng);
   const { matches, refresh: refreshMatches, dismiss } = useMyMatches();
@@ -97,7 +99,7 @@ export default function Home() {
             <View style={styles.pad}><SetupNotice /></View>
           ) : (
             <>
-              <MapboxWebView token={MAPBOX_TOKEN} reports={reports} resources={resources} center={center} radiusMi={alertRadiusMi} onSelect={(sel) => {
+              <MapboxWebView token={MAPBOX_TOKEN} reports={reports} resources={resources} center={center} radiusMi={alertRadiusMi} me={me} onSelect={(sel) => {
                 if (!sel) return;
                 if (sel.kind === "resource") { const r = resources.find((x) => x.id === sel.id); if (r) openResource(r); }
                 else { const r = reports.find((x) => x.id === sel.id); if (r) setPinReport(r); }

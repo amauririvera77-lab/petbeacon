@@ -34,7 +34,7 @@ export function buildMapHtml(token: string): string {
   map.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-left");
   map.touchZoomRotate.disableRotation();
 
-  var loaded = false, pending = null, lastRadius = null;
+  var loaded = false, pending = null, lastRadius = null, meOn = false;
 
   function pinSvg(color, inner) {
     return '<svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 44 44">' +
@@ -75,6 +75,10 @@ export function buildMapHtml(token: string): string {
     map.getSource("items").setData({ type: "FeatureCollection", features: feats });
     var ring = circle(p.center[0], p.center[1], p.radiusMi);
     map.getSource("radius").setData({ type: "Feature", geometry: { type: "Polygon", coordinates: [ring] } });
+    meOn = !!p.me;   // punto "tú": ubicación actual del dispositivo (null si no hay permiso)
+    map.getSource("me").setData(p.me
+      ? { type: "Feature", geometry: { type: "Point", coordinates: [p.me.lng, p.me.lat] }, properties: {} }
+      : { type: "FeatureCollection", features: [] });
     if (lastRadius !== p.radiusMi) {   // re-encuadra solo cuando cambia el radio, no en cada refresco de datos
       lastRadius = p.radiusMi;
       var b = new mapboxgl.LngLatBounds();
@@ -101,6 +105,21 @@ export function buildMapHtml(token: string): string {
         paint: { "text-color": "#fff" } });
       map.addLayer({ id: "pins", type: "symbol", source: "items", filter: ["!", ["has", "point_count"]],
         layout: { "icon-image": ["concat", "pin-", ["get", "icon"]], "icon-allow-overlap": true, "icon-size": 0.9 } });
+
+      // Ubicación actual (prototipo): punto negro de 16px con borde blanco de 3px y anillo que pulsa cada 2s.
+      // Se inserta debajo de los clusters y pines para no taparlos.
+      map.addSource("me", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addLayer({ id: "me-halo", type: "circle", source: "me", paint: { "circle-color": "#2A6B63", "circle-radius": 8, "circle-opacity": 0.45 } }, "clusters");
+      map.addLayer({ id: "me-dot", type: "circle", source: "me", paint: { "circle-color": "#000000", "circle-radius": 8, "circle-stroke-width": 3, "circle-stroke-color": "#ffffff" } }, "clusters");
+      var t0 = performance.now();
+      (function pulse(now) {
+        if (meOn && map.getLayer("me-halo")) {
+          var k = ((now - t0) % 2000) / 2000;
+          map.setPaintProperty("me-halo", "circle-radius", 8 + 14 * k);
+          map.setPaintProperty("me-halo", "circle-opacity", 0.45 * (1 - k));
+        }
+        requestAnimationFrame(pulse);
+      })(t0);
 
       map.on("click", "clusters", function (e) {
         var f = map.queryRenderedFeatures(e.point, { layers: ["clusters"] })[0];
