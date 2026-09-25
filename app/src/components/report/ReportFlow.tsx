@@ -1,8 +1,10 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronRight, Dog, Mail, MapPin, Phone, Share2 } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import { FLYERS_READY } from "../../lib/flyer";
 import { Place } from "../../lib/geocode";
+import { reportShareText } from "../../lib/shareText";
 import { publishReport } from "../../lib/publish";
 import { supabase } from "../../lib/supabase";
 import { validateContact } from "../../lib/validation";
@@ -213,6 +215,15 @@ export function ReportFlow({ kind }: { kind: Kind }) {
 
   // done — círculo con ícono ARRIBA → título → texto de apoyo → botones (SuccessBlock). "Share flyer/sighting" genera la imagen real.
   const goFlyer = () => publishedId && router.push({ pathname: "/flyer", params: { id: publishedId } });
+  // "Share alert": compartir texto con la hoja nativa. Es la acción de compartir mientras el flyer (imagen) no esté verificado (FLYERS_READY):
+  // estas pantallas nunca se quedan sin una forma de compartir.
+  const shareAlert = () => {
+    if (!publishedId || !species) return;
+    Share.share({ message: reportShareText({
+      id: publishedId, status: kind, species, name: isLost ? petName.trim() || null : null, breed: breed.trim() || null,
+      features_description: features.trim() || null, location_label: place?.label ?? null, created_at: new Date().toISOString(),
+    }) }).catch(() => Alert.alert("Couldn't open sharing"));
+  };
   const supportLink = (
     <Pressable accessibilityRole="button" onPress={() => router.dismissTo("/(tabs)/support")} style={st.supportLink}>
       <Text style={st.supportT}>Pet care can get expensive. Free local resources</Text>
@@ -226,7 +237,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
           <Text style={[successText.p, { marginBottom: 8 }]}>{"Nearby users have been notified.\nWe'll alert you the moment there's a match."}</Text>
           <Text style={[successText.strong, { marginBottom: 24 }]}>{"Share this with your neighborhood\nto reach more people"}</Text>
           <View style={st.fullW}>
-            <Cta label="Share flyer" tone="lost" icon={<Share2 size={18} color={C.white} />} disabled={!publishedId} onPress={goFlyer} />
+            <Cta label={FLYERS_READY ? "Share flyer" : "Share alert"} tone="lost" icon={<Share2 size={18} color={C.white} />} disabled={!publishedId} onPress={FLYERS_READY ? goFlyer : shareAlert} />
             <Pressable accessibilityRole="button" onPress={() => router.dismissTo("/(tabs)")} style={st.textBtn}><Text style={st.textBtnT}>View on List</Text></Pressable>
             {supportLink}
           </View>
@@ -235,8 +246,8 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         <SuccessBlock title="Thanks for helping">
           <Text style={[successText.p, { marginBottom: 24 }]}>Your sighting has been posted to the map.</Text>
           <View style={st.fullW}>
-            <Pressable accessibilityRole="button" onPress={goFlyer} disabled={!publishedId} style={[st.outlineBtn, !publishedId && { opacity: 0.5 }]}>
-              <Share2 size={16} color={C.ink} /><Text style={st.outlineT}>Share sighting</Text>
+            <Pressable accessibilityRole="button" onPress={FLYERS_READY ? goFlyer : shareAlert} disabled={!publishedId} style={[st.outlineBtn, !publishedId && { opacity: 0.5 }]}>
+              <Share2 size={16} color={C.ink} /><Text style={st.outlineT}>{FLYERS_READY ? "Share sighting" : "Share alert"}</Text>
             </Pressable>
             <Cta label="View on List" tone="sighted" onPress={() => router.dismissTo("/(tabs)")} />
             {supportLink}
