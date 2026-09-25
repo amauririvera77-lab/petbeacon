@@ -13,7 +13,7 @@ import { FocusImage } from "./FocusImage";
 
 const COLOR = { lost: C.sos, sighted: C.warn, reunited: C.ok } as const;
 
-// Tres estados distintos (CLAUDE.md §2), no uno con texto condicional:
+// Tres estados distintos (CLAUDE.md §2), no uno con texto condicional. El botón del flyer solo aparece con FLYERS_READY (lib/flyer.ts):
 //  · Lost      → "I've seen this pet" + "Share flyer"
 //  · Sighted   → "Report to network" + "Share sighting"
 //  · Reunited  → caja verde de cierre, sin botones de acción
@@ -128,12 +128,13 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited }: {
                         </Pressable>
                       ) : null}
                     </>
-                  ) : (
+                  ) : FLYERS_READY ? (
+                    // "Share flyer" / "Share sighting" abren el flyer: se ocultan en TODOS los detalles mientras FLYERS_READY sea false.
                     <Pressable accessibilityRole="button" onPress={openFlyer} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: "#F1F5F9" }]}>
                       <Share2 size={16} color={C.ink} />
                       <Text style={styles.secondaryT}>{status === "sighted" ? "Share sighting" : "Share flyer"}</Text>
                     </Pressable>
-                  )}
+                  ) : null}
                 </View>
               )}
             </ScrollView>
