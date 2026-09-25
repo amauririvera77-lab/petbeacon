@@ -31,3 +31,5 @@ insert into reports (id, user_id, status, species, name, breed, photo_url, featu
 --   Sighted #6 (Golden Retriever, 30 min, 0.2 mi) vs Lost #1 (Max, Golden Retriever) => 'strong'.
 -- Ejemplos que NO deben generar match: Sighted #2 (Beagle) vs Max (Golden) → tamaños incompatibles;
 --   Sighted #3 (Gray tabby) vs Luna (Siamese) → razas de gato distintas.
+-- Evento destacado con fecha concreta (columna agregada en 0011): el próximo sábado.
+update resources set event_date = current_date + ((6 - extract(dow from current_date)::int + 7) % 7) where name = 'Free pet food pantry';

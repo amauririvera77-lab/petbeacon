@@ -110,6 +110,7 @@ export type ResourceNearby = {
   is_featured_event: boolean;
   icon: string | null;
   hours: string | null;
+  event_date?: string | null; // fecha real del evento (migración 0011); ausente antes de aplicarla
   photo_url: string | null;
   lat: number;
   lng: number;

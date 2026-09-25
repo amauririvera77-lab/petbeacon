@@ -1,5 +1,6 @@
 import { HeartHandshake, Search, X } from "lucide-react-native";
-import { useMemo, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OfflineBanner } from "../../components/OfflineBanner";
@@ -25,6 +26,15 @@ export default function Support() {
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]["key"]>("all");
   const [contact, setContact] = useState<ResourceNearby | null>(null);
   const [mode, setMode] = useState<ResourceSheetMode>("contact");
+
+  // Desde la tarjeta "Community resource" del feed: abre directamente el detalle de ese recurso.
+  const { resourceId } = useLocalSearchParams<{ resourceId?: string }>();
+  useEffect(() => {
+    if (!resourceId || resources.length === 0) return;
+    const r = resources.find((x) => x.id === resourceId);
+    if (r) { setMode("detail"); setContact(r); }
+    router.setParams({ resourceId: undefined });
+  }, [resourceId, resources]);
 
   const q = query.trim().toLowerCase();
   const filtered = useMemo(

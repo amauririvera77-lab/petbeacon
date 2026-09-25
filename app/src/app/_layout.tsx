@@ -3,6 +3,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { SnackbarProvider } from "../components/Snackbar";
+import { HomePrefsProvider } from "../state/homePrefs";
 import { SessionProvider } from "../state/session";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { fontAssets } from "../theme/fonts";
@@ -19,11 +20,13 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <SessionProvider>
+        <HomePrefsProvider>
         <SnackbarProvider>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.white } }}>
           <Stack.Screen name="flyer" options={{ presentation: "modal" }} />
         </Stack>
         </SnackbarProvider>
+        </HomePrefsProvider>
       </SessionProvider>
     </SafeAreaProvider>
   );

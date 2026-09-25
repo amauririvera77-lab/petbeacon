@@ -1,7 +1,8 @@
-import { Phone } from "lucide-react-native";
+import { ChevronRight, HeartHandshake, Phone } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { ResourceNearby } from "../lib/database.types";
 import { CATEGORY_STYLE, resourceIcon } from "../lib/resources";
+import { eventWhen } from "../lib/time";
 import { C, MIN_HIT, font, radius } from "../theme/tokens";
 
 // Tarjeta de Support and care: ícono tintado por categoría, descripción, distancia y botón Contact.
@@ -25,17 +26,20 @@ export function ResourceCard({ resource: r, onContact }: { resource: ResourceNea
   );
 }
 
-// Tarjeta del feed de Home (recurso destacado intercalado): fondo info, como en el prototipo.
-export function FeaturedResourceCard({ resource: r, onPress }: { resource: ResourceNearby; onPress: () => void }) {
-  const Icon = resourceIcon(r);
+// Tarjeta de recurso comunitario del feed (fase 3.4): variante NEUTRAL (la misma tarjeta blanca con borde que usan los reportes) para
+// que no compita con los reportes urgentes ni se lea como publicidad. Etiqueta superior "Community resource" + fecha concreta.
+export function CommunityResourceCard({ resource: r, onPress }: { resource: ResourceNearby; onPress: () => void }) {
+  const when = eventWhen(r.event_date, r.hours);
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={styles.featured}>
-      <View style={styles.fIcon}><Icon size={22} color={C.info} /></View>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={styles.fKind}>Community resource</Text>
-        <Text style={styles.fName}>{r.name}</Text>
-        <Text style={styles.fMeta} numberOfLines={2}>{[r.hours, `${r.distance_mi.toFixed(1)} mi away`].filter(Boolean).join(" · ")}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={`Community resource: ${r.name}`} onPress={onPress} style={({ pressed }) => [styles.neutral, pressed && { opacity: 0.9 }]}>
+      <View style={styles.nIcon}><HeartHandshake size={22} color={C.slate700} /></View>
+      <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+        <Text style={styles.nKind}>Community resource</Text>
+        <Text style={styles.nName} numberOfLines={2}>{r.name}</Text>
+        {when ? <Text style={styles.nWhen}>{when}</Text> : null}
+        <Text style={styles.nDist}>{r.distance_mi.toFixed(1)} mi away</Text>
       </View>
+      <ChevronRight size={18} color={C.slate500} />
     </Pressable>
   );
 }
@@ -49,9 +53,10 @@ const styles = StyleSheet.create({
   dist: { fontFamily: font.bodyBold, fontSize: 12, color: C.teal },
   btn: { minHeight: MIN_HIT - 4, paddingHorizontal: 16, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.ink, backgroundColor: C.white, flexDirection: "row", gap: 6, alignItems: "center" },
   btnT: { fontFamily: font.bodyBold, fontSize: 13, color: C.ink },
-  featured: { flexDirection: "row", gap: 14, alignItems: "center", padding: 16, borderRadius: radius.lg, backgroundColor: C.infoTint, borderWidth: 1, borderColor: C.info },
-  fIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
-  fKind: { fontFamily: font.bodyBold, fontSize: 11, color: C.info, textTransform: "uppercase", letterSpacing: 0.5 },
-  fName: { fontFamily: font.head, fontSize: 16, color: C.ink },
-  fMeta: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700 },
+  neutral: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: C.border, backgroundColor: C.white },
+  nIcon: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: C.surface, alignItems: "center", justifyContent: "center" },
+  nKind: { fontFamily: font.bodyBold, fontSize: 11, letterSpacing: 0.5, textTransform: "uppercase", color: C.slate500 },
+  nName: { fontFamily: font.head, fontSize: 16, color: C.ink },
+  nWhen: { fontFamily: font.bodySemi, fontSize: 13, color: C.slate700 },
+  nDist: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate500 },
 });

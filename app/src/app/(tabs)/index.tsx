@@ -1,4 +1,4 @@
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { List, Map as MapIcon } from "lucide-react-native";
 import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -14,7 +14,8 @@ import { MapboxWebView } from "../../components/map/MapboxWebView";
 import { useSnackbar } from "../../components/Snackbar";
 import { NotificationsSheet } from "../../components/NotificationsSheet";
 import { OfflineBanner } from "../../components/OfflineBanner";
-import { FeaturedResourceCard } from "../../components/ResourceCard";
+import { CommunityResourceCard } from "../../components/ResourceCard";
+import { SortControl } from "../../components/SortControl";
 import { ResourceModal, ResourceSheetMode } from "../../components/ResourceModal";
 import { ReportCard } from "../../components/ReportCard";
 import { SetupNotice } from "../../components/SetupNotice";
@@ -29,8 +30,10 @@ import { useMyMatches } from "../../hooks/useMyMatches";
 import { useMyReports } from "../../hooks/useMyReports";
 import { useNotificationsFeed } from "../../hooks/useNotificationsFeed";
 import { useResourcesState } from "../../hooks/useResources";
+import { sortReports } from "../../lib/sort";
+import { useHomePrefs } from "../../state/homePrefs";
 import { useSession } from "../../state/session";
-import { C, font, radius } from "../../theme/tokens";
+import { C, FAB_CLEARANCE, font, radius } from "../../theme/tokens";
 
 const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN;
 
@@ -45,6 +48,7 @@ export default function Home() {
   const [sheetMode, setSheetMode] = useState<ResourceSheetMode>("detail");
   const openResource = (r: ResourceNearby) => { setSheetMode("detail"); setSheetResource(r); };
   const { alertRadiusMi, notifSeenAt, update } = useSession();
+  const { prefs, setSort } = useHomePrefs();
   const uid = useAuthUser();
   const center = useHome();
   const me = useMyPosition(view === "map");
@@ -55,6 +59,10 @@ export default function Home() {
   // Los filtros solo afectan a los pines del mapa (memoizado: un array nuevo en cada render reenviaría los datos al WebView).
   const mapReports = useMemo(() => reports.filter((r) => filters[r.status]), [reports, filters]);
   const featured = resources.find((r) => r.is_featured_event) ?? null;
+  // Orden elegido (persiste al cambiar List/Map y al volver a la Home). Por defecto: más recientes primero.
+  const sorted = useMemo(() => sortReports(reports, prefs.sort), [reports, prefs.sort]);
+  // El recurso comunitario va al final del feed o, como máximo, tras 9 reportes: nunca entre los primeros resultados.
+  const resourceAt = Math.min(9, sorted.length);
   const { reports: myReports, refresh: refreshMine } = useMyReports();
   const activeLost = useMemo(() => myReports.filter((r) => r.status === "lost"), [myReports]);
   const mineIds = useMemo(() => myReports.map((r) => r.id), [myReports]);
@@ -144,9 +152,10 @@ export default function Home() {
             <Placeholder text={`No activity within ${alertRadiusMi} mi yet.`} />
           ) : (
             <>
-              {reports.slice(0, 2).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} onPress={() => setPinReport(r)} />)}
-              {featured ? <FeaturedResourceCard resource={featured} onPress={() => openResource(featured)} /> : null}
-              {reports.slice(2).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} onPress={() => setPinReport(r)} />)}
+              <SortControl value={prefs.sort} onChange={setSort} count={sorted.length} />
+              {sorted.slice(0, resourceAt).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} onPress={() => setPinReport(r)} />)}
+              {featured ? <CommunityResourceCard resource={featured} onPress={() => router.navigate({ pathname: "/(tabs)/support", params: { resourceId: featured.id } })} /> : null}
+              {sorted.slice(resourceAt).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} onPress={() => setPinReport(r)} />)}
             </>
           )}
         </ScrollView>
@@ -167,7 +176,8 @@ const styles = StyleSheet.create({
   segItem: { flex: 1, height: 40, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", borderRadius: radius.md, backgroundColor: "#F1F5F9" },
   segOn: { backgroundColor: C.teal },
   segT: { fontFamily: font.bodyBold, fontSize: 14, color: C.slate700 },
-  listC: { padding: 16, paddingBottom: 200, gap: 10 },
+  // Padding inferior = FAB + su margen: la última tarjeta se ve completa al llegar al final del scroll.
+  listC: { padding: 16, paddingBottom: FAB_CLEARANCE, gap: 10 },
   mapWrap: { flex: 1 },
   pad: { padding: 16 },
   errBox: { gap: 8 },
