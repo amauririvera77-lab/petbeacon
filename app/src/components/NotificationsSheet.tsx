@@ -42,7 +42,7 @@ export function NotificationsSheet({ visible, items, onClose, onPick }: {
                   <View style={[styles.icon, { backgroundColor: tint }]}><Icon size={20} color={color} /></View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.itemT}>{n.title}</Text>
-                    <Text style={styles.itemS}>{ago(n.at)}</Text>
+                    <Text style={styles.itemS}>{ago(n.at)}{n.dismissed ? " · Dismissed" : ""}</Text>
                   </View>
                 </Pressable>
               );

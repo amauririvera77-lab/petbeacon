@@ -1,38 +1,42 @@
 import { Sparkles, X } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { MyMatch } from "../lib/database.types";
+import { matchSubtitle, matchTitle } from "../lib/matchCopy";
 import { C, MIN_HIT, font, radius } from "../theme/tokens";
 import { FocusImage } from "./FocusImage";
 
-// "Possible match" (especie y zona coinciden) o "Strong match" (además coincide la raza) — §6.
-export function MatchBanner({ match, onView, onDismiss }: { match: MyMatch; onView: () => void; onDismiss: () => void }) {
-  const strong = match.confidence === "strong";
-  const title = `${strong ? "Strong" : "Possible"} match for ${match.lost_name ?? "your pet"}`;
+// Coincidencia (fase 1.2): título, MOTIVO ("Similar dog seen 0.9 mi from where Max was lost · 1h ago") y un botón explícito
+// "View sighting" (el área tocable no depende de adivinar que toda la tarjeta lo es). Color: tokens de éxito (una coincidencia es
+// una buena noticia; el rojo queda reservado a Lost y al badge de notificaciones).
+export function MatchBanner({ match, onViewSighting, onDismiss }: { match: MyMatch; onViewSighting: () => void; onDismiss: () => void }) {
   return (
     <View style={styles.box} accessibilityRole="alert">
-      {match.sighted_photo_url ? <FocusImage uri={match.sighted_photo_url} focusX={match.sighted_focus_x} focusY={match.sighted_focus_y} zoom={(match.sighted_zoom ?? 100) / 100} style={styles.photo} /> : (
-        <View style={[styles.photo, styles.icon]}><Sparkles size={22} color={C.warn} /></View>
+      {match.sighted_photo_url ? (
+        <FocusImage uri={match.sighted_photo_url} focusX={match.sighted_focus_x} focusY={match.sighted_focus_y} zoom={(match.sighted_zoom ?? 100) / 100} style={styles.photo} />
+      ) : (
+        <View style={[styles.photo, styles.icon]}><Sparkles size={22} color={C.ok} /></View>
       )}
       <View style={styles.body}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.sub} numberOfLines={2}>
-          A sighting{match.sighted_breed ? ` of a ${match.sighted_breed}` : ""}{match.sighted_label ? ` near ${match.sighted_label}` : ""} looks like your pet.
-        </Text>
-        <Pressable accessibilityRole="button" onPress={onView} style={styles.view}><Text style={styles.viewT}>View on map</Text></Pressable>
+        <Text style={styles.title}>{matchTitle(match)}</Text>
+        <Text style={styles.sub}>{matchSubtitle(match)}</Text>
+        <Pressable accessibilityRole="button" onPress={onViewSighting} style={({ pressed }) => [styles.cta, pressed && { opacity: 0.85 }]}>
+          <Text style={styles.ctaT}>View sighting</Text>
+        </Pressable>
       </View>
-      <Pressable accessibilityRole="button" accessibilityLabel="Dismiss match" onPress={onDismiss} style={styles.x}><X size={18} color={C.slate500} /></Pressable>
+      {/* Zona táctil de 44×44 pt como mínimo. */}
+      <Pressable accessibilityRole="button" accessibilityLabel="Dismiss match" onPress={onDismiss} hitSlop={4} style={styles.x}><X size={18} color={C.slate700} /></Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  box: { flexDirection: "row", gap: 12, padding: 12, borderRadius: radius.lg, backgroundColor: C.warnTint, borderWidth: 1, borderColor: C.warn },
+  box: { flexDirection: "row", gap: 12, padding: 12, borderRadius: radius.lg, backgroundColor: C.okTint, borderWidth: 1, borderColor: C.ok },
   photo: { width: 56, height: 56, borderRadius: radius.md, backgroundColor: C.white },
   icon: { alignItems: "center", justifyContent: "center" },
   body: { flex: 1, gap: 2 },
   title: { fontFamily: font.head, fontSize: 16, color: C.ink },
-  sub: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700 },
-  view: { minHeight: 36, justifyContent: "center", alignSelf: "flex-start" },
-  viewT: { fontFamily: font.bodyBold, fontSize: 13, color: C.warn },
+  sub: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 18, color: C.slate700 },
+  cta: { minHeight: MIN_HIT, alignSelf: "flex-start", justifyContent: "center", paddingHorizontal: 16, marginTop: 6, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.ok, backgroundColor: C.white },
+  ctaT: { fontFamily: font.bodyBold, fontSize: 14, color: C.ink },
   x: { width: MIN_HIT, height: MIN_HIT, alignItems: "center", justifyContent: "center", marginTop: -8, marginRight: -8 },
 });

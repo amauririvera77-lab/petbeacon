@@ -7,6 +7,7 @@ export type NotifItem = {
   title: string;
   at: number; // epoch ms
   reportId: string; // pin a seleccionar en el mapa
+  dismissed?: boolean; // coincidencia descartada: sigue accesible aquí (fase 1.3)
 };
 
 const WINDOW = 48 * 3_600_000; // mismo horizonte que la retención de Sighted (§6)
@@ -27,7 +28,7 @@ export function useNotificationsFeed(reports: ReportNearby[], matches: MyMatch[]
     for (const m of matches) {
       const at = new Date(m.created_at).getTime();
       if (now - at > WINDOW) continue;
-      items.push({ id: `m-${m.id}`, kind: "match", title: `Match update on ${m.lost_name ?? "your pet"}`, at, reportId: m.sighted_report_id });
+      items.push({ id: `m-${m.id}`, kind: "match", title: `Match update on ${m.lost_name ?? "your pet"}`, at, reportId: m.sighted_report_id, dismissed: m.dismissed });
     }
     items.sort((a, b) => b.at - a.at);
     const list = items.slice(0, 30);

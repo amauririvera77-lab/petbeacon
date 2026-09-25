@@ -24,5 +24,13 @@ export function useMyMatches() {
     if (error) { console.warn("dismiss:", error.message); refresh(); }
   }, [refresh]);
 
-  return { matches, refresh, dismiss };
+  // Deshacer: la coincidencia nunca se borra, solo cambia su marca `dismissed` (fase 1.3).
+  const restore = useCallback(async (id: string) => {
+    setMatches((m) => m.map((x) => (x.id === id ? { ...x, dismissed: false } : x)));
+    if (!supabase) return;
+    const { error } = await supabase.from("matches").update({ dismissed: false }).eq("id", id);
+    if (error) { console.warn("restore:", error.message); refresh(); }
+  }, [refresh]);
+
+  return { matches, refresh, dismiss, restore };
 }

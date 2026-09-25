@@ -10,6 +10,7 @@ import { MapRadiusChip } from "../../components/MapRadiusChip";
 import { PinDetailSheet } from "../../components/PinDetailSheet";
 import { MatchBanner } from "../../components/MatchBanner";
 import { MapboxWebView } from "../../components/map/MapboxWebView";
+import { useSnackbar } from "../../components/Snackbar";
 import { NotificationsSheet } from "../../components/NotificationsSheet";
 import { OfflineBanner } from "../../components/OfflineBanner";
 import { FeaturedResourceCard } from "../../components/ResourceCard";
@@ -18,6 +19,7 @@ import { ReportCard } from "../../components/ReportCard";
 import { SetupNotice } from "../../components/SetupNotice";
 import { Placeholder } from "../../components/TabScreen";
 import type { ReportNearby, ResourceNearby } from "../../lib/database.types";
+import { fetchReportNearby } from "../../lib/reportLookup";
 import { useAuthUser } from "../../hooks/useAuthUser";
 import { useFeed } from "../../hooks/useFeed";
 import { useHome } from "../../hooks/useHome";
@@ -47,7 +49,8 @@ export default function Home() {
   const me = useMyPosition(view === "map");
   const { reports, loading, error, refresh } = useFeed(alertRadiusMi, center.lat, center.lng);
   const { resources, refresh: refreshResources } = useResourcesState(alertRadiusMi, center.lat, center.lng);
-  const { matches, refresh: refreshMatches, dismiss } = useMyMatches();
+  const { matches, refresh: refreshMatches, dismiss, restore } = useMyMatches();
+  const snackbar = useSnackbar();
   const banner = matches.find((m) => !m.dismissed);
   // Los filtros solo afectan a los pines del mapa (memoizado: un array nuevo en cada render reenviaría los datos al WebView).
   const mapReports = useMemo(() => reports.filter((r) => filters[r.status]), [reports, filters]);
@@ -64,6 +67,11 @@ export default function Home() {
 
 
   // Abrir la hoja limpia el badge (CLAUDE.md §2).
+  // "View sighting": abre el detalle del avistamiento (del feed, o buscándolo si está fuera de él).
+  const viewSighting = async (id: string) => {
+    const r = reports.find((x) => x.id === id) ?? (await fetchReportNearby(id, center.lat, center.lng));
+    if (r) setPinReport(r);
+  };
   const openNotifs = () => { setNotifOpen(true); update({ notifSeenAt: Date.now() }); };
   // iOS ignora un Modal que se abre mientras otro aún se está cerrando: se espera a que termine la animación.
   const pickNotif = (reportId: string) => {
@@ -117,7 +125,8 @@ export default function Home() {
         <ScrollView contentContainerStyle={styles.listC}>
           <EnableAlertsCard />
           {banner ? (
-            <MatchBanner match={banner} onDismiss={() => dismiss(banner.id)} onView={() => pickNotif(banner.sighted_report_id)} />
+            <MatchBanner match={banner} onViewSighting={() => viewSighting(banner.sighted_report_id)}
+              onDismiss={() => { dismiss(banner.id); snackbar.show({ message: "Match dismissed", actionLabel: "Undo", onAction: () => restore(banner.id) }); }} />
           ) : null}
           {error === "supabase-not-configured" ? (
             <SetupNotice />

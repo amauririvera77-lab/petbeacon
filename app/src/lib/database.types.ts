@@ -116,7 +116,17 @@ export type ResourceNearby = {
   distance_mi: number;
 };
 
-// Forma de retorno de my_matches() (0004_matches.sql).
+// Motivos guardados por el trigger de matching (0009): por qué se generó la coincidencia.
+export type MatchReasons = {
+  same_species?: boolean;
+  breed?: "exact" | "similar" | "unknown";
+  distance_mi?: number;
+  radius_mi?: number;
+  seen_after_loss?: boolean;
+  minutes_after_loss?: number;
+};
+
+// Forma de retorno de my_matches() (0004; ampliada en 0009 — los campos nuevos pueden faltar hasta aplicar esa migración).
 export type MyMatch = {
   id: string;
   lost_report_id: string;
@@ -131,6 +141,10 @@ export type MyMatch = {
   sighted_focus_x: number | null;
   sighted_focus_y: number | null;
   sighted_zoom: number | null;
+  sighted_created_at?: string;
+  sighted_species?: Species;
+  distance_mi?: number | null;
+  reasons?: MatchReasons | null;
 };
 
 // supabase-js exige `Relationships` en cada tabla y `Views` en el schema (aunque estén vacíos)

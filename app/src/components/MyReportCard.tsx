@@ -11,7 +11,7 @@ function ago(iso: string) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-export function MyReportCard({ report, matchCount, onEdit, onMarkReunited }: { report: MyReport; matchCount: number; onEdit?: () => void; onMarkReunited?: () => void }) {
+export function MyReportCard({ report, matchCount, onMatches, onEdit, onMarkReunited }: { report: MyReport; matchCount: number; onMatches?: () => void; onEdit?: () => void; onMarkReunited?: () => void }) {
   const title = report.name?.trim() || `Unknown ${report.species}`;
   return (
     <View style={styles.card}>
@@ -27,7 +27,9 @@ export function MyReportCard({ report, matchCount, onEdit, onMarkReunited }: { r
         </View>
       </View>
       {matchCount > 0 && report.status === "lost" ? (
-        <View style={styles.match}><Text style={styles.matchT}>{matchCount} possible {matchCount === 1 ? "match" : "matches"}</Text></View>
+        <Pressable accessibilityRole="button" accessibilityLabel="View matches" onPress={onMatches} style={styles.match}>
+          <Text style={styles.matchT}>{matchCount} possible {matchCount === 1 ? "match" : "matches"} ›</Text>
+        </Pressable>
       ) : null}
       {report.status === "reunited" ? (
         <View style={styles.closed}><Text style={styles.closedT}>Case closed — thanks for updating it.</Text></View>
@@ -53,8 +55,8 @@ const styles = StyleSheet.create({
   name: { fontFamily: font.head, fontSize: 17, color: C.ink },
   sub: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700 },
   loc: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate500 },
-  match: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.pill, backgroundColor: C.warnTint },
-  matchT: { fontFamily: font.bodyBold, fontSize: 12, color: C.warn },
+  match: { alignSelf: "flex-start", minHeight: MIN_HIT, justifyContent: "center", paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: C.okTint, borderWidth: 1, borderColor: C.ok },
+  matchT: { fontFamily: font.bodyBold, fontSize: 12, color: C.ink },
   closed: { padding: 10, borderRadius: radius.md, backgroundColor: C.okTint },
   closedT: { fontFamily: font.bodySemi, fontSize: 13, color: C.ok },
   actions: { flexDirection: "row", gap: 8 },
