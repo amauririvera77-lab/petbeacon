@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { Cat, Check, Dog, Eye, MapPin, PawPrint, Share2, X } from "lucide-react-native";
+import { Cat, Check, Dog, Eye, MapPin, PawPrint, Pencil, Share2, X } from "lucide-react-native";
 import { useState } from "react";
 import { Alert, Modal, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,7 +23,7 @@ function whenLabel(iso: string) {
 //  · Lost      → "I've seen this pet" + "Share flyer"
 //  · Sighted   → "Report to network" + "Share sighting"
 //  · Reunited  → caja verde de cierre, sin botones de acción
-export function PinDetailSheet({ report, onClose }: { report: ReportNearby | null; onClose: () => void }) {
+export function PinDetailSheet({ report, onClose, mine }: { report: ReportNearby | null; onClose: () => void; mine?: boolean }) {
   const insets = useSafeAreaInsets();
   const [photoFailed, setPhotoFailed] = useState(false);
   const r = report;
@@ -49,6 +49,14 @@ export function PinDetailSheet({ report, onClose }: { report: ReportNearby | nul
     setTimeout(() => router.push({ pathname: "/flyer", params: { id: r.id } }), 400);
   };
   const share = () => Share.share({ message: shareText() }).catch(() => Alert.alert("Couldn't open sharing"));
+
+  // Reporte propio: en vez de "I've seen this pet" (que sería absurdo para el dueño) se ofrece editarlo.
+  const editOwn = () => {
+    if (!r) return;
+    onClose();
+    setTimeout(() => router.push({ pathname: "/edit-report", params: { id: r.id } }), 400);
+  };
+  const ownLost = !!mine && status === "lost";
 
   // "I've seen this pet": abre el flujo de avistamiento con la especie ya elegida. Al publicarse, el matching
   // avisa al dueño (no es un toast: registra un avistamiento real).
@@ -102,10 +110,10 @@ export function PinDetailSheet({ report, onClose }: { report: ReportNearby | nul
                 </View>
               ) : (
                 <View style={{ gap: 8 }}>
-                  <Pressable accessibilityRole="button" onPress={status === "lost" ? iveSeen : share}
+                  <Pressable accessibilityRole="button" onPress={ownLost ? editOwn : status === "lost" ? iveSeen : share}
                     style={({ pressed }) => [styles.cta, { backgroundColor: color }, pressed && { opacity: 0.9 }]}>
-                    {status === "lost" ? <Eye size={18} color={C.white} /> : <Share2 size={18} color={C.white} />}
-                    <Text style={styles.ctaT}>{status === "lost" ? "I've seen this pet" : "Report to network"}</Text>
+                    {ownLost ? <Pencil size={18} color={C.white} /> : status === "lost" ? <Eye size={18} color={C.white} /> : <Share2 size={18} color={C.white} />}
+                    <Text style={styles.ctaT}>{ownLost ? "Edit report" : status === "lost" ? "I've seen this pet" : "Report to network"}</Text>
                   </Pressable>
                   <Pressable accessibilityRole="button" onPress={openFlyer} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: "#F1F5F9" }]}>
                     <Share2 size={16} color={C.ink} />

@@ -6,7 +6,7 @@ import type { ReportNearby } from "../lib/database.types";
 
 const SPECIES_LABEL: Record<string, string> = { dog: "Dog", cat: "Cat", other: "Pet" };
 
-export function ReportCard({ report, onPress }: { report: ReportNearby; onPress?: () => void }) {
+export function ReportCard({ report, onPress, mine }: { report: ReportNearby; onPress?: () => void; mine?: boolean }) {
   const title = report.name?.trim() || `Unknown ${SPECIES_LABEL[report.species].toLowerCase()}`;
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}>
@@ -19,7 +19,10 @@ export function ReportCard({ report, onPress }: { report: ReportNearby; onPress?
       )}
       <View style={styles.body}>
         <View style={styles.row}>
-          <Badge status={report.status as BadgeStatus} />
+          <View style={styles.badges}>
+            <Badge status={report.status as BadgeStatus} />
+            {mine ? <View style={styles.mine}><Text style={styles.mineT}>Your report</Text></View> : null}
+          </View>
           <Text style={styles.distance}>{report.distance_mi.toFixed(1)} mi</Text>
         </View>
         <Text style={styles.name} numberOfLines={1}>{title}</Text>
@@ -37,6 +40,10 @@ const styles = StyleSheet.create({
   photoFallbackT: { fontFamily: font.headBold, fontSize: 22, color: C.slate500 },
   body: { flex: 1, gap: 4, justifyContent: "center" },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  badges: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 },
+  // Etiqueta neutra (borde y texto ink): el rojo queda reservado a Lost y al badge de notificaciones.
+  mine: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, borderWidth: 1, borderColor: C.ink, backgroundColor: C.white },
+  mineT: { fontFamily: font.bodyBold, fontSize: 11, color: C.ink },
   distance: { fontFamily: font.bodySemi, fontSize: 12, color: C.slate500 },
   name: { fontFamily: font.head, fontSize: 17, color: C.ink },
   breed: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700 },

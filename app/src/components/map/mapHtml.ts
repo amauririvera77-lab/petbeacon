@@ -66,7 +66,7 @@ export function buildMapHtml(token: string): string {
     var feats = [];
     (p.reports || []).forEach(function (r) {
       feats.push({ type: "Feature", geometry: { type: "Point", coordinates: [r.lng, r.lat] },
-        properties: { kind: "report", rid: r.id, icon: r.status } });
+        properties: { kind: "report", rid: r.id, icon: r.status, mine: !!r.mine } });
     });
     (p.resources || []).forEach(function (r) {
       feats.push({ type: "Feature", geometry: { type: "Point", coordinates: [r.lng, r.lat] },
@@ -105,6 +105,13 @@ export function buildMapHtml(token: string): string {
         paint: { "text-color": "#fff" } });
       map.addLayer({ id: "pins", type: "symbol", source: "items", filter: ["!", ["has", "point_count"]],
         layout: { "icon-image": ["concat", "pin-", ["get", "icon"]], "icon-allow-overlap": true, "icon-size": 0.9 } });
+
+      // Reportes propios ("Your report"): aro negro bajo el pin y etiqueta encima.
+      map.addLayer({ id: "pins-mine-ring", type: "circle", source: "items", filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "mine"], true]],
+        paint: { "circle-radius": 24, "circle-color": "rgba(0,0,0,0)", "circle-stroke-width": 2.5, "circle-stroke-color": "${C.ink}" } }, "pins");
+      map.addLayer({ id: "pins-mine-label", type: "symbol", source: "items", filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "mine"], true]],
+        layout: { "text-field": "Your report", "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-size": 11, "text-offset": [0, -2.6], "text-anchor": "bottom", "text-allow-overlap": true },
+        paint: { "text-color": "${C.ink}", "text-halo-color": "#fff", "text-halo-width": 2 } });
 
       // Ubicación actual (prototipo): punto negro de 16px con borde blanco de 3px y anillo que pulsa cada 2s.
       // Se inserta debajo de los clusters y pines para no taparlos.

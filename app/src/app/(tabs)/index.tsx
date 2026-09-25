@@ -8,7 +8,8 @@ import { HomeHeader } from "../../components/HomeHeader";
 import { ALL_FILTERS, MapFilters, type MapFilterState } from "../../components/MapFilters";
 import { MapRadiusChip } from "../../components/MapRadiusChip";
 import { PinDetailSheet } from "../../components/PinDetailSheet";
-import { MatchBanner } from "../../components/MatchBanner";
+import { MatchesSheet } from "../../components/MatchesSheet";
+import { MyReportCarousel } from "../../components/MyReportCarousel";
 import { MapboxWebView } from "../../components/map/MapboxWebView";
 import { useSnackbar } from "../../components/Snackbar";
 import { NotificationsSheet } from "../../components/NotificationsSheet";
@@ -51,15 +52,16 @@ export default function Home() {
   const { resources, refresh: refreshResources } = useResourcesState(alertRadiusMi, center.lat, center.lng);
   const { matches, refresh: refreshMatches, dismiss, restore } = useMyMatches();
   const snackbar = useSnackbar();
-  const banner = matches.find((m) => !m.dismissed);
   // Los filtros solo afectan a los pines del mapa (memoizado: un array nuevo en cada render reenviaría los datos al WebView).
   const mapReports = useMemo(() => reports.filter((r) => filters[r.status]), [reports, filters]);
   const featured = resources.find((r) => r.is_featured_event) ?? null;
   const { reports: myReports, refresh: refreshMine } = useMyReports();
+  const activeLost = useMemo(() => myReports.filter((r) => r.status === "lost"), [myReports]);
+  const mineIds = useMemo(() => myReports.map((r) => r.id), [myReports]);
+  const [matchesFor, setMatchesFor] = useState<{ id: string; name: string } | null>(null);
 
   // Solo novedades de otros usuarios (lo propio no es una notificación).
-  const mineIds = new Set(myReports.map((r) => r.id));
-  const others = reports.filter((r) => !mineIds.has(r.id));
+  const others = reports.filter((r) => !mineIds.includes(r.id));
   const { items, unread } = useNotificationsFeed(others, matches, uid, notifSeenAt);
 
   // Al volver de publicar un reporte, el feed se actualiza sin tener que reiniciar la app.
@@ -112,7 +114,7 @@ export default function Home() {
             <View style={styles.pad}><SetupNotice /></View>
           ) : (
             <>
-              <MapboxWebView token={MAPBOX_TOKEN} reports={mapReports} resources={resources} center={center} radiusMi={alertRadiusMi} me={me} onSelect={(sel) => {
+              <MapboxWebView token={MAPBOX_TOKEN} reports={mapReports} resources={resources} center={center} radiusMi={alertRadiusMi} me={me} mineIds={mineIds} onSelect={(sel) => {
                 if (!sel) return;
                 if (sel.kind === "resource") { const r = resources.find((x) => x.id === sel.id); if (r) openResource(r); }
                 else { const r = reports.find((x) => x.id === sel.id); if (r) setPinReport(r); }
@@ -124,10 +126,11 @@ export default function Home() {
       ) : (
         <ScrollView contentContainerStyle={styles.listC}>
           <EnableAlertsCard />
-          {banner ? (
-            <MatchBanner match={banner} onViewSighting={() => viewSighting(banner.sighted_report_id)}
-              onDismiss={() => { dismiss(banner.id); snackbar.show({ message: "Match dismissed", actionLabel: "Undo", onAction: () => restore(banner.id) }); }} />
-          ) : null}
+          <MyReportCarousel reports={activeLost} matches={matches}
+            onOpen={(r) => viewSighting(r.id)}
+            onViewSighting={(m) => viewSighting(m.sighted_report_id)}
+            onDismiss={(m) => { dismiss(m.id); snackbar.show({ message: "Match dismissed", actionLabel: "Undo", onAction: () => restore(m.id) }); }}
+            onViewAll={(r) => setMatchesFor({ id: r.id, name: r.name ?? "your pet" })} />
           {error === "supabase-not-configured" ? (
             <SetupNotice />
           ) : error ? (
@@ -141,15 +144,17 @@ export default function Home() {
             <Placeholder text={`No activity within ${alertRadiusMi} mi yet.`} />
           ) : (
             <>
-              {reports.slice(0, 2).map((r) => <ReportCard key={r.id} report={r} onPress={() => setPinReport(r)} />)}
+              {reports.slice(0, 2).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} onPress={() => setPinReport(r)} />)}
               {featured ? <FeaturedResourceCard resource={featured} onPress={() => openResource(featured)} /> : null}
-              {reports.slice(2).map((r) => <ReportCard key={r.id} report={r} onPress={() => setPinReport(r)} />)}
+              {reports.slice(2).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} onPress={() => setPinReport(r)} />)}
             </>
           )}
         </ScrollView>
       )}
 
-      <PinDetailSheet report={pinReport} onClose={() => setPinReport(null)} />
+      <PinDetailSheet report={pinReport} mine={!!pinReport && mineIds.includes(pinReport.id)} onClose={() => setPinReport(null)} />
+      <MatchesSheet lostName={matchesFor?.name ?? ""} matches={matchesFor ? matches.filter((m) => m.lost_report_id === matchesFor.id) : null}
+        onClose={() => setMatchesFor(null)} onView={(m) => { setMatchesFor(null); setTimeout(() => viewSighting(m.sighted_report_id), 400); }} onDismiss={dismiss} onRestore={restore} />
       <ResourceModal resource={sheetResource} mode={sheetMode} onMode={setSheetMode} onClose={() => setSheetResource(null)} />
       <NotificationsSheet visible={notifOpen} items={items} onClose={() => setNotifOpen(false)} onPick={(n) => pickNotif(n.reportId)} />
     </View>
