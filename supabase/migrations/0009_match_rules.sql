@@ -3,11 +3,14 @@
 -- Problema: el matching solo exigía misma especie y estar dentro del radio; la raza solo subía la confianza.
 -- Resultado: "Possible match for Max" con un Beagle (Max es Golden Retriever). Esta migración exige, como mínimo:
 --   1. Misma especie (sin excepciones).
---   2. Avistamiento POSTERIOR a la fecha en que se reportó la pérdida.
---   3. Proximidad: el avistamiento está dentro del radio de alerta del dueño desde el último punto donde se vio la mascota.
---   4. Compatibilidad de raza/tamaño cuando ambos datos existen. Perros: por peso típico de la raza (razón > 1.7 = incompatible).
---      Gatos: razas específicas distintas = incompatible; "domestic/mix/unknown" no descarta. "Mix" o raza desconocida no descartan.
--- Y cada coincidencia guarda POR QUÉ se generó (reasons) y a qué distancia (distance_mi).
+--   2. Avistamiento POSTERIOR a la fecha en que se reportó la pérdida (sin excepciones).
+--   3. Proximidad al último punto donde se vio la mascota, con un RADIO DE COINCIDENCIA PROPIO (independiente del radio de alertas
+--      del dueño) que crece con el tiempo transcurrido desde la pérdida:  < 24 h → 3 mi · < 72 h → 5 mi · después → 10 mi.
+--   4. Tamaño compatible, SOLO para perros y por peso típico de la raza (razón > 1.7 = incompatible). La raza por sí sola nunca descarta:
+--      los avistadores no son expertos en razas. Perros de otra raza pero de tamaño similar, "mix" o raza desconocida → siguen siendo candidatos.
+--      Gatos: una raza distinta NUNCA descarta; solo baja la confianza ('strong' → 'possible').
+--   Solo una raza idéntica da 'strong'.
+-- Cada coincidencia guarda POR QUÉ se generó (reasons) y a qué distancia (distance_mi).
 
 -- ── 1. Normalización de raza ─────────────────────────────────────────────────────────────────────────────────────
 create or replace function norm_breed(t text) returns text language sql immutable as $$
@@ -50,13 +53,18 @@ create or replace function breed_pattern(t text) returns text language sql stabl
   select pattern from breed_sizes where norm_breed(t) like '%' || pattern || '%' order by length(pattern) desc limit 1
 $$;
 
--- ── 3. Compatibilidad: 'exact' | 'similar' | 'unknown' | 'incompatible' ──────────────────────────────────────────────
+-- ── 3. Compatibilidad de raza ──────────────────────────────────────────────────────────────────────────────────────
+-- 'exact'        misma raza (solo esta da 'strong')
+-- 'similar'      perros de raza distinta pero peso compatible
+-- 'different'    gatos con razas específicas distintas (NO descarta; baja la confianza)
+-- 'unknown'      falta un dato o la raza es genérica ("domestic", "mix", desconocida) (NO descarta)
+-- 'incompatible' SOLO perros con pesos típicos muy distintos (razón > 1.7): es el único caso que descarta
 create or replace function breed_compat(a text, b text, sp species_type) returns text
 language plpgsql stable as $$
 declare
   na text := norm_breed(a); nb text := norm_breed(b);
   pa text; pb text; wa numeric; wb numeric;
-  generic text := '(domestic|shorthair|longhair|unknown|tabby cat|unsure)';
+  generic text := '(domestic|shorthair|longhair|unknown|unsure)';
 begin
   if na is null or nb is null then return 'unknown'; end if;
 
@@ -70,10 +78,17 @@ begin
   elsif sp = 'cat' then
     if na = nb then return 'exact'; end if;
     if na ~ generic or nb ~ generic then return 'unknown'; end if;
-    return 'incompatible';
+    return 'different';
   end if;
   return 'unknown';
 end $$;
+
+-- Radio de coincidencia (mi) según el tiempo transcurrido entre la pérdida y el avistamiento. Independiente del radio de alertas.
+create or replace function match_radius_mi(elapsed interval) returns numeric language sql immutable as $$
+  select case when elapsed < interval '24 hours' then 3
+              when elapsed < interval '72 hours' then 5
+              else 10 end::numeric
+$$;
 
 -- ── 4. Motivos y distancia guardados en cada coincidencia ─────────────────────────────────────────────────────────
 alter table matches add column if not exists distance_mi numeric(6, 2);
@@ -89,47 +104,53 @@ begin
          round(d.miles::numeric, 2),
          jsonb_build_object(
            'same_species', true,
-           'breed', c.k,                                   -- exact | similar | unknown
+           'breed', c.k,                                   -- exact | similar | different | unknown
            'distance_mi', round(d.miles::numeric, 2),
-           'radius_mi', p.alert_radius_mi,
+           'radius_mi', match_radius_mi(new.created_at - l.created_at),
            'seen_after_loss', true,
-           'minutes_after_loss', round((extract(epoch from (new.created_at - l.created_at)) / 60)::numeric)
+           'minutes_after_loss', round((extract(epoch from (new.created_at - l.created_at)) / 60)::numeric),
+           'passes_rules', true
          )
   from reports l
-  join profiles p on p.id = l.user_id
   cross join lateral (select st_distance(l.location, new.location) / 1609.344 as miles) d
   cross join lateral (select breed_compat(l.breed, new.breed, l.species) as k) c
   where l.status = 'lost'
     and l.user_id <> new.user_id
-    and l.species = new.species                            -- 1. misma especie
-    and new.created_at >= l.created_at                     -- 2. avistamiento posterior a la pérdida
-    and d.miles <= p.alert_radius_mi                       -- 3. proximidad al último punto visto
-    and c.k <> 'incompatible'                              -- 4. raza/tamaño compatibles
+    and l.species = new.species                                            -- 1. misma especie
+    and new.created_at >= l.created_at                                     -- 2. avistamiento posterior a la pérdida
+    and d.miles <= match_radius_mi(new.created_at - l.created_at)          -- 3. radio propio, crece con el tiempo
+    and c.k <> 'incompatible'                                              -- 4. solo el tamaño (perros) descarta
   on conflict do nothing;
   return new;
 end $$;
 
--- ── 6. Limpieza de datos: elimina coincidencias que hoy incumplen las reglas y recalcula motivos/confianza ────────────
+-- ── 6. Limpieza de datos existentes ───────────────────────────────────────────────────────────────────────────────
+-- Se BORRAN únicamente las coincidencias que incumplen la especie o la fecha, y solo si no fueron descartadas por el usuario.
+-- Nunca se borra una coincidencia `dismissed`, ni las que solo fallan por raza/tamaño o por radio: esas se recalculan.
 delete from matches m
-using reports l, reports s, profiles p
-where m.lost_report_id = l.id and m.sighted_report_id = s.id and p.id = l.user_id
-  and (l.species <> s.species
-       or s.created_at < l.created_at
-       or st_distance(l.location, s.location) / 1609.344 > p.alert_radius_mi
-       or breed_compat(l.breed, s.breed, l.species) = 'incompatible');
+using reports l, reports s
+where m.lost_report_id = l.id and m.sighted_report_id = s.id
+  and not m.dismissed
+  and (l.species <> s.species or s.created_at < l.created_at);
 
+-- Recalcula distancia, confianza y motivos de TODAS las que quedan con las reglas nuevas. `passes_rules` marca si aún cumplen
+-- todas las reglas; my_matches() (abajo) oculta —sin borrar— las que no (p. ej. una coincidencia descartada de otra especie).
 update matches m set
   distance_mi = round((st_distance(l.location, s.location) / 1609.344)::numeric, 2),
   confidence = case when breed_compat(l.breed, s.breed, l.species) = 'exact' then 'strong'::match_confidence else 'possible'::match_confidence end,
   reasons = jsonb_build_object(
-    'same_species', true,
+    'same_species', l.species = s.species,
     'breed', breed_compat(l.breed, s.breed, l.species),
     'distance_mi', round((st_distance(l.location, s.location) / 1609.344)::numeric, 2),
-    'radius_mi', p.alert_radius_mi,
-    'seen_after_loss', true,
-    'minutes_after_loss', round((extract(epoch from (s.created_at - l.created_at)) / 60)::numeric))
-from reports l, reports s, profiles p
-where m.lost_report_id = l.id and m.sighted_report_id = s.id and p.id = l.user_id;
+    'radius_mi', match_radius_mi(s.created_at - l.created_at),
+    'seen_after_loss', s.created_at >= l.created_at,
+    'minutes_after_loss', round((extract(epoch from (s.created_at - l.created_at)) / 60)::numeric),
+    'passes_rules', (l.species = s.species
+                     and s.created_at >= l.created_at
+                     and st_distance(l.location, s.location) / 1609.344 <= match_radius_mi(s.created_at - l.created_at)
+                     and breed_compat(l.breed, s.breed, l.species) <> 'incompatible'))
+from reports l, reports s
+where m.lost_report_id = l.id and m.sighted_report_id = s.id;
 
 -- ── 7. my_matches(): ahora devuelve también cuándo se vio, la especie, la distancia y los motivos ────────────────────
 drop function if exists my_matches();
@@ -150,14 +171,15 @@ language sql stable as $$
   join reports s on s.id = m.sighted_report_id
   where l.user_id = auth.uid() and l.status = 'lost' and s.status = 'sighted'
     and s.created_at > now() - interval '48 hours'
+    and coalesce((m.reasons->>'passes_rules')::boolean, true)   -- las que ya no cumplen las reglas quedan ocultas, no borradas
   order by m.created_at desc;
 $$;
 grant execute on function my_matches() to authenticated;
 
 -- ── 8. DATOS DE PRUEBA (solo demo) ────────────────────────────────────────────────────────────────────────────────────
--- (a) El gato del avistamiento #3 se describía como "Domestic shorthair, gray tabby"; contra Luna (Siamese) no debe emparejar.
-update reports set breed = 'Gray tabby' where id = '10000000-0000-0000-0000-000000000003';
--- (b) Ejemplo coherente: un Golden Retriever visto hace 30 min a ~0.2 mi de donde se perdió Max → 'strong' para Max.
+-- Ejemplo coherente: un Golden Retriever visto hace 30 min a ~0.2 mi de donde se perdió Max → 'strong' para Max.
+-- (Con las reglas nuevas: el Beagle #2 no genera match con Max —tamaños incompatibles—; el gato #3 sí genera un 'possible' para Luna,
+--  porque una raza de gato distinta solo baja la confianza.)
 insert into reports (id, user_id, status, species, name, breed, photo_url, features_description, location, location_label, created_at)
 select '10000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000002', 'sighted', 'dog', null, 'Golden Retriever', null,
        'Golden coat, blue collar. Stayed near the park entrance and let people approach.',

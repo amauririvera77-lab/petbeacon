@@ -120,7 +120,8 @@ export type ResourceNearby = {
 // Motivos guardados por el trigger de matching (0009): por qué se generó la coincidencia.
 export type MatchReasons = {
   same_species?: boolean;
-  breed?: "exact" | "similar" | "unknown";
+  breed?: "exact" | "similar" | "different" | "unknown" | "incompatible";
+  passes_rules?: boolean;
   distance_mi?: number;
   radius_mi?: number;
   seen_after_loss?: boolean;
