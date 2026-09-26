@@ -28,7 +28,7 @@ export function ResourceCard({ resource: r, onAction }: { resource: ResourceNear
         <TagChips r={r} />
         <Text style={styles.desc}>{r.description}</Text>
         <View style={styles.foot}>
-          <Pressable accessibilityRole="button" accessibilityLabel={`${action.label}: ${r.name}`} accessibilityState={{ disabled: sample }} disabled={sample}
+          <Pressable accessibilityRole="button" accessibilityLabel={`${action.label}: ${r.name}`} accessibilityState={{ disabled: sample }}
             onPress={() => onAction(action.kind)} style={({ pressed }) => [styles.btn, sample && styles.btnOff, pressed && { backgroundColor: C.ink }]}>
             {({ pressed }) => (<><action.Icon size={14} color={sample ? C.slate500 : pressed ? C.white : C.ink} /><Text style={[styles.btnT, sample && { color: C.slate500 }, pressed && { color: C.white }]}>{action.label}</Text></>)}
           </Pressable>
@@ -57,7 +57,7 @@ export function EventResourceCard({ resource: r, onAction }: { resource: Resourc
       <Text style={styles.eDesc}>{r.description}</Text>
       <View style={styles.foot}>
         <Text style={styles.eDist}>{r.distance_mi.toFixed(1)} mi away</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel={`${action.label}: ${r.name}`} accessibilityState={{ disabled: sample }} disabled={sample}
+        <Pressable accessibilityRole="button" accessibilityLabel={`${action.label}: ${r.name}`} accessibilityState={{ disabled: sample }}
           onPress={() => onAction(action.kind)} style={({ pressed }) => [styles.eBtn, sample && styles.eBtnOff, pressed && { opacity: 0.85 }]}>
           <action.Icon size={14} color={sample ? C.slate500 : C.white} /><Text style={[styles.eBtnT, sample && { color: C.slate500 }]}>{action.label}</Text>
         </Pressable>

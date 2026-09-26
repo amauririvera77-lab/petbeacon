@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, T
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OfflineBanner } from "../../components/OfflineBanner";
 import { ScreenTitle } from "../../components/ScreenTitle";
+import { useSnackbar } from "../../components/Snackbar";
 import { EventResourceCard, ResourceCard } from "../../components/ResourceCard";
 import { ResourceModal, ResourceSheetMode } from "../../components/ResourceModal";
 import { SetupNotice } from "../../components/SetupNotice";
@@ -23,6 +24,7 @@ const SUPPORT_RADIUS_MI = 30;
 export default function Support() {
   const insets = useSafeAreaInsets();
   const { city } = useSession();
+  const snackbar = useSnackbar();
   const center = useHome();
   const now = useNow();
   const { resources, loading, error, refresh } = useResourcesState(SUPPORT_RADIUS_MI, center.lat, center.lng);
@@ -53,7 +55,8 @@ export default function Support() {
   const reset = () => { setQuery(""); setCategory("all"); };
   // Acción principal de cada tarjeta (5.3). Con datos de muestra no hace nada: la tarjeta ya la muestra deshabilitada.
   const act = (r: ResourceNearby, kind: "directions" | "learn" | "contact") => {
-    if (isSample(r)) return;
+    // Datos de muestra: el botón se ve apagado pero al tocarlo explica por qué no hace nada.
+    if (isSample(r)) { snackbar.show({ message: "This is sample data, so contact actions are turned off for now." }); return; }
     if (kind === "contact") { setMode("contact"); setContact(r); return; }
     const url = kind === "directions" ? directionsUrl(r) : webUrl(r.website_url);
     if (url) Linking.openURL(url).catch(() => Alert.alert("Couldn't open that", "Your device couldn't handle this action."));
