@@ -122,16 +122,23 @@ begin
       'Flat-faced, long white fur. Indoor cat that slipped out through the back door.',
       null,
       st_setsrid(st_makepoint(-74.044975, 40.76351), 4326)::geography, 'Paterson Plank Rd', 'whiskers.family@example.com', now() - interval '80 hours', null, '30000000-0000-0000-0000-000000000005'),
-    ('20000000-0000-0000-0000-000000000011', me, 'lost', 'dog', 'Lazy', lazy_breed,
-      lazy_photo, null, null, null,                                                  -- datos de tu mascota Lazy; sin coincidencias (perro pequeño: incompatible por tamaño con los avistamientos)
-      'Small and fluffy with a flat face. Wears a green collar.',
-      null,
-      st_setsrid(st_makepoint(-74.018217, 40.786395), 4326)::geography, 'Bergenline Ave & 56th St', '(201) 555-0100', now() - interval '20 hours', null, lazy_pet),
     ('20000000-0000-0000-0000-000000000008', demo_owner, 'reunited', 'dog', 'Biscuit', 'Labrador mix',
       'https://images.unsplash.com/photo-1585588640338-2c3dc723e638', 56, 25, 190,
       'Reunited with owner within 3 hours of the alert going live.',
       null,
       st_setsrid(st_makepoint(-74.022272, 40.781078), 4326)::geography, 'Bergenline Ave & 47th St', '(201) 555-0100', now() - interval '18 hours', now() - interval '5 hours', '30000000-0000-0000-0000-000000000006');
+
+  -- Lazy (tu mascota registrada): una mascota solo puede tener UN Lost activo (índice único, 0015). Si ya tienes un reporte Lost REAL de Lazy
+  -- (creado desde la app), se respeta y NO se añade el de demo.
+  if not exists (select 1 from reports where pet_id = lazy_pet and status = 'lost' and id::text not like '20000000-0000-0000-0000-0000000000__') then
+    insert into reports (id, user_id, status, species, name, breed, photo_url, photo_focus_x, photo_focus_y, photo_zoom,
+                       features_description, condition, location, location_label, contact_phone_or_email, created_at, reunited_at, pet_id) values
+    ('20000000-0000-0000-0000-000000000011', me, 'lost', 'dog', 'Lazy', lazy_breed,
+      lazy_photo, null, null, null,                                                  -- datos de tu mascota Lazy; sin coincidencias (perro pequeño: incompatible por tamaño con los avistamientos)
+      'Small and fluffy with a flat face. Wears a green collar.',
+      null,
+      st_setsrid(st_makepoint(-74.018217, 40.786395), 4326)::geography, 'Bergenline Ave & 56th St', '(201) 555-0100', now() - interval '20 hours', null, lazy_pet);
+  end if;
 
   select location into max_loc from reports where id = '20000000-0000-0000-0000-000000000001';
 
