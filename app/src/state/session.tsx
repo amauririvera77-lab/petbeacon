@@ -1,11 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { snapRadius } from "../lib/radius";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 export type Intent = "lost" | "seen" | "register" | "";
 
 // alertRadiusMi: radio configurable en Profile (1-10 mi, CLAUDE.md §2), usado por reports_nearby (§5.4 y §6).
 // home: centro del feed y del mapa (GPS del onboarding o ciudad geocodificada); null = aún sin resolver.
-type Persisted = { onboarded: boolean; intent: Intent; name: string; city: string; alertRadiusMi: number; home: { lat: number; lng: number } | null; pushEnabled: boolean; emailEnabled: boolean; alertsCardDismissed: boolean; notifSeenAt: number };
+type Persisted = { onboarded: boolean; intent: Intent; name: string; city: string; alertRadiusMi: number; home: { lat: number; lng: number } | null; pushEnabled: boolean; nearbyEnabled: boolean; matchEnabled: boolean; emailEnabled: boolean; alertsCardDismissed: boolean; notifSeenAt: number; avatarUrl: string | null };
 type Session = Persisted & {
   hydrated: boolean;
   update: (patch: Partial<Persisted>) => void;
@@ -13,7 +14,7 @@ type Session = Persisted & {
 };
 
 const KEY = "petbeacon.session.v1";
-const EMPTY: Persisted = { onboarded: false, intent: "", name: "", city: "", alertRadiusMi: 5, home: null, pushEnabled: true, emailEnabled: false, alertsCardDismissed: false, notifSeenAt: 0 };
+const EMPTY: Persisted = { onboarded: false, intent: "", name: "", city: "", alertRadiusMi: 5, home: null, pushEnabled: true, nearbyEnabled: true, matchEnabled: true, emailEnabled: false, alertsCardDismissed: false, notifSeenAt: 0, avatarUrl: null };
 const Ctx = createContext<Session | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
@@ -22,7 +23,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.getItem(KEY)
-      .then((raw) => raw && setState({ ...EMPTY, ...JSON.parse(raw) }))
+      .then((raw) => {
+        if (!raw) return;
+        const saved = { ...EMPTY, ...JSON.parse(raw) } as Persisted;
+        // Escala única de radios (1 / 3 / 5 / 10): un valor guardado antes (p. ej. 6) pasa al más cercano (5). useSyncRadius lo sube al perfil.
+        setState({ ...saved, alertRadiusMi: snapRadius(saved.alertRadiusMi) });
+      })
       .catch(() => {})
       .finally(() => setHydrated(true));
   }, []);

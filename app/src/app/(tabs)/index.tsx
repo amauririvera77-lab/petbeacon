@@ -46,6 +46,7 @@ import { useNotificationsFeed } from "../../hooks/useNotificationsFeed";
 import { useResourcesState } from "../../hooks/useResources";
 import { geocode, type Place } from "../../lib/geocode";
 import { activeFilterCount, applyHomeFilters, mapEventResources } from "../../lib/homeFilters";
+import { nextRadius } from "../../lib/radius";
 import { reportShareText } from "../../lib/shareText";
 import { sortReports } from "../../lib/sort";
 import { useFab } from "../../state/fab";
@@ -166,10 +167,10 @@ export default function Home() {
     setPulling(false);
   };
   // Radio siguiente (1 → 5 → 10) para el botón "Expand" de los estados vacíos.
-  const nextRadius: ViewRadius | null = prefs.viewRadiusMi === 1 ? 5 : prefs.viewRadiusMi === 5 ? 10 : null;
+  const nextR = nextRadius(prefs.viewRadiusMi);
   const noReportsInRadius = !loading && !error && reports.length === 0;
-  const emptyRadiusProps = nextRadius
-    ? { title: `No reports within ${prefs.viewRadiusMi} mi`, body: "Nothing has been reported in this area recently.", actionLabel: `Expand to ${nextRadius} mi`, onAction: () => setPrefs({ viewRadiusMi: nextRadius }) }
+  const emptyRadiusProps = nextR
+    ? { title: `No reports within ${prefs.viewRadiusMi} mi`, body: "Nothing has been reported in this area recently.", actionLabel: `Expand to ${nextR} mi`, onAction: () => setPrefs({ viewRadiusMi: nextR as ViewRadius }) }
     : { title: "No reports within 10 mi", body: "Nothing has been reported nearby recently. We'll alert you when something is." };
   const { items, unread } = useNotificationsFeed(others, matches, uid, notifSeenAt);
 

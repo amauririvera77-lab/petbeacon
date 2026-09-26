@@ -1,14 +1,34 @@
 // 1 · Welcome — contenido centrado; sin CTA: las salidas son los botones de intención y dos enlaces.
 import { Bell, Eye } from "lucide-react-native";
 import { router } from "expo-router";
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { SaveAccountSheet } from "../../components/account/SaveAccountSheet";
 import { Logo } from "../../components/Logo";
 import { OnboardingScreen } from "../../components/Screen";
+import { registerPush } from "../../lib/push";
+import { snapRadius } from "../../lib/radius";
+import { supabase } from "../../lib/supabase";
 import { Intent, useSession } from "../../state/session";
 import { C, font, radius } from "../../theme/tokens";
 
 export default function Welcome() {
   const { update } = useSession();
+  const [loginOpen, setLoginOpen] = useState(false);
+  // Tras entrar en una cuenta ya guardada se trae su perfil y se salta el onboarding.
+  const onLoggedIn = async () => {
+    setLoginOpen(false);
+    if (supabase) {
+      const { data: s } = await supabase.auth.getSession();
+      if (s.session) {
+        registerPush(s.session.user.id, null); // este teléfono vuelve a recibir los avisos de la cuenta (solo si ya dio permiso)
+        const { data: p } = await supabase.from("profiles").select("name,city,alert_radius_mi,nearby_alerts_enabled,match_updates_enabled,avatar_url").eq("id", s.session.user.id).maybeSingle();
+        if (p) update({ name: p.name, city: p.city, alertRadiusMi: snapRadius(p.alert_radius_mi), nearbyEnabled: p.nearby_alerts_enabled, matchEnabled: p.match_updates_enabled, pushEnabled: p.nearby_alerts_enabled || p.match_updates_enabled, avatarUrl: p.avatar_url });
+      }
+    }
+    update({ onboarded: true });
+    router.replace("/(tabs)");
+  };
   const pick = (intent: Intent) => {
     update({ intent });
     router.push("/signup");
@@ -35,7 +55,11 @@ export default function Welcome() {
         <Pressable accessibilityRole="link" onPress={() => router.push("/(tabs)/support")} style={[styles.link, { marginTop: 18 }]}>
           <Text style={[styles.linkT, { lineHeight: 20.3 }]}>{"Struggling to care for your pet right now?\nSee local support"}</Text>
         </Pressable>
+        <Pressable accessibilityRole="link" onPress={() => setLoginOpen(true)} style={[styles.link, { marginTop: 10 }]}>
+          <Text style={styles.linkT}>Already saved your account? Log in</Text>
+        </Pressable>
       </View>
+      <SaveAccountSheet visible={loginOpen} mode="login" onClose={() => setLoginOpen(false)} onDone={onLoggedIn} />
     </OnboardingScreen>
   );
 }

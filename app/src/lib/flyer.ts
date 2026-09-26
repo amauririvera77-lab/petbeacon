@@ -21,5 +21,14 @@ export async function loadFlyerData(id: string): Promise<{ report: FlyerReport; 
   if (error) throw new Error(error.message);
   if (!data) throw new Error("We couldn't find this report.");
   const { data: contact, error: cErr } = await supabase.rpc("my_report_contact", { report_id: id });
-  return { report: data as FlyerReport, contact: cErr ? null : (contact as string | null) };
+  let value = cErr ? null : (contact as string | null);
+  // Privacy → "Include my contact on flyers": si el dueño lo apagó, el flyer sale sin su teléfono/correo.
+  if (value) {
+    const { data: s } = await supabase.auth.getSession();
+    if (s.session) {
+      const { data: prof } = await supabase.from("profiles").select("flyer_show_contact").eq("id", s.session.user.id).maybeSingle();
+      if (prof && prof.flyer_show_contact === false) value = null;
+    }
+  }
+  return { report: data as FlyerReport, contact: value };
 }

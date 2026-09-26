@@ -15,7 +15,7 @@ export function EnableAlertsCard() {
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={styles.t}>Get alerts near you</Text>
         <Text style={styles.s}>Know right away about lost pets nearby and matches for your pet.</Text>
-        <Pressable accessibilityRole="button" onPress={enable} style={styles.btn}><Text style={styles.btnT}>Turn on notifications</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => enable()} style={styles.btn}><Text style={styles.btnT}>Turn on notifications</Text></Pressable>
       </View>
       <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" onPress={() => update({ alertsCardDismissed: true })} style={styles.x}>
         <X size={18} color={C.slate500} />

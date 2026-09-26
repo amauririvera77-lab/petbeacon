@@ -4,7 +4,7 @@ import type { SortMode } from "../lib/sort";
 
 export type AgeFilter = "24h" | "7d" | "all";
 export type SpeciesFilter = "all" | "dog" | "cat" | "other";
-export type ViewRadius = 1 | 5 | 10;
+export type ViewRadius = 1 | 3 | 5 | 10; // misma escala que el radio de alertas del perfil (lib/radius.ts)
 export type HomeView = "list" | "map";
 
 // Preferencias de la Home. Viven FUERA de la pantalla para que no se pierdan al cambiar entre List y Map ni al volver a la Home

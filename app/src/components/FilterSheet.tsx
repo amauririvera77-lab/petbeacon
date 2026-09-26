@@ -1,6 +1,7 @@
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { activeFilterCount } from "../lib/homeFilters";
+import { RADIUS_OPTIONS } from "../lib/radius";
 import { AgeFilter, Prefs, SpeciesFilter, ViewRadius } from "../state/homePrefs";
 import { C, MIN_HIT, font, radius } from "../theme/tokens";
 import { Toggle } from "./Toggle";
@@ -45,8 +46,8 @@ export function FilterSheet({ visible, prefs, onChange, onReset, onClose }: {
           <ScrollView contentContainerStyle={{ padding: 20, gap: 24 }}>
             <Pills<SpeciesFilter> label="Species" value={prefs.species} onChange={(species) => onChange({ species })}
               options={[{ value: "all", label: "All" }, { value: "dog", label: "Dogs" }, { value: "cat", label: "Cats" }, { value: "other", label: "Other" }]} />
-            <Pills<ViewRadius> label="Radius" value={prefs.viewRadiusMi} onChange={(viewRadiusMi) => onChange({ viewRadiusMi })}
-              options={[{ value: 1, label: "1 mi" }, { value: 5, label: "5 mi" }, { value: 10, label: "10 mi" }]} />
+            <Pills<ViewRadius> label="Showing within" value={prefs.viewRadiusMi} onChange={(viewRadiusMi) => onChange({ viewRadiusMi })}
+              options={RADIUS_OPTIONS.map((o) => ({ value: o, label: `${o} mi` }))} />
             <Pills<AgeFilter> label="Posted" value={prefs.age} onChange={(age) => onChange({ age })}
               options={[{ value: "24h", label: "Last 24h" }, { value: "7d", label: "Last 7 days" }, { value: "all", label: "All" }]} />
             <View style={styles.toggleRow}>

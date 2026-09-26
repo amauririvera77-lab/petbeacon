@@ -19,7 +19,13 @@ export type Profile = {
   name: string;
   city: string;
   alert_radius_mi: number;
-  push_notifications_enabled: boolean;
+  push_notifications_enabled: boolean; // heredado: = alguna de las dos siguientes activa
+  nearby_alerts_enabled: boolean; // 0018
+  match_updates_enabled: boolean;
+  avatar_url: string | null;
+  contact_email: string | null; // datos de contacto del perfil (privados); el correo de login vive en auth.users
+  contact_phone: string | null;
+  flyer_show_contact: boolean;
   email_notifications_enabled: boolean;
   push_token: string | null;
   home: string | null; // geography (EWKT al escribir)

@@ -3,7 +3,9 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { C, font, radius } from "../theme/tokens";
 
-const OPTIONS = [1, 5, 10]; // mismas opciones que el radio de la hoja de filtros (fase 4.3)
+import { RADIUS_OPTIONS } from "../lib/radius";
+
+const OPTIONS = RADIUS_OPTIONS; // la escala única de radios (1 / 3 / 5 / 10 mi), la misma de Profile y de la hoja de filtros
 
 // Chip "5 mi ⌄" del mapa (CLAUDE.md §5.4). Cambia el radio de VISUALIZACIÓN (el mismo de la hoja de filtros, no el de alertas del perfil)
 // y vuelve a consultar reports_nearby/resources_nearby con él.
@@ -13,7 +15,7 @@ export function MapRadiusChip({ value, onChange }: { value: number; onChange: (m
     <View style={styles.wrap}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Search radius, ${value} miles`}
+        accessibilityLabel={`Showing within ${value} miles`}
         accessibilityState={{ expanded: open }}
         onPress={() => setOpen((o) => !o)}
         style={styles.chip}

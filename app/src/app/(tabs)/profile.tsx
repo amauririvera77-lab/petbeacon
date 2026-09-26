@@ -1,56 +1,83 @@
 import { router, useFocusEffect } from "expo-router";
-import { ChevronRight, PawPrint, Plus, User } from "lucide-react-native";
-import { useCallback, useState } from "react";
+import { ChevronRight, PawPrint, Plus } from "lucide-react-native";
+import { useCallback, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Avatar } from "../../components/account/Avatar";
+import { SaveAccountSheet } from "../../components/account/SaveAccountSheet";
+import { Badge } from "../../components/Badge";
 import { EditLocationSheet } from "../../components/EditLocationSheet";
 import { FocusImage } from "../../components/FocusImage";
 import { OfflineBanner } from "../../components/OfflineBanner";
-import { RadiusSlider } from "../../components/RadiusSlider";
+import { RadiusChips } from "../../components/RadiusChips";
+import { useSnackbar } from "../../components/Snackbar";
 import { ToggleRow } from "../../components/ToggleRow";
+import { useAccount } from "../../hooks/useAccount";
 import { saveProfilePref, useEnablePush } from "../../hooks/useEnablePush";
-import { Badge } from "../../components/Badge";
 import { useMyReports } from "../../hooks/useMyReports";
 import { usePets } from "../../hooks/usePets";
-import { petState } from "../../lib/petStatus";
 import { logout } from "../../lib/account";
+import { petState } from "../../lib/petStatus";
 import { useSession } from "../../state/session";
 import { C, MIN_HIT, font, radius } from "../../theme/tokens";
 
-// Profile (prototipo): cabecera con avatar, nombre y ciudad editable; radio de alerta; notificaciones;
-// mascotas registradas; Help and FAQ; Log out siempre al final.
+// Profile: identidad (foto o iniciales, nombre y zona de alertas), invitación a guardar la cuenta, radio de alertas, notificaciones por categoría,
+// mascotas registradas, cuenta (editar perfil, privacidad), ayuda y cierre de sesión.
 export default function Profile() {
   const insets = useSafeAreaInsets();
-  const { name, city, alertRadiusMi, emailEnabled, update, reset } = useSession();
-  const { perm, on: pushOn, enable, disable } = useEnablePush();
+  const { name, city, alertRadiusMi, emailEnabled, avatarUrl, update, reset } = useSession();
+  const { perm, nearbyOn, matchOn, enable, disableKind } = useEnablePush();
   const { pets, refresh: refreshPets } = usePets();
   const { reports: myReports, refresh: refreshMine } = useMyReports();
+  const account = useAccount();
+  const snackbar = useSnackbar();
   const [cityOpen, setCityOpen] = useState(false);
+  const [saveOpen, setSaveOpen] = useState(false);
 
   useFocusEffect(useCallback(() => { refreshPets(); refreshMine(); }, [refreshPets, refreshMine]));
 
-  // La cuenta es anónima (sin contraseña): cerrar sesión no se puede deshacer. Se avisa antes.
-  // Se navega a "/(onboarding)" explícito: "/" es ambigua (index, (tabs)/index y (onboarding)/index resuelven todos a esa ruta).
-  const confirmLogout = () =>
-    Alert.alert(
-      "Log out?",
-      "PetBeacon doesn't use passwords yet, so once you log out you won't be able to get back to your reports and registered pets on this account.",
-      [
+  // Nombres de las mascotas con un Lost activo: para advertir al apagar "Match updates" y al cerrar sesión.
+  const lostNames = useMemo(() => myReports.filter((r) => r.status === "lost").map((r) => r.name?.trim() || "your pet"), [myReports]);
+  const lostLabel = lostNames.length === 0 ? "" : lostNames.length === 1 ? lostNames[0] : lostNames.length === 2 ? `${lostNames[0]} and ${lostNames[1]}` : "your pets";
+  const hasLost = lostNames.length > 0;
+
+  const toggleMatch = (v: boolean) => {
+    if (v) { enable("match"); return; }
+    if (!hasLost) { disableKind("match"); return; }
+    Alert.alert("Turn off match updates?", `You won't be notified if someone sees ${lostLabel}. Turn off anyway?`, [
+      { text: "Turn off", style: "destructive", onPress: () => disableKind("match") },
+      { text: "Keep on", style: "cancel" },
+    ]);
+  };
+
+  const doLogout = async () => { try { await logout(); } finally { reset(); router.replace("/(onboarding)"); } };
+  // Cerrar sesión: una cuenta anónima se pierde para siempre (se ofrece guardarla antes); una guardada se puede recuperar con el correo.
+  const confirmLogout = () => {
+    const lostNote = hasLost ? `\n\nYou won't receive match updates for ${lostLabel} while logged out.` : "";
+    if (account.isAnonymous) {
+      Alert.alert("Log out?", `Your account isn't saved yet. If you log out you'll lose access to your reports and pets forever.${lostNote}`, [
+        { text: "Save your account first", onPress: () => setSaveOpen(true) },
+        { text: "Log out anyway", style: "destructive", onPress: doLogout },
         { text: "Cancel", style: "cancel" },
-        { text: "Log out", style: "destructive", onPress: async () => { try { await logout(); } finally { reset(); router.replace("/(onboarding)"); } } },
-      ],
-    );
+      ]);
+    } else {
+      Alert.alert("Log out?", `You can log back in any time with ${account.email ?? "your email"}.${lostNote}`, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Log out", style: "destructive", onPress: doLogout },
+      ]);
+    }
+  };
 
   return (
     <View style={styles.root}>
       <View style={{ paddingTop: insets.top, backgroundColor: C.white }}>
         <OfflineBanner />
         <View style={styles.head}>
-          <View style={styles.avatar}><User size={30} color={C.teal} /></View>
+          <Avatar uri={avatarUrl} name={name} size={64} />
           <View style={{ flex: 1 }}>
             <Text style={styles.name} numberOfLines={1}>{name || "Your profile"}</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="Edit location" onPress={() => setCityOpen(true)} style={styles.cityBtn}>
-              <Text style={styles.city} numberOfLines={1}>{city || "Add your city"}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel="Edit alert area" onPress={() => setCityOpen(true)} style={styles.cityBtn}>
+              <Text style={styles.city} numberOfLines={1}>Alert area: {city || "add your city"}</Text>
               <ChevronRight size={14} color="#94A3B8" />
             </Pressable>
           </View>
@@ -58,20 +85,31 @@ export default function Profile() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: 200 }}>
-        <Text style={styles.sec}>Alert radius</Text>
-        <View style={[styles.card, { padding: 16, marginBottom: 32 }]}>
-          <View style={styles.radiusHead}>
-            <Text style={styles.radiusLabel}>Notify me about activity within</Text>
-            <Text style={styles.radiusValue}>{alertRadiusMi} mi</Text>
+        {/* Con un Lost activo y la cuenta sin guardar, la invitación es prominente: perder la cuenta sería perder el reporte. */}
+        {account.ready && account.isAnonymous && hasLost ? (
+          <View style={styles.saveCard}>
+            <Text style={styles.saveT}>Save your account</Text>
+            <Text style={styles.saveS}>{`You have an active alert for ${lostLabel}. Add your email so you never lose access to it, even if you switch phones.`}</Text>
+            <Pressable accessibilityRole="button" onPress={() => setSaveOpen(true)} style={({ pressed }) => [styles.saveBtn, pressed && { opacity: 0.85 }]}>
+              <Text style={styles.saveBtnT}>Save your account</Text>
+            </Pressable>
           </View>
-          <RadiusSlider value={alertRadiusMi} onChange={(v) => update({ alertRadiusMi: v })} showValue={false} />
+        ) : null}
+
+        <Text style={styles.sec}>Alert radius</Text>
+        <View style={[styles.card, { padding: 16, marginBottom: 32, gap: 12 }]}>
+          <Text style={styles.radiusHelp}>We'll send you notifications about lost and sighted pets within this distance of your alert area.</Text>
+          <RadiusChips value={alertRadiusMi} onChange={(v) => update({ alertRadiusMi: v })} />
         </View>
 
         <Text style={styles.sec}>Notifications</Text>
         <View style={[styles.card, { marginBottom: 32 }]}>
           <View style={styles.row}>
-            <ToggleRow title="Push alerts" subtitle="Proximity alerts and match updates" value={pushOn} onChange={(v) => (v ? enable() : disable())}
+            <ToggleRow title="Nearby alerts" subtitle="Lost and sighted pets near you" value={nearbyOn} onChange={(v) => (v ? enable("nearby") : disableKind("nearby"))}
               note={perm === "denied" ? "Notifications are off for Expo Go in iPhone Settings." : undefined} />
+          </View>
+          <View style={[styles.row, styles.divider]}>
+            <ToggleRow title="Match updates" subtitle="When someone may have seen your pet" value={matchOn} onChange={toggleMatch} />
           </View>
           <View style={[styles.row, styles.divider]}>
             <ToggleRow title="Email summaries" subtitle="Weekly digest of nearby activity" value={emailEnabled}
@@ -84,33 +122,46 @@ export default function Profile() {
           {pets.map((p) => {
             const st = petState(p.id, myReports); // Home / Lost / Reunited, derivado de sus reportes
             return (
-            <Pressable key={p.id} accessibilityRole="button" onPress={() => router.push({ pathname: "/pet", params: { id: p.id } })}
-              style={({ pressed }) => [styles.petRow, pressed && { backgroundColor: C.surface }]}>
-              <View style={styles.thumb}>
-                {p.photo_url ? <FocusImage uri={p.photo_url} style={StyleSheet.absoluteFill} /> : <PawPrint size={22} color="#94A3B8" />}
-              </View>
-              <View style={{ flex: 1 }}>
-                <View style={styles.nameRow}>
-                  <Text style={styles.petName} numberOfLines={1}>{p.name}</Text>
-                  {st.state !== "home" ? <Badge status={st.state} /> : null}
+              <Pressable key={p.id} accessibilityRole="button" onPress={() => router.push({ pathname: "/pet", params: { id: p.id } })}
+                style={({ pressed }) => [styles.listRow, pressed && { backgroundColor: C.surface }]}>
+                <View style={styles.thumb}>
+                  {p.photo_url ? <FocusImage uri={p.photo_url} style={StyleSheet.absoluteFill} /> : <PawPrint size={22} color="#94A3B8" />}
                 </View>
-                {p.breed ? <Text style={styles.petBreed}>{p.breed}</Text> : null}
-              </View>
-              <ChevronRight size={18} color="#94A3B8" />
-            </Pressable>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.nameRow}>
+                    <Text style={styles.petName} numberOfLines={1}>{p.name}</Text>
+                    {st.state !== "home" ? <Badge status={st.state} /> : null}
+                  </View>
+                  {p.breed ? <Text style={styles.petBreed}>{p.breed}</Text> : null}
+                </View>
+                <ChevronRight size={18} color="#94A3B8" />
+              </Pressable>
             );
           })}
           <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/pet", params: { id: "new" } })}
-            style={({ pressed }) => [styles.petRow, styles.addRow, pressed && { backgroundColor: C.surface }]}>
+            style={({ pressed }) => [styles.listRow, styles.addRow, pressed && { backgroundColor: C.surface }]}>
             <View style={[styles.thumb, { backgroundColor: "transparent" }]}><Plus size={22} color={C.slate700} /></View>
             <Text style={styles.addT}>{pets.length === 0 ? "Register your pet" : "Add another pet"}</Text>
           </Pressable>
         </View>
 
-        <Pressable accessibilityRole="button" onPress={() => router.push("/help")} style={({ pressed }) => [styles.helpRow, pressed && { opacity: 0.75 }]}>
-          <Text style={styles.sec2}>Help and FAQ</Text>
-          <ChevronRight size={18} color="#94A3B8" />
-        </Pressable>
+        <Text style={styles.sec}>Account</Text>
+        <View style={{ gap: 8, marginBottom: 24 }}>
+          <NavRow title="Edit profile" subtitle="Name, photo and contact details" onPress={() => router.push("/edit-profile")} />
+          <NavRow title="Privacy" subtitle="What others can see and what stays private" onPress={() => router.push("/privacy")} />
+          {account.ready && account.isAnonymous && !hasLost ? (
+            <NavRow title="Save your account" subtitle="Add your email to get back to your reports and pets from any device" onPress={() => setSaveOpen(true)} />
+          ) : null}
+          {account.ready && !account.isAnonymous ? (
+            <View style={[styles.listRow, { opacity: 0.9 }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.petName}>Account saved</Text>
+                <Text style={styles.petBreed} numberOfLines={1}>{account.email}</Text>
+              </View>
+            </View>
+          ) : null}
+          <NavRow title="Help and FAQ" onPress={() => router.push("/help")} />
+        </View>
 
         <Pressable accessibilityRole="button" onPress={confirmLogout} style={({ pressed }) => [styles.logout, pressed && { backgroundColor: "#F1F5F9" }]}>
           <Text style={styles.logoutT}>Log out</Text>
@@ -118,33 +169,47 @@ export default function Profile() {
       </ScrollView>
 
       <EditLocationSheet visible={cityOpen} onClose={() => setCityOpen(false)} />
+      <SaveAccountSheet visible={saveOpen} mode="save" onClose={() => setSaveOpen(false)} onDone={(email) => { setSaveOpen(false); snackbar.show({ message: `Account saved with ${email}` }); }} />
     </View>
+  );
+}
+
+// Fila de lista tocable: mismo estilo que las filas de mascotas.
+function NavRow({ title, subtitle, onPress }: { title: string; subtitle?: string; onPress: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.listRow, pressed && { backgroundColor: C.surface }]}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.petName}>{title}</Text>
+        {subtitle ? <Text style={styles.petBreed}>{subtitle}</Text> : null}
+      </View>
+      <ChevronRight size={18} color="#94A3B8" />
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.surface },
   head: { flexDirection: "row", alignItems: "center", gap: 16, paddingHorizontal: 16, paddingVertical: 24, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
-  avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.border, alignItems: "center", justifyContent: "center" },
   name: { fontFamily: font.head, fontSize: 20, color: C.ink },
   cityBtn: { flexDirection: "row", alignItems: "center", gap: 4, minHeight: 28, alignSelf: "flex-start" },
   city: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700, flexShrink: 1 },
+  saveCard: { gap: 8, padding: 16, marginBottom: 24, borderRadius: radius.lg, borderWidth: 2, borderColor: C.ink, backgroundColor: C.white },
+  saveT: { fontFamily: font.head, fontSize: 17, color: C.ink },
+  saveS: { fontFamily: font.bodyRegular, fontSize: 14, lineHeight: 20, color: C.slate700 },
+  saveBtn: { minHeight: 48, borderRadius: radius.md, backgroundColor: C.ink, alignItems: "center", justifyContent: "center", marginTop: 4 },
+  saveBtnT: { fontFamily: font.bodyBold, fontSize: 15, color: C.white },
   sec: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 0.72, textTransform: "uppercase", color: C.slate500, marginBottom: 12 },
-  sec2: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 0.72, textTransform: "uppercase", color: C.slate500 },
   card: { borderRadius: radius.lg, backgroundColor: C.white, borderWidth: 1, borderColor: C.border, overflow: "hidden" },
-  radiusHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-  radiusLabel: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700, flex: 1 },
-  radiusValue: { fontFamily: font.bodyBold, fontSize: 16, color: C.teal },
+  radiusHelp: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 19, color: C.slate700 },
   row: { padding: 16 },
   divider: { borderTopWidth: 1, borderTopColor: C.border },
-  petRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderRadius: radius.lg, backgroundColor: C.white, borderWidth: 1, borderColor: C.border },
+  listRow: { minHeight: MIN_HIT + 16, flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderRadius: radius.lg, backgroundColor: C.white, borderWidth: 1, borderColor: C.border },
   addRow: { borderStyle: "dashed", borderColor: C.border2 },
   thumb: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center", overflow: "hidden" },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   petName: { flexShrink: 1, fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
   petBreed: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate500 },
   addT: { flex: 1, fontFamily: font.bodyBold, fontSize: 15, color: C.slate700 },
-  helpRow: { minHeight: MIN_HIT + 8, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 16, marginBottom: 8 },
   logout: { height: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
   logoutT: { fontFamily: font.bodyBold, fontSize: 15, color: C.slate700 },
 });
