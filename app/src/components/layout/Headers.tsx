@@ -14,8 +14,8 @@ export function OnboardingHeader({ onSkip }: { onSkip?: () => void }) {
 }
 
 // Encabezado de los flujos de reporte: Back · título centrado · "n/3", y 3 barras de progreso (5 px) debajo.
-export function FlowHeader({ title, step, total = 3, accent, onBack, showBars = true, showRow = true }: {
-  title: string; step: number; total?: number; accent: string; onBack: () => void; showBars?: boolean; showRow?: boolean;
+export function FlowHeader({ title, step, total = 3, accent, onBack, showBars = true, showRow = true, showCount = true }: {
+  title: string; step: number; total?: number; accent: string; onBack: () => void; showBars?: boolean; showRow?: boolean; showCount?: boolean;
 }) {
   if (!showRow) return null;
   return (
@@ -23,7 +23,7 @@ export function FlowHeader({ title, step, total = 3, accent, onBack, showBars = 
       <View style={styles.row}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={styles.back}><ChevronLeft size={22} color={C.ink} /></Pressable>
         <Text style={styles.title} accessibilityRole="header">{title}</Text>
-        <Text style={styles.count}>{Math.min(step, total)}/{total}</Text>
+        {showCount ? <Text style={styles.count}>{Math.min(step, total)}/{total}</Text> : <View style={{ minWidth: 44 }} />}
       </View>
       {showBars ? (
         <View style={styles.bars}>

@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { MyReport } from "../hooks/useMyReports";
 import { C, MIN_HIT, font, radius } from "../theme/tokens";
-import { Badge } from "./Badge";
+import { Badge, type BadgeStatus } from "./Badge";
 import { FocusImage } from "./FocusImage";
 
 function ago(iso: string) {
@@ -20,7 +20,7 @@ export function MyReportCard({ report, matchCount, onMatches, onEdit, onMarkReun
           <View style={[styles.photo, styles.fallback]}><Text style={styles.fallbackT}>{title[0]?.toUpperCase()}</Text></View>
         )}
         <View style={styles.body}>
-          <View style={styles.head}><Badge status={report.status} /><Text style={styles.when}>{ago(report.created_at)}</Text></View>
+          <View style={styles.head}><Badge status={report.status as BadgeStatus} /><Text style={styles.when}>{ago(report.created_at)}</Text></View>
           <Text style={styles.name} numberOfLines={1}>{title}</Text>
           {report.breed ? <Text style={styles.sub} numberOfLines={1}>{report.breed}</Text> : null}
           {report.location_label ? <Text style={styles.loc} numberOfLines={1}>{report.location_label}</Text> : null}

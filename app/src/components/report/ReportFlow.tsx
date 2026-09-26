@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { ChevronRight, Dog, Mail, MapPin, Phone, Share2 } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { ChevronRight, Dog, Mail, MapPin, Phone, Plus, Share2 } from "lucide-react-native";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { FLYERS_READY } from "../../lib/flyer";
 import { Place } from "../../lib/geocode";
@@ -10,10 +10,16 @@ import { supabase } from "../../lib/supabase";
 import { validateContact } from "../../lib/validation";
 import type { Species } from "../../lib/database.types";
 import { useHome } from "../../hooks/useHome";
+import { useMyReports } from "../../hooks/useMyReports";
+import { usePets } from "../../hooks/usePets";
+import { petsAtHome } from "../../lib/petStatus";
 import { useHomePrefs } from "../../state/homePrefs";
 import { useSession } from "../../state/session";
 import { C, font, radius } from "../../theme/tokens";
 import { Cta } from "../Cta";
+import { FocusImage } from "../FocusImage";
+import { SpeciesPlaceholder } from "../SpeciesPlaceholder";
+import { useSnackbar } from "../Snackbar";
 import { TextField } from "../TextField";
 import { ConditionGrid, TypeButtons, type Condition } from "../flow/OptionButtons";
 import { PhotoDropzone } from "../flow/PhotoDropzone";
@@ -47,7 +53,14 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [petPhotoUrl, setPetPhotoUrl] = useState<string | null>(null); // foto de la mascota registrada (ya subida)
   const [petName, setPetName] = useState("");
-  const { species: speciesParam, petId } = useLocalSearchParams<{ species?: string; petId?: string }>();
+  const { species: speciesParam, petId: petIdParam } = useLocalSearchParams<{ species?: string; petId?: string }>();
+  const [petId, setPetId] = useState<string | undefined>(petIdParam);
+  const snackbar = useSnackbar();
+  // "Which pet is missing?" (desde el FAB): si el usuario tiene mascotas en estado Home, el primer paso le deja elegir una o "Another pet".
+  const [chooserDone, setChooserDone] = useState(false);
+  const { pets, loading: petsLoading } = usePets();
+  const { reports: myReports, loading: mineLoading } = useMyReports();
+  const homePets = useMemo(() => petsAtHome(pets, myReports), [pets, myReports]);
   const [species, setSpecies] = useState<Species | null>(speciesParam === "dog" || speciesParam === "cat" || speciesParam === "other" ? speciesParam : null);
   const [breed, setBreed] = useState("");
   const [features, setFeatures] = useState("");
@@ -60,9 +73,16 @@ export function ReportFlow({ kind }: { kind: Kind }) {
 
   // "Report lost" desde Pet profile: prellena nombre, tipo, raza y foto de la mascota registrada y, como esos pasos ya
   // están completos, arranca directo en "Where did you last see them?". Con "Back" se puede volver a editarlos.
-  const [petLoading, setPetLoading] = useState(!!petId);
+  const [petLoading, setPetLoading] = useState(!!petIdParam);
   useEffect(() => {
     if (!petId || !supabase) { setPetLoading(false); return; }
+    setPetLoading(true);
+    // Una mascota solo puede tener un Lost activo (también lo impone la base): si ya lo tiene, no se abre el flujo.
+    if (kind === "lost") {
+      supabase.from("reports").select("id").eq("pet_id", petId).eq("status", "lost").limit(1).then(({ data: act }) => {
+        if (act && act.length > 0) Alert.alert("Already reported", "This pet already has an active Lost report.", [{ text: "OK", onPress: () => router.back() }]);
+      });
+    }
     supabase.from("pets").select("name,species,breed,photo_url").eq("id", petId).maybeSingle().then(({ data }) => {
       if (data) {
         setPetName(data.name); setSpecies(data.species as Species); setBreed(data.breed ?? ""); setPetPhotoUrl(data.photo_url);
@@ -90,7 +110,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
     if (!c.ok || !place || !species) return;
     setPublishing(true);
     try {
-      const { id } = await publishReport({
+      const { id, petCreated } = await publishReport({
         status: kind,
         species,
         name: isLost ? petName.trim() : null,
@@ -104,6 +124,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         petId: petId ?? null,
         profile: { name: userName, city, alertRadiusMi, home },
       });
+      if (petCreated) snackbar.show({ message: `${petName.trim() || "Your pet"} was added to your pets` });
       setPublishedId(id);
       setI(steps.indexOf("done"));
     } catch (e) {
@@ -113,7 +134,8 @@ export function ReportFlow({ kind }: { kind: Kind }) {
     }
   };
 
-  if (petLoading) {
+  const chooserActive = kind === "lost" && !petIdParam && !petId && !chooserDone;
+  if (petLoading || (chooserActive && (petsLoading || mineLoading))) {
     return <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: C.white }}><ActivityIndicator color={C.teal} /></View>;
   }
 
@@ -128,6 +150,31 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   );
   const pad = { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 24 } as const;
   const publishGuard = () => { if (!publishing) publish(); };
+
+  if (chooserActive && homePets.length > 0) {
+    return (
+      <ScreenLayout header={<FlowHeader title="Report lost pet" step={1} accent={accent} onBack={close} showBars={false} showCount={false} />} contentStyle={pad}>
+        <Text style={[st.h2, { marginBottom: 8 }]}>Which pet is missing?</Text>
+        <Text style={[st.sub, { marginBottom: 24 }]}>Pick one of your pets and we'll fill in the details for you.</Text>
+        <View style={{ gap: 10 }}>
+          {homePets.map((p) => (
+            <Pressable key={p.id} accessibilityRole="button" onPress={() => setPetId(p.id)} style={({ pressed }) => [st.petPick, pressed && { backgroundColor: C.surface }]}>
+              {p.photo_url ? <FocusImage uri={p.photo_url} style={st.petThumb} /> : <SpeciesPlaceholder species={p.species} size={48} />}
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={st.petPickName} numberOfLines={1}>{p.name}</Text>
+                {p.breed ? <Text style={st.petPickBreed} numberOfLines={1}>{p.breed}</Text> : null}
+              </View>
+              <ChevronRight size={18} color={C.slate500} />
+            </Pressable>
+          ))}
+          <Pressable accessibilityRole="button" onPress={() => setChooserDone(true)} style={({ pressed }) => [st.petPick, st.petPickDashed, pressed && { backgroundColor: C.surface }]}>
+            <View style={[st.petThumb, { alignItems: "center", justifyContent: "center" }]}><Plus size={22} color={C.slate700} /></View>
+            <Text style={[st.petPickName, { flex: 1, color: C.slate700 }]}>Another pet</Text>
+          </Pressable>
+        </View>
+      </ScreenLayout>
+    );
+  }
 
   if (step === "photo") {
     return (
@@ -265,6 +312,11 @@ export function ReportFlow({ kind }: { kind: Kind }) {
 
 // Estilos del prototipo: h2 24/1.2 (Geist 600), subtítulo 14/1.5, etiquetas 13/700, contador 12.
 const st = StyleSheet.create({
+  petPick: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: C.border, backgroundColor: C.white },
+  petPickDashed: { borderStyle: "dashed", borderColor: C.border2 },
+  petThumb: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: C.surface, overflow: "hidden" },
+  petPickName: { fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
+  petPickBreed: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate500 },
   h2: { fontFamily: font.displayMedium, fontSize: 24, lineHeight: 28.8, letterSpacing: -0.24, color: C.ink },
   sub: { fontFamily: font.bodyRegular, fontSize: 14, lineHeight: 21, color: C.slate600, marginBottom: 24 },
   label: { fontFamily: font.bodyBold, fontSize: 13, color: C.slate700, marginBottom: 8 },

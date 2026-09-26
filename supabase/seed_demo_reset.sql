@@ -38,6 +38,10 @@ declare
   center        geography;
   max_loc       geography;
   has_alerted   boolean;
+  max_pet       uuid;
+  lazy_pet      uuid;
+  lazy_breed    text;
+  lazy_photo    text;
   has_event     boolean;
 begin
   me := coalesce(v_me,
@@ -75,39 +79,59 @@ begin
   where id::text like '20000000-0000-0000-0000-0000000000__'
      or id::text like '10000000-0000-0000-0000-00000000000_';
 
+  -- 1b. Mascotas registradas (Fase 1 de Profile/Pets). Max y Lazy son TUYAS: se reutilizan si ya existen (por nombre) y, si no, se crean.
+  select id into max_pet from pets where user_id = me and lower(btrim(name)) = 'max' limit 1;
+  if max_pet is null then
+    max_pet := '30000000-0000-0000-0000-000000000001';
+    insert into pets (id, user_id, name, species, breed, photo_url)
+    values (max_pet, me, 'Max', 'dog', 'Golden Retriever', 'https://images.unsplash.com/photo-1552053831-71594a27632d') on conflict (id) do nothing;
+  end if;
+  select id, breed, photo_url into lazy_pet, lazy_breed, lazy_photo from pets where user_id = me and lower(btrim(name)) = 'lazy' limit 1;
+  if lazy_pet is null then
+    lazy_pet := '30000000-0000-0000-0000-000000000002'; lazy_breed := 'Pekingese';
+    insert into pets (id, user_id, name, species, breed) values (lazy_pet, me, 'Lazy', 'dog', lazy_breed) on conflict (id) do nothing;
+  end if;
+  -- Mascotas de los usuarios demo (por id fijo; se recrean en cada corrida).
+  delete from pets where id::text like '30000000-0000-0000-0000-0000000000__' and user_id in (demo_owner, demo_reporter);
+  insert into pets (id, user_id, name, species, breed, photo_url) values
+    ('30000000-0000-0000-0000-000000000003', demo_owner, 'Luna', 'cat', 'Siamese cat', 'https://images.unsplash.com/photo-1695708794933-57424f0bf14e'),
+    ('30000000-0000-0000-0000-000000000004', demo_owner, 'Bartholomew Maximilian von Schnauzenberg', 'dog', 'Miniature Schnauzer', null),
+    ('30000000-0000-0000-0000-000000000005', demo_owner, 'Whiskers', 'cat', 'Persian', null),
+    ('30000000-0000-0000-0000-000000000006', demo_owner, 'Biscuit', 'dog', 'Labrador mix', 'https://images.unsplash.com/photo-1585588640338-2c3dc723e638');
+
   -- 2a. Reportes Lost y Reunited (primero: los avistamientos necesitan que el Lost ya exista para generar coincidencias).
   insert into reports (id, user_id, status, species, name, breed, photo_url, photo_focus_x, photo_focus_y, photo_zoom,
-                       features_description, condition, location, location_label, contact_phone_or_email, created_at, reunited_at) values
+                       features_description, condition, location, location_label, contact_phone_or_email, created_at, reunited_at, pet_id) values
     ('20000000-0000-0000-0000-000000000001', me, 'lost', 'dog', 'Max', 'Golden Retriever',
       'https://images.unsplash.com/photo-1552053831-71594a27632d', 52, 37, 190,
       'Blue collar with a silver tag, limps slightly on his left leg.',
       null,
-      st_setsrid(st_makepoint(-74.03518, 40.782693), 4326)::geography, 'Tonnelle Ave & 42nd St', '(201) 555-0100', now() - interval '3 hours', null),
+      st_setsrid(st_makepoint(-74.03518, 40.782693), 4326)::geography, 'Tonnelle Ave & 42nd St', '(201) 555-0100', now() - interval '3 hours', null, max_pet),
     ('20000000-0000-0000-0000-000000000002', demo_owner, 'lost', 'cat', 'Luna', 'Siamese cat',
       'https://images.unsplash.com/photo-1695708794933-57424f0bf14e', 50, 30, 190,
       'Very shy — may not approach strangers, please don''t chase.',
       null,
-      st_setsrid(st_makepoint(-74.01639, 40.795797), 4326)::geography, 'Kennedy Blvd & 67th St', 'luna.owner@example.com', now() - interval '30 hours', null),
+      st_setsrid(st_makepoint(-74.01639, 40.795797), 4326)::geography, 'Kennedy Blvd & 67th St', 'luna.owner@example.com', now() - interval '30 hours', null, '30000000-0000-0000-0000-000000000003'),
     ('20000000-0000-0000-0000-000000000003', demo_owner, 'lost', 'dog', 'Bartholomew Maximilian von Schnauzenberg', 'Miniature Schnauzer',
       null, null, null, null,
       'Grey and white beard, answers to Barty. Wearing a red harness.',
       null,
-      st_setsrid(st_makepoint(-74.024186, 40.791013), 4326)::geography, 'Meadowview Ave', '(201) 555-0142', now() - interval '48 hours', null),
+      st_setsrid(st_makepoint(-74.024186, 40.791013), 4326)::geography, 'Meadowview Ave', '(201) 555-0142', now() - interval '48 hours', null, '30000000-0000-0000-0000-000000000004'),
     ('20000000-0000-0000-0000-000000000004', demo_owner, 'lost', 'cat', 'Whiskers', 'Persian',
       null, null, null, null,
       'Flat-faced, long white fur. Indoor cat that slipped out through the back door.',
       null,
-      st_setsrid(st_makepoint(-74.044975, 40.76351), 4326)::geography, 'Paterson Plank Rd', 'whiskers.family@example.com', now() - interval '80 hours', null),
-    ('20000000-0000-0000-0000-000000000011', me, 'lost', 'dog', 'Lazy', 'Great Dane',
-      null, null, null, null,                                                        -- sin foto y sin coincidencias (tamaño incompatible con todos los avistamientos)
-      'Very tall and gentle, brindle coat, wearing a green collar.',
+      st_setsrid(st_makepoint(-74.044975, 40.76351), 4326)::geography, 'Paterson Plank Rd', 'whiskers.family@example.com', now() - interval '80 hours', null, '30000000-0000-0000-0000-000000000005'),
+    ('20000000-0000-0000-0000-000000000011', me, 'lost', 'dog', 'Lazy', lazy_breed,
+      lazy_photo, null, null, null,                                                  -- datos de tu mascota Lazy; sin coincidencias (perro pequeño: incompatible por tamaño con los avistamientos)
+      'Small and fluffy with a flat face. Wears a green collar.',
       null,
-      st_setsrid(st_makepoint(-74.018217, 40.786395), 4326)::geography, 'Bergenline Ave & 56th St', '(201) 555-0100', now() - interval '20 hours', null),
+      st_setsrid(st_makepoint(-74.018217, 40.786395), 4326)::geography, 'Bergenline Ave & 56th St', '(201) 555-0100', now() - interval '20 hours', null, lazy_pet),
     ('20000000-0000-0000-0000-000000000008', demo_owner, 'reunited', 'dog', 'Biscuit', 'Labrador mix',
       'https://images.unsplash.com/photo-1585588640338-2c3dc723e638', 56, 25, 190,
       'Reunited with owner within 3 hours of the alert going live.',
       null,
-      st_setsrid(st_makepoint(-74.022272, 40.781078), 4326)::geography, 'Bergenline Ave & 47th St', '(201) 555-0100', now() - interval '18 hours', now() - interval '5 hours');
+      st_setsrid(st_makepoint(-74.022272, 40.781078), 4326)::geography, 'Bergenline Ave & 47th St', '(201) 555-0100', now() - interval '18 hours', now() - interval '5 hours', '30000000-0000-0000-0000-000000000006');
 
   select location into max_loc from reports where id = '20000000-0000-0000-0000-000000000001';
 

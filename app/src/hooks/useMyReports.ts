@@ -5,8 +5,8 @@ import { useAuthUser } from "./useAuthUser";
 
 // Sin `contact_phone_or_email`: esa columna solo la lee el dueño vía my_report_contact() (migración 0003).
 // alerted_count: número de vecinos alertados por push (migración 0010). Es null/ausente en reportes anteriores o antes de aplicarla.
-export type MyReport = Pick<Report, "id" | "status" | "species" | "name" | "breed" | "photo_url" | "photo_focus_x" | "photo_focus_y" | "photo_zoom" | "features_description" | "location_label" | "created_at" | "reunited_at"> & { alerted_count?: number | null };
-const COLS_BASE = "id,status,species,name,breed,photo_url,photo_focus_x,photo_focus_y,photo_zoom,features_description,location_label,created_at,reunited_at";
+export type MyReport = Pick<Report, "id" | "status" | "species" | "name" | "breed" | "photo_url" | "photo_focus_x" | "photo_focus_y" | "photo_zoom" | "features_description" | "location_label" | "created_at" | "reunited_at" | "pet_id"> & { alerted_count?: number | null };
+const COLS_BASE = "id,status,species,name,breed,photo_url,photo_focus_x,photo_focus_y,photo_zoom,features_description,location_label,created_at,reunited_at,pet_id";
 const COLS_WITH_COUNT = `${COLS_BASE},alerted_count`;
 
 export function useMyReports() {

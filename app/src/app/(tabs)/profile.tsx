@@ -9,7 +9,10 @@ import { OfflineBanner } from "../../components/OfflineBanner";
 import { RadiusSlider } from "../../components/RadiusSlider";
 import { ToggleRow } from "../../components/ToggleRow";
 import { saveProfilePref, useEnablePush } from "../../hooks/useEnablePush";
+import { Badge } from "../../components/Badge";
+import { useMyReports } from "../../hooks/useMyReports";
 import { usePets } from "../../hooks/usePets";
+import { petState } from "../../lib/petStatus";
 import { logout } from "../../lib/account";
 import { useSession } from "../../state/session";
 import { C, MIN_HIT, font, radius } from "../../theme/tokens";
@@ -21,9 +24,10 @@ export default function Profile() {
   const { name, city, alertRadiusMi, emailEnabled, update, reset } = useSession();
   const { perm, on: pushOn, enable, disable } = useEnablePush();
   const { pets, refresh: refreshPets } = usePets();
+  const { reports: myReports, refresh: refreshMine } = useMyReports();
   const [cityOpen, setCityOpen] = useState(false);
 
-  useFocusEffect(useCallback(() => { refreshPets(); }, [refreshPets]));
+  useFocusEffect(useCallback(() => { refreshPets(); refreshMine(); }, [refreshPets, refreshMine]));
 
   // La cuenta es anónima (sin contraseña): cerrar sesión no se puede deshacer. Se avisa antes.
   // Se navega a "/(onboarding)" explícito: "/" es ambigua (index, (tabs)/index y (onboarding)/index resuelven todos a esa ruta).
@@ -77,19 +81,25 @@ export default function Profile() {
 
         <Text style={styles.sec}>Registered pets</Text>
         <View style={{ gap: 8, marginBottom: 32 }}>
-          {pets.map((p) => (
+          {pets.map((p) => {
+            const st = petState(p.id, myReports); // Home / Lost / Reunited, derivado de sus reportes
+            return (
             <Pressable key={p.id} accessibilityRole="button" onPress={() => router.push({ pathname: "/pet", params: { id: p.id } })}
               style={({ pressed }) => [styles.petRow, pressed && { backgroundColor: C.surface }]}>
               <View style={styles.thumb}>
                 {p.photo_url ? <FocusImage uri={p.photo_url} style={StyleSheet.absoluteFill} /> : <PawPrint size={22} color="#94A3B8" />}
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.petName}>{p.name}</Text>
+                <View style={styles.nameRow}>
+                  <Text style={styles.petName} numberOfLines={1}>{p.name}</Text>
+                  {st.state !== "home" ? <Badge status={st.state} /> : null}
+                </View>
                 {p.breed ? <Text style={styles.petBreed}>{p.breed}</Text> : null}
               </View>
               <ChevronRight size={18} color="#94A3B8" />
             </Pressable>
-          ))}
+            );
+          })}
           <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/pet", params: { id: "new" } })}
             style={({ pressed }) => [styles.petRow, styles.addRow, pressed && { backgroundColor: C.surface }]}>
             <View style={[styles.thumb, { backgroundColor: "transparent" }]}><Plus size={22} color={C.slate700} /></View>
@@ -130,7 +140,8 @@ const styles = StyleSheet.create({
   petRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderRadius: radius.lg, backgroundColor: C.white, borderWidth: 1, borderColor: C.border },
   addRow: { borderStyle: "dashed", borderColor: C.border2 },
   thumb: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center", overflow: "hidden" },
-  petName: { fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  petName: { flexShrink: 1, fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
   petBreed: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate500 },
   addT: { flex: 1, fontFamily: font.bodyBold, fontSize: 15, color: C.slate700 },
   helpRow: { minHeight: MIN_HIT + 8, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 16, marginBottom: 8 },

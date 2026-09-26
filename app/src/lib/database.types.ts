@@ -6,7 +6,9 @@
 // firma de índice explícita (los alias de tipo sí). Con `interface`, TS descarta el genérico
 // `Database` y `rpc()` pierde el tipado de sus argumentos.
 
-export type ReportStatus = "lost" | "sighted" | "reunited";
+// closed = Lost cerrado sin reencuentro; resolved = avistamiento resuelto (migración 0014). Ninguno sale en el feed ni en el mapa.
+export type LiveReportStatus = "lost" | "sighted" | "reunited"; // los únicos que devuelven el feed y el mapa
+export type ReportStatus = LiveReportStatus | "closed" | "resolved";
 export type Species = "dog" | "cat" | "other";
 export type ResourceCategory = "food" | "foster" | "legal";
 export type ReportCondition = "calm" | "scared" | "injured" | "unsure";
@@ -84,7 +86,7 @@ export type MatchRow = {
 // Forma de retorno de la función SQL reports_nearby() (0001_init.sql).
 export type ReportNearby = {
   id: string;
-  status: ReportStatus;
+  status: LiveReportStatus;
   species: Species;
   name: string | null;
   breed: string | null;
