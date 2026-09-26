@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
 import type { ReportNearby, ResourceNearby } from "../../lib/database.types";
@@ -15,13 +15,18 @@ type Props = {
   radiusMi: number;
   focus?: { lat: number; lng: number } | null; // zona/dirección buscada: la cámara vuela allí
   mineIds?: string[]; // ids de los reportes del propio usuario (llevan aro y etiqueta "Your report")
-  me?: { lat: number; lng: number } | null; // ubicación actual del dispositivo (punto negro pulsante)
+  me?: { lat: number; lng: number; accuracy?: number | null } | null; // ubicación actual del dispositivo (punto negro pulsante + halo de precisión)
+  alertRadiusMi?: number; // radio de alertas del perfil: se dibuja centrado en `me`
+  selectedId?: string | null; // pin seleccionado (más grande y por encima)
   onSelect: (s: MapSelection) => void;
 };
 
 // Mapbox GL JS dentro de un WebView (funciona en Expo Go; el SDK nativo requeriría development build).
-export function MapboxWebView({ token, reports, resources, center, radiusMi, me, mineIds, focus, onSelect }: Props) {
+export type MapHandle = { recenter: () => void };
+
+export const MapboxWebView = forwardRef<MapHandle, Props>(function MapboxWebView({ token, reports, resources, center, radiusMi, alertRadiusMi, selectedId, me, mineIds, focus, onSelect }, handle) {
   const ref = useRef<WebView>(null);
+  useImperativeHandle(handle, () => ({ recenter: () => ref.current?.injectJavaScript("window.__recenter && window.__recenter(); true;") }), []);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const html = useMemo(() => buildMapHtml(token), [token]);
@@ -30,13 +35,15 @@ export function MapboxWebView({ token, reports, resources, center, radiusMi, me,
     const payload = {
       center: [center.lng, center.lat],
       radiusMi,
-      me: me ? { lat: me.lat, lng: me.lng } : null,
+      alertRadiusMi: alertRadiusMi ?? radiusMi,
+      selectedId: selectedId ?? null,
+      me: me ? { lat: me.lat, lng: me.lng, accuracy: me.accuracy ?? null } : null,
       focus: focus ? { lat: focus.lat, lng: focus.lng } : null,
       reports: reports.map((r) => ({ id: r.id, status: r.status, lat: r.lat, lng: r.lng, mine: mineIds?.includes(r.id) ?? false })),
       resources: resources.map((r) => ({ id: r.id, lat: r.lat, lng: r.lng })),
     };
     ref.current?.injectJavaScript(`window.__update(${JSON.stringify(payload)}); true;`);
-  }, [reports, resources, center.lat, center.lng, radiusMi, me?.lat, me?.lng, mineIds, focus?.lat, focus?.lng]);
+  }, [reports, resources, center.lat, center.lng, radiusMi, alertRadiusMi, selectedId, me?.lat, me?.lng, me?.accuracy, mineIds, focus?.lat, focus?.lng]);
 
   useEffect(() => { if (ready) push(); }, [ready, push]);
 
@@ -74,7 +81,7 @@ export function MapboxWebView({ token, reports, resources, center, radiusMi, me,
       ) : null}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: C.surface },

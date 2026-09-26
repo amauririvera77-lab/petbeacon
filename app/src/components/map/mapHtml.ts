@@ -34,16 +34,17 @@ export function buildMapHtml(token: string): string {
   map.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-left");
   map.touchZoomRotate.disableRotation();
 
-  var loaded = false, pending = null, lastRadius = null, meOn = false, lastFocus = null;
+  var loaded = false, pending = null, lastP = null, lastRadius = null, meOn = false, lastFocus = null;
 
+  // Pin en gota (fase 5.3): la PUNTA es el punto exacto del reporte (icon-anchor "bottom"); el ícono va en la cabeza.
   function pinSvg(color, inner) {
-    return '<svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 44 44">' +
-      '<circle cx="22" cy="22" r="19" fill="' + color + '" stroke="#fff" stroke-width="3"/>' +
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="88" height="112" viewBox="0 0 44 56">' +
+      '<path d="M22 54C22 54 3 34 3 22a19 19 0 0 1 38 0C41 34 22 54 22 54Z" fill="' + color + '" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>' +
       '<g transform="translate(10 10)" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + inner + '</g></svg>';
   }
   function loadIcon(name, color, inner) {
     return new Promise(function (resolve) {
-      var img = new Image(88, 88);
+      var img = new Image(88, 112);
       img.onload = function () { if (!map.hasImage(name)) map.addImage(name, img, { pixelRatio: 2 }); resolve(); };
       img.onerror = resolve;
       img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(pinSvg(color, inner));
@@ -66,15 +67,22 @@ export function buildMapHtml(token: string): string {
     var feats = [];
     (p.reports || []).forEach(function (r) {
       feats.push({ type: "Feature", geometry: { type: "Point", coordinates: [r.lng, r.lat] },
-        properties: { kind: "report", rid: r.id, icon: r.status, mine: !!r.mine } });
+        properties: { kind: "report", rid: r.id, icon: r.status, mine: !!r.mine, sel: r.id === p.selectedId } });
     });
     (p.resources || []).forEach(function (r) {
       feats.push({ type: "Feature", geometry: { type: "Point", coordinates: [r.lng, r.lat] },
         properties: { kind: "resource", rid: r.id, icon: "resource" } });
     });
     map.getSource("items").setData({ type: "FeatureCollection", features: feats });
+    lastP = p;
+    // Círculo del radio de ALERTA centrado en tu ubicación real (o en tu zona si no hay GPS). El encuadre sigue el radio de vista.
+    var ac = p.me ? [p.me.lng, p.me.lat] : p.center;
+    map.getSource("radius").setData({ type: "Feature", geometry: { type: "Polygon", coordinates: [circle(ac[0], ac[1], p.alertRadiusMi || p.radiusMi)] } });
     var ring = circle(p.center[0], p.center[1], p.radiusMi);
-    map.getSource("radius").setData({ type: "Feature", geometry: { type: "Polygon", coordinates: [ring] } });
+    // Halo de precisión: radio real del GPS en metros (con tope, para que un fix malo no cubra media ciudad).
+    map.getSource("accuracy").setData(p.me && p.me.accuracy
+      ? { type: "Feature", geometry: { type: "Polygon", coordinates: [circle(p.me.lng, p.me.lat, Math.min(p.me.accuracy, 400) / 1609.344)] } }
+      : { type: "FeatureCollection", features: [] });
     meOn = !!p.me;   // punto "tú": ubicación actual del dispositivo (null si no hay permiso)
     map.getSource("me").setData(p.me
       ? { type: "Feature", geometry: { type: "Point", coordinates: [p.me.lng, p.me.lat] }, properties: {} }
@@ -97,6 +105,11 @@ export function buildMapHtml(token: string): string {
     }
   }
 
+  window.__recenter = function () {
+    if (!lastP) return;
+    var c = lastP.me ? [lastP.me.lng, lastP.me.lat] : lastP.center;
+    map.flyTo({ center: c, zoom: 14, duration: 600 });
+  };
   window.__update = function (p) { if (loaded) apply(p); else pending = p; };
 
   map.on("load", function () {
@@ -114,7 +127,7 @@ export function buildMapHtml(token: string): string {
         layout: { "text-field": ["get", "point_count_abbreviated"], "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-size": 14, "text-allow-overlap": true },
         paint: { "text-color": "#fff" } });
       map.addLayer({ id: "pins", type: "symbol", source: "items", filter: ["!", ["has", "point_count"]],
-        layout: { "icon-image": ["concat", "pin-", ["get", "icon"]], "icon-allow-overlap": true, "icon-size": 0.9 } });
+        layout: { "icon-image": ["concat", "pin-", ["get", "icon"]], "icon-anchor": "bottom", "icon-allow-overlap": true, "icon-size": ["case", ["==", ["get", "sel"], true], 1.1, 0.9], "symbol-sort-key": ["case", ["==", ["get", "sel"], true], 1, 0] } });
 
       // Resultado de la búsqueda de zona: punto blanco con borde ink (distinto del punto negro de "tú").
       map.addSource("focus", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
@@ -122,16 +135,19 @@ export function buildMapHtml(token: string): string {
 
       // Reportes propios ("Your report"): aro negro bajo el pin y etiqueta encima.
       map.addLayer({ id: "pins-mine-ring", type: "circle", source: "items", filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "mine"], true]],
-        paint: { "circle-radius": 24, "circle-color": "rgba(0,0,0,0)", "circle-stroke-width": 2.5, "circle-stroke-color": "${C.ink}" } }, "pins");
+        paint: { "circle-radius": 25, "circle-translate": [0, -30], "circle-color": "rgba(0,0,0,0)", "circle-stroke-width": 2.5, "circle-stroke-color": "${C.ink}" } }, "pins");
       map.addLayer({ id: "pins-mine-label", type: "symbol", source: "items", filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "mine"], true]],
-        layout: { "text-field": "Your report", "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-size": 11, "text-offset": [0, -2.6], "text-anchor": "bottom", "text-allow-overlap": true },
+        layout: { "text-field": "Your report", "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-size": 11, "text-offset": [0, -5.9], "text-anchor": "bottom", "text-allow-overlap": true },
         paint: { "text-color": "${C.ink}", "text-halo-color": "#fff", "text-halo-width": 2 } });
 
-      // Ubicación actual (prototipo): punto negro de 16px con borde blanco de 3px y anillo que pulsa cada 2s.
-      // Se inserta debajo de los clusters y pines para no taparlos.
+      // Ubicación actual: SIEMPRE por encima de clusters y pines (se añade la última, sin capa de referencia).
+      // Halo de precisión (radio real del GPS), anillo que pulsa cada 2 s y punto negro de 16 px con borde blanco de 3 px.
+      map.addSource("accuracy", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addLayer({ id: "me-accuracy", type: "fill", source: "accuracy", paint: { "fill-color": "#000", "fill-opacity": 0.1 } });
+      map.addLayer({ id: "me-accuracy-line", type: "line", source: "accuracy", paint: { "line-color": "#000", "line-opacity": 0.25, "line-width": 1 } });
       map.addSource("me", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-      map.addLayer({ id: "me-halo", type: "circle", source: "me", paint: { "circle-color": "#2A6B63", "circle-radius": 8, "circle-opacity": 0.45 } }, "clusters");
-      map.addLayer({ id: "me-dot", type: "circle", source: "me", paint: { "circle-color": "#000000", "circle-radius": 8, "circle-stroke-width": 3, "circle-stroke-color": "#ffffff" } }, "clusters");
+      map.addLayer({ id: "me-halo", type: "circle", source: "me", paint: { "circle-color": "#2A6B63", "circle-radius": 8, "circle-opacity": 0.45 } });
+      map.addLayer({ id: "me-dot", type: "circle", source: "me", paint: { "circle-color": "#000000", "circle-radius": 8, "circle-stroke-width": 3, "circle-stroke-color": "#ffffff" } });
       var t0 = performance.now();
       (function pulse(now) {
         if (meOn && map.getLayer("me-halo")) {

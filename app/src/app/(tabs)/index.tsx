@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from "expo-router";
-import { X } from "lucide-react-native";
+import { LocateFixed, X } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,7 +11,7 @@ import { MapRadiusChip } from "../../components/MapRadiusChip";
 import { PinDetailSheet } from "../../components/PinDetailSheet";
 import { MatchesSheet } from "../../components/MatchesSheet";
 import { MyReportCarousel } from "../../components/MyReportCarousel";
-import { MapboxWebView } from "../../components/map/MapboxWebView";
+import { MapboxWebView, type MapHandle } from "../../components/map/MapboxWebView";
 import { useSnackbar } from "../../components/Snackbar";
 import { ReunitedCelebration } from "../../components/ReunitedCelebration";
 import { NotificationsSheet } from "../../components/NotificationsSheet";
@@ -56,7 +56,9 @@ export default function Home() {
   const [sheetResource, setSheetResource] = useState<ResourceNearby | null>(null);
   const [sheetMode, setSheetMode] = useState<ResourceSheetMode>("detail");
   const openResource = (r: ResourceNearby) => { setSheetMode("detail"); setSheetResource(r); };
-  const { city, notifSeenAt, update } = useSession();
+  const { city, alertRadiusMi, notifSeenAt, update } = useSession();
+  const mapRef = useRef<MapHandle>(null);
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const { prefs, setPrefs, setSort, resetFilters, listQuery, setListQuery, mapQuery, setMapQuery } = useHomePrefs();
   const { setCollapsed } = useFab();
   const uid = useAuthUser();
@@ -72,6 +74,8 @@ export default function Home() {
   const mapReports = useMemo(() => applyHomeFilters(reports, prefs), [reports, prefs]);
   const featured = resources.find((r) => r.is_featured_event) ?? null;
   // Orden elegido (persiste al cambiar List/Map y al volver a la Home). Por defecto: más recientes primero.
+  // Tarjeta de vista previa del pin tocado (misma ReportCard del feed); si un filtro lo oculta, desaparece sola.
+  const preview = useMemo(() => mapReports.find((r) => r.id === previewId) ?? null, [mapReports, previewId]);
   const sorted = useMemo(() => sortReports(listFiltered, prefs.sort), [listFiltered, prefs.sort]);
   // El recurso comunitario va al final del feed o, como máximo, tras 9 reportes: nunca entre los primeros resultados.
   const resourceAt = Math.min(9, sorted.length);
@@ -92,7 +96,7 @@ export default function Home() {
     lastY.current = y;
     setCollapsed(y > 24 && dy > 0);
   }, [setCollapsed]);
-  useEffect(() => { if (view === "map") setCollapsed(false); }, [view, setCollapsed]);
+  useEffect(() => { if (view === "map") setCollapsed(false); else setPreviewId(null); }, [view, setCollapsed]);
   useFocusEffect(useCallback(() => () => setCollapsed(false), [setCollapsed]));
 
   // Búsqueda de zona o dirección (modo Map): geocodifica cerca de tu centro y la cámara vuela allí.
@@ -166,12 +170,20 @@ export default function Home() {
             <View style={styles.pad}><SetupNotice /></View>
           ) : (
             <>
-              <MapboxWebView token={MAPBOX_TOKEN} reports={mapReports} resources={resources} center={center} radiusMi={prefs.viewRadiusMi} me={me} mineIds={mineIds} focus={focus} onSelect={(sel) => {
-                if (!sel) return;
-                if (sel.kind === "resource") { const r = resources.find((x) => x.id === sel.id); if (r) openResource(r); }
-                else { const r = reports.find((x) => x.id === sel.id); if (r) setPinReport(r); }
+              <MapboxWebView ref={mapRef} alertRadiusMi={alertRadiusMi} selectedId={preview?.id ?? null} token={MAPBOX_TOKEN} reports={mapReports} resources={resources} center={center} radiusMi={prefs.viewRadiusMi} me={me} mineIds={mineIds} focus={focus} onSelect={(sel) => {
+                if (!sel) { setPreviewId(null); return; }
+                if (sel.kind === "resource") { setPreviewId(null); const r = resources.find((x) => x.id === sel.id); if (r) openResource(r); }
+                else setPreviewId(sel.id);
               }} />
               <MapRadiusChip value={prefs.viewRadiusMi} onChange={(mi) => setPrefs({ viewRadiusMi: mi as ViewRadius })} />
+              <Pressable accessibilityRole="button" accessibilityLabel="Center map on my location" onPress={() => mapRef.current?.recenter()} style={styles.recenter}>
+                <LocateFixed size={22} color={C.ink} />
+              </Pressable>
+              {preview ? (
+                <View style={styles.preview}>
+                  <ReportCard report={preview} mine={mineIds.includes(preview.id)} onPress={() => setPinReport(preview)} />
+                </View>
+              ) : null}
               {focus ? (
                 <Pressable accessibilityRole="button" accessibilityLabel="Clear searched area" onPress={() => { setFocus(null); setMapQuery(""); }} style={styles.focusChip}>
                   <Text style={styles.focusT} numberOfLines={1}>{focus.label}</Text>
@@ -232,6 +244,9 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.surface },
   controls: { paddingHorizontal: 16, paddingVertical: 10, gap: 10, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
   chipRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 },
+  recenter: { position: "absolute", right: 16, bottom: 16 + 73 + 12, width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: C.white, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
+  // Deja libre la columna derecha del FAB (73 px + márgenes).
+  preview: { position: "absolute", left: 12, right: 16 + 73 + 8, bottom: 16, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 4 },
   focusChip: { position: "absolute", top: 12, right: 12, maxWidth: "55%", minHeight: 44, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: C.white, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
   focusT: { flexShrink: 1, fontFamily: font.bodyBold, fontSize: 13, color: C.ink },
   noMatch: { alignItems: "center", gap: 12, padding: 24, borderRadius: radius.lg, borderWidth: 1, borderStyle: "dashed", borderColor: C.border2, backgroundColor: C.white },
