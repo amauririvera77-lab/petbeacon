@@ -7,7 +7,8 @@
 --   1. Borra SOLO las filas de demo, por ID fijo: los reportes '20000000-0000-0000-0000-0000000000NN' y los del seed antiguo
 --      '10000000-0000-0000-0000-00000000000N' (sus coincidencias caen en cascada). No toca nada más: ni tus reportes reales,
 --      ni perfiles, ni mascotas, ni recursos.
---   2. Recrea 9 reportes con fechas relativas a now(), ubicados a distancias reales de un centro (ver AJUSTES):
+--   2. Recrea 9 reportes con fechas relativas a now(), en direcciones reales de North Bergen / Union City (coordenadas fijas
+--      obtenidas con geocoding; el avistamiento Golden se ubica a 320 m de Max para que genere la coincidencia STRONG):
 --        Lost      Max (Golden, TUYO, 3 h, 0.4 mi) · Luna (gata Siamese, 30 h, 2.0 mi) · "Bartholomew Maximilian von Schnauzenberg"
 --                  (nombre largo, 48 h, 3.2 mi, sin foto) · Whiskers (gato Persian, 80 h, 4.5 mi, sin foto)
 --        Sighted   Golden Retriever SIN FOTO (30 min, a 0.2 mi de Max → coincidencia STRONG para Max) · Beagle mix (1 h, 0.9 mi →
@@ -25,7 +26,7 @@ declare
   -- ── AJUSTES ───────────────────────────────────────────────────────────────────────────────────────────────────────
   v_me          uuid             := null;   -- tu id en Authentication → Users. null = el perfil real (no demo) creado más recientemente
   v_center_lng  double precision := null;   -- centro de la demo. null = tu ubicación base (profiles.home) o, si no hay, White Plains
-  v_center_lat  double precision := null;   --   p. ej. North Bergen: lng -74.0068, lat 40.8015
+  v_center_lat  double precision := null;   --   (solo informativo: las posiciones de los reportes ahora son coordenadas fijas de North Bergen)
   v_send_push   boolean          := false;  -- true = deja activos los triggers que envían push reales
   -- ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   demo_owner    constant uuid := '00000000-0000-0000-0000-000000000001';
@@ -77,23 +78,23 @@ begin
     ('20000000-0000-0000-0000-000000000001', me, 'lost', 'dog', 'Max', 'Golden Retriever',
       'https://images.unsplash.com/photo-1552053831-71594a27632d', 52, 37, 190,
       'Blue collar with a silver tag, limps slightly on his left leg.',
-      st_project(center, 640, radians(40))::geography, 'near Maple Park', '(914) 555-0100', now() - interval '3 hours', null),
+      st_setsrid(st_makepoint(-74.03518, 40.782693), 4326)::geography, 'Tonnelle Ave & 42nd St', '(201) 555-0100', now() - interval '3 hours', null),
     ('20000000-0000-0000-0000-000000000002', demo_owner, 'lost', 'cat', 'Luna', 'Siamese cat',
       'https://images.unsplash.com/photo-1695708794933-57424f0bf14e', 50, 30, 190,
       'Very shy — may not approach strangers, please don''t chase.',
-      st_project(center, 3200, radians(200))::geography, 'Birchwood Ln', 'luna.owner@example.com', now() - interval '30 hours', null),
+      st_setsrid(st_makepoint(-74.01639, 40.795797), 4326)::geography, 'Kennedy Blvd & 67th St', 'luna.owner@example.com', now() - interval '30 hours', null),
     ('20000000-0000-0000-0000-000000000003', demo_owner, 'lost', 'dog', 'Bartholomew Maximilian von Schnauzenberg', 'Miniature Schnauzer',
       null, null, null, null,
       'Grey and white beard, answers to Barty. Wearing a red harness.',
-      st_project(center, 5150, radians(300))::geography, 'Lakeview Ave', '(914) 555-0142', now() - interval '48 hours', null),
+      st_setsrid(st_makepoint(-74.024186, 40.791013), 4326)::geography, 'Meadowview Ave', '(201) 555-0142', now() - interval '48 hours', null),
     ('20000000-0000-0000-0000-000000000004', demo_owner, 'lost', 'cat', 'Whiskers', 'Persian',
       null, null, null, null,
       'Flat-faced, long white fur. Indoor cat that slipped out through the back door.',
-      st_project(center, 7250, radians(120))::geography, 'Grand St', 'whiskers.family@example.com', now() - interval '80 hours', null),
+      st_setsrid(st_makepoint(-74.044975, 40.76351), 4326)::geography, 'Paterson Plank Rd', 'whiskers.family@example.com', now() - interval '80 hours', null),
     ('20000000-0000-0000-0000-000000000008', demo_owner, 'reunited', 'dog', 'Biscuit', 'Labrador mix',
       'https://images.unsplash.com/photo-1585588640338-2c3dc723e638', 56, 25, 190,
       'Reunited with owner within 3 hours of the alert going live.',
-      st_project(center, 2570, radians(20))::geography, 'near Maple Park', '(914) 555-0100', now() - interval '18 hours', now() - interval '5 hours');
+      st_setsrid(st_makepoint(-74.022272, 40.781078), 4326)::geography, 'Bergenline Ave & 47th St', '(201) 555-0100', now() - interval '18 hours', now() - interval '5 hours');
 
   select location into max_loc from reports where id = '20000000-0000-0000-0000-000000000001';
 
@@ -103,19 +104,19 @@ begin
     ('20000000-0000-0000-0000-000000000005', demo_reporter, 'sighted', 'dog', null, 'Golden Retriever',
       null, null, null, null,                                                        -- SIN FOTO a propósito (muestra la silueta)
       'Golden coat, blue collar. Stayed near the park entrance and let people approach.',
-      st_project(max_loc, 320, radians(60))::geography, 'Maple Park entrance', null, now() - interval '30 minutes', null),
+      st_project(max_loc, 320, radians(60))::geography, 'Near Tonnelle Ave & 42nd St', null, now() - interval '30 minutes', null),
     ('20000000-0000-0000-0000-000000000006', demo_reporter, 'sighted', 'dog', null, 'Beagle mix',
       'https://images.unsplash.com/photo-1703721025121-26d64508482b', 28, 46, 150,
       'No collar visible. Friendly, approached the reporter calmly.',
-      st_project(center, 1450, radians(100))::geography, '5th Ave & Elm St', null, now() - interval '1 hour', null),
+      st_setsrid(st_makepoint(-74.022914, 40.78319), 4326)::geography, 'Kennedy Blvd & 50th St', null, now() - interval '1 hour', null),
     ('20000000-0000-0000-0000-000000000007', demo_reporter, 'sighted', 'cat', null, 'Domestic shorthair, gray tabby',
       'https://images.unsplash.com/photo-1557735802-ef14538b00a4', 43, 35, 240,
       'Skittish — seen hiding under a porch, did not approach.',
-      st_project(center, 1770, radians(250))::geography, 'Oak Street', null, now() - interval '6 hours', null),
+      st_setsrid(st_makepoint(-74.014293, 40.799959), 4326)::geography, 'Kennedy Blvd & 73rd St', null, now() - interval '6 hours', null),
     ('20000000-0000-0000-0000-000000000009', demo_reporter, 'sighted', 'dog', null, 'Labrador mix',
       null, null, null, null,
       'Black lab mix, no collar, drinking from a puddle.',
-      st_project(center, 4300, radians(330))::geography, 'Riverside Dr', null, now() - interval '40 hours', null);
+      st_setsrid(st_makepoint(-74.011318, 40.795557), 4326)::geography, 'Bergenline Ave & 69th St', null, now() - interval '40 hours', null);
 
   -- 3. Evento con fecha concreta (0011) y conteo de demostración (0010), solo si esas columnas existen.
   select exists (select 1 from information_schema.columns where table_name = 'resources' and column_name = 'event_date') into has_event;
@@ -127,6 +128,27 @@ begin
   if has_alerted then
     execute $q$update reports set alerted_count = 14 where id = '20000000-0000-0000-0000-000000000001'$q$;
   end if;
+
+  -- 4. (mudanza a North Bergen) Borra los reportes de prueba Lost 'Lazy', 'Champion' y 'Firulai' (por ID exacto; coincidencias en cascada).
+  delete from reports where id in (
+    '15739402-f80e-43f0-ab66-b0be4e1b8b53',   -- Lazy (Lost)
+    '8137f61b-280e-4005-8f48-c61a29c1e7ca',   -- Champion (Lost)
+    '958e0dd3-27e7-4397-bd00-1dfe2112da19');  -- Firulai (Lost)
+
+  -- 5. Recursos de Support and care en el área de North Bergen (por nombre actual o ya renombrado; se puede repetir).
+  update resources r set name = v.new_name, address = v.addr, location = st_setsrid(st_makepoint(v.lng, v.lat), 4326)::geography,
+                         phone = v.phone, website_url = v.web
+  from (values
+    ('Westchester Pet Pantry',         'Hudson County Pet Pantry',      '4500 Bergenline Ave, Union City, NJ',        -74.023366, 40.779477, '(201) 555-0142', 'hudsoncountypetpantry.org'),
+    ('Low-Cost Spay/Neuter Clinic',    'Low-Cost Spay/Neuter Clinic',   '7601 JFK Blvd, North Bergen, NJ',            -74.012897, 40.802517, '(201) 555-0188', 'lowcostspayneuter.org'),
+    ('Emergency Vet Aid Fund',         'Emergency Vet Aid Fund',        '3600 JFK Blvd, Union City, NJ',              -74.029895, 40.775575, '(201) 555-0121', 'vetaidfund.org'),
+    ('Bridge Foster Network',          'Bridge Foster Network',         '1300 Tonnelle Ave, North Bergen, NJ',        -74.047203, 40.764342, '(201) 555-0156', 'bridgefosternetwork.org'),
+    ('Crisis Boarding Program',        'Crisis Boarding Program',       '7001 Tonnelle Ave, North Bergen, NJ',        -74.020718, 40.802164, '(201) 555-0119', 'crisisboarding.org'),
+    ('Animal Welfare Legal Aid',       'Animal Welfare Legal Aid',      '6800 Bergenline Ave, Guttenberg, NJ',        -74.01161,  40.79482,  '(201) 555-0301', 'animalwelfarelegalaid.org'),
+    ('Riverside Animal Sanctuary',     'Riverside Animal Sanctuary',    '2300 JFK Blvd, Union City, NJ',              -74.03833,  40.76972,  '(201) 555-0177', 'riversideanimalsanctuary.org'),
+    ('Free pet food pantry',           'Free pet food pantry',          'Community Hall, Tonnelle Ave & 51st St, North Bergen, NJ', -74.030946, 40.787819, '(201) 555-0110', 'hudsoncountypetpantry.org/pantry')
+  ) as v(old_name, new_name, addr, lng, lat, phone, web)
+  where r.name in (v.old_name, v.new_name);
 
   -- Reactiva los triggers de push.
   if not v_send_push then
