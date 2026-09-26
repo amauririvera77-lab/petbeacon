@@ -10,6 +10,7 @@ import { supabase } from "../../lib/supabase";
 import { validateContact } from "../../lib/validation";
 import type { Species } from "../../lib/database.types";
 import { useHome } from "../../hooks/useHome";
+import { useHomePrefs } from "../../state/homePrefs";
 import { useSession } from "../../state/session";
 import { C, font, radius } from "../../theme/tokens";
 import { Cta } from "../Cta";
@@ -35,6 +36,9 @@ const ORDER: Record<Kind, Step[]> = {
 
 export function ReportFlow({ kind }: { kind: Kind }) {
   const { name: userName, city, alertRadiusMi, home } = useSession();
+  const { setView } = useHomePrefs();
+  // "View on List": la Home se abre SIEMPRE en List, aunque el usuario la hubiera dejado en Map.
+  const viewOnList = () => { setView("list"); router.dismissTo("/(tabs)"); };
   const center = useHome();
   const steps = ORDER[kind];
   const [i, setI] = useState(0);
@@ -238,7 +242,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
           <Text style={[successText.strong, { marginBottom: 24 }]}>{"Share this with your neighborhood\nto reach more people"}</Text>
           <View style={st.fullW}>
             <Cta label={FLYERS_READY ? "Share flyer" : "Share alert"} tone="lost" icon={<Share2 size={18} color={C.white} />} disabled={!publishedId} onPress={FLYERS_READY ? goFlyer : shareAlert} />
-            <Pressable accessibilityRole="button" onPress={() => router.dismissTo("/(tabs)")} style={st.textBtn}><Text style={st.textBtnT}>View on List</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => viewOnList()} style={st.textBtn}><Text style={st.textBtnT}>View on List</Text></Pressable>
             {supportLink}
           </View>
         </SuccessBlock>
@@ -249,7 +253,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
             <Pressable accessibilityRole="button" onPress={FLYERS_READY ? goFlyer : shareAlert} disabled={!publishedId} style={[st.outlineBtn, !publishedId && { opacity: 0.5 }]}>
               <Share2 size={16} color={C.ink} /><Text style={st.outlineT}>{FLYERS_READY ? "Share sighting" : "Share alert"}</Text>
             </Pressable>
-            <Cta label="View on List" tone="sighted" onPress={() => router.dismissTo("/(tabs)")} />
+            <Cta label="View on List" tone="sighted" onPress={() => viewOnList()} />
             {supportLink}
           </View>
         </SuccessBlock>

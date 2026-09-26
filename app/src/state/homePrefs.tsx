@@ -5,6 +5,7 @@ import type { SortMode } from "../lib/sort";
 export type AgeFilter = "24h" | "7d" | "all";
 export type SpeciesFilter = "all" | "dog" | "cat" | "other";
 export type ViewRadius = 1 | 5 | 10;
+export type HomeView = "list" | "map";
 
 // Preferencias de la Home. Viven FUERA de la pantalla para que no se pierdan al cambiar entre List y Map ni al volver a la Home
 // (y se guardan en disco). `viewRadiusMi` es el radio de VISUALIZACIÓN del feed y del mapa: es independiente del radio de alertas
@@ -29,6 +30,8 @@ type Value = {
   // Búsqueda: en List filtra por raza, color o nombre; en Map es una dirección/zona. Cada modo conserva su propio texto.
   listQuery: string; setListQuery: (q: string) => void;
   mapQuery: string; setMapQuery: (q: string) => void;
+  // Modo de la Home (List/Map). Vive aquí, fuera de la pantalla, para que otras pantallas (p. ej. "View on List" al terminar un reporte) puedan fijarlo.
+  view: HomeView; setView: (v: HomeView) => void;
 };
 const Ctx = createContext<Value | null>(null);
 
@@ -36,6 +39,7 @@ export function HomePrefsProvider({ children }: { children: ReactNode }) {
   const [prefs, setPrefsState] = useState<Prefs>(DEFAULT_PREFS);
   const [listQuery, setListQuery] = useState("");
   const [mapQuery, setMapQuery] = useState("");
+  const [view, setView] = useState<HomeView>("list");
 
   useEffect(() => {
     AsyncStorage.getItem(KEY).then((raw) => raw && setPrefsState({ ...DEFAULT_PREFS, ...JSON.parse(raw) })).catch(() => {});
@@ -49,8 +53,8 @@ export function HomePrefsProvider({ children }: { children: ReactNode }) {
     setPrefs({ lost: true, sighted: true, species: "all", viewRadiusMi: DEFAULT_PREFS.viewRadiusMi, age: "all", showReunited: false });
   }, [setPrefs]);
 
-  const value = useMemo(() => ({ prefs, setPrefs, setSort, resetFilters, listQuery, setListQuery, mapQuery, setMapQuery }),
-    [prefs, setPrefs, setSort, resetFilters, listQuery, mapQuery]);
+  const value = useMemo(() => ({ prefs, setPrefs, setSort, resetFilters, listQuery, setListQuery, mapQuery, setMapQuery, view, setView }),
+    [prefs, setPrefs, setSort, resetFilters, listQuery, mapQuery, view]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

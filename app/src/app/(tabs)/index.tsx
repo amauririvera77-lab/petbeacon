@@ -53,7 +53,6 @@ const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN;
 // List (default) y Map con igual jerarquía (CLAUDE.md §7); ambos leen los mismos datos y el mismo radio.
 export default function Home() {
   const insets = useSafeAreaInsets();
-  const [view, setView] = useState<"list" | "map">("list");
   const [pinReport, setPinReport] = useState<ReportNearby | null>(null);
   const [notifOpen, setNotifOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -64,7 +63,7 @@ export default function Home() {
   const { city, alertRadiusMi, notifSeenAt, update } = useSession();
   const mapRef = useRef<MapHandle>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
-  const { prefs, setPrefs, setSort, resetFilters, listQuery, setListQuery, mapQuery, setMapQuery } = useHomePrefs();
+  const { prefs, setPrefs, setSort, resetFilters, listQuery, setListQuery, mapQuery, setMapQuery, view, setView } = useHomePrefs();
   const { setCollapsed } = useFab();
   const uid = useAuthUser();
   const center = useHome();
