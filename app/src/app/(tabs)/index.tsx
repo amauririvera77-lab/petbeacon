@@ -1,9 +1,10 @@
 import { router, useFocusEffect } from "expo-router";
 import { LocateFixed, X } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Animated, NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EditLocationSheet } from "../../components/EditLocationSheet";
+import { EndOfFeed } from "../../components/EndOfFeed";
 import { EmptyState } from "../../components/EmptyState";
 import { LocationOffStrip } from "../../components/LocationOffStrip";
 import { NewReportsPill } from "../../components/NewReportsPill";
@@ -67,7 +68,7 @@ export default function Home() {
   const mapRef = useRef<MapHandle>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const { prefs, setPrefs, setSort, resetFilters, resetAll, listQuery, setListQuery, mapQuery, setMapQuery, view, setView } = useHomePrefs();
-  const { setCollapsed } = useFab();
+  const { collapsed: fabCollapsed, setCollapsed } = useFab();
   const uid = useAuthUser();
   const center = useHome();
   const { pos: me, status: posStatus } = useMyPosition(view === "map");
@@ -118,10 +119,18 @@ export default function Home() {
     lastY.current = y;
     setCollapsed(y > 24 && dy > 0);
   }, [setCollapsed]);
-  useEffect(() => { if (view !== "map") setPreviewId(null); }, [view]);
+  useEffect(() => { if (view !== "map") { setPreviewId(null); setCollapsed(false); lastY.current = 0; } }, [view, setCollapsed]);
   // En Map el FAB va expandido, salvo con la tarjeta de vista previa abierta: se contrae al círculo para no taparla.
   useEffect(() => { if (view === "map") setCollapsed(preview !== null); }, [view, preview, setCollapsed]);
   useFocusEffect(useCallback(() => () => setCollapsed(false), [setCollapsed]));
+
+  // D.6: al bajar la lista la búsqueda se contrae (misma señal de scroll que el FAB) y quedan fijos chips y List/Map; al subir reaparece.
+  // Con texto en la búsqueda NO se contrae, y en Map siempre está visible.
+  const hideSearch = view === "list" && fabCollapsed && listQuery.trim() === "";
+  const searchAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.timing(searchAnim, { toValue: hideSearch ? 0 : 1, duration: 180, useNativeDriver: false }).start();
+  }, [hideSearch, searchAnim]);
 
   // Búsqueda de zona o dirección (modo Map): geocodifica cerca de tu centro y la cámara vuela allí.
   const searchMap = async () => {
@@ -200,9 +209,11 @@ export default function Home() {
       <View style={{ paddingTop: insets.top, backgroundColor: C.white }}>
         <HomeHeader unread={unread} onBell={openNotifs} />
         <View style={styles.controls}>
+          <Animated.View style={{ height: searchAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 54] }), opacity: searchAnim, overflow: "hidden" }} pointerEvents={hideSearch ? "none" : "auto"}>
           <SearchBar
             value={view === "map" ? mapQuery : listQuery} onChange={view === "map" ? changeMapQuery : setListQuery} onSubmit={view === "map" ? searchMap : undefined}
             placeholder={view === "map" ? "Search an area or address" : "Search breed, color or name"} />
+          </Animated.View>
           <View style={styles.chipRow}>
             <StatusChips lost={prefs.lost} sighted={prefs.sighted} onToggle={(k) => setPrefs({ [k]: !prefs[k] })} />
             <View style={styles.rightCluster}>
@@ -290,6 +301,7 @@ export default function Home() {
               {sorted.slice(0, resourceAt).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} matchFor={matchNames[r.id]} onPress={() => setPinReport(r)} />)}
               {featured ? <CommunityResourceCard resource={featured} onPress={() => router.navigate({ pathname: "/(tabs)/support", params: { resourceId: featured.id } })} /> : null}
               {sorted.slice(resourceAt).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} matchFor={matchNames[r.id]} onPress={() => setPinReport(r)} />)}
+              <EndOfFeed radiusMi={prefs.viewRadiusMi} onExpand={() => setFiltersOpen(true)} />
             </>
           )}
         </ScrollView>
@@ -310,7 +322,7 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.surface },
-  controls: { paddingHorizontal: 16, paddingVertical: 10, gap: 10, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
+  controls: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
   rightCluster: { flexDirection: "row", alignItems: "center", gap: 8 },
   chipRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 },
   recenter: { position: "absolute", right: 16, bottom: 16 + 73 + 12, width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: C.white, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },

@@ -26,7 +26,7 @@ export function ActiveFilters({ prefs, onChange, onClearAll }: { prefs: Prefs; o
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
+  row: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 10 },
   chip: { height: 30, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, borderRadius: radius.pill, backgroundColor: C.selectBg, borderWidth: 1, borderColor: C.border2 },
   t: { fontFamily: font.bodySemi, fontSize: 12, color: C.ink },
   clear: { height: 30, justifyContent: "center", paddingHorizontal: 4 },

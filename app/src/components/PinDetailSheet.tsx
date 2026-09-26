@@ -7,6 +7,7 @@ import type { ReportNearby } from "../lib/database.types";
 import { C, font, radius } from "../theme/tokens";
 import { FLYERS_READY } from "../lib/flyer";
 import { reportShareText } from "../lib/shareText";
+import { cleanFeatures, reportTitle } from "../lib/reportText";
 import { whenLabel } from "../lib/time";
 import { CONDITION_LABEL } from "./flow/OptionButtons";
 import { Badge } from "./Badge";
@@ -26,7 +27,7 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited }: {
   const r = report;
   const status = r?.status;
   const color = status ? COLOR[status] : C.sos;
-  const title = r ? (r.name?.trim() || `Unknown ${r.species}`) : "";
+  const title = r ? reportTitle(r) : ""; // el mismo título que la tarjeta, pero aquí completo (sin recortar)
   const Fallback = r?.species === "cat" ? Cat : Dog;
 
   // Texto para "Report to network" (compartir con tu red): incluye el enlace público cuando existe y nunca el contacto del dueño.
@@ -81,10 +82,10 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited }: {
               </View>
 
               <View style={styles.titleRow}>
-                <Text style={styles.h} numberOfLines={2}>{title}</Text>
+                <Text style={styles.h}>{title}</Text>
                 <Badge status={r.status} sitOnBaseline />
               </View>
-              {r.breed ? <Text style={styles.breed}>{r.breed}</Text> : <View style={{ height: 24 }} />}
+              {r.breed && r.breed.trim() !== title ? <Text style={styles.breed}>{r.breed}</Text> : <View style={{ height: 24 }} />}
 
               <View style={{ gap: 16, marginBottom: 24 }}>
                 <View style={styles.row}>
@@ -100,10 +101,10 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited }: {
                     <Text style={styles.features}>Condition: {CONDITION_LABEL[r.condition]}</Text>
                   </View>
                 ) : null}
-                {r.features_description ? (
+                {cleanFeatures(r.features_description) ? (
                   <View style={styles.row}>
                     <View style={{ marginTop: 2 }}><PawPrint size={18} color={C.slate500} /></View>
-                    <Text style={styles.features}>{r.features_description}</Text>
+                    <Text style={styles.features}>{cleanFeatures(r.features_description)}</Text>
                   </View>
                 ) : null}
               </View>
