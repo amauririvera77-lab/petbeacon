@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { ReportNearby } from "../lib/database.types";
 import { agoShort } from "../lib/time";
 import { C, font, radius } from "../theme/tokens";
@@ -13,7 +13,13 @@ const SPECIES_LABEL: Record<string, string> = { dog: "Dog", cat: "Cat", other: "
 //   · centro: nombre + píldora (si no caben en una línea, la píldora pasa DEBAJO del nombre, nunca se solapan) y, en la segunda
 //     línea, raza/descripción, que sí puede cortarse con puntos suspensivos
 //   · derecha: distancia y tiempo, uno bajo el otro; NUNCA se truncan (flexShrink 0)
+// En iOS los tamaños de texto de accesibilidad de Dynamic Type (AX1 = 1.64×) empiezan bien por encima de xxxLarge (1.35×).
+const ACCESSIBILITY_FONT_SCALE = 1.5;
+
 export function ReportCard({ report, onPress, mine }: { report: ReportNearby; onPress?: () => void; mine?: boolean }) {
+  const { fontScale } = useWindowDimensions();
+  // Con texto de accesibilidad, distancia y tiempo pasan DEBAJO del nombre (columna central) para no robarle ancho.
+  const stacked = fontScale >= ACCESSIBILITY_FONT_SCALE;
   const title = report.name?.trim() || `Unknown ${SPECIES_LABEL[report.species].toLowerCase()}`;
   const sub = report.breed?.trim() || report.features_description?.trim() || null;
   return (
@@ -29,12 +35,17 @@ export function ReportCard({ report, onPress, mine }: { report: ReportNearby; on
           <Badge status={report.status as BadgeStatus} />
           {mine ? <View style={styles.mine}><Text style={styles.mineT}>Your report</Text></View> : null}
         </View>
-        {sub ? <Text style={styles.sub} numberOfLines={1}>{sub}</Text> : null}
+        {stacked ? (
+          <Text style={styles.meta}>{report.distance_mi.toFixed(1)} mi · {agoShort(report.created_at)}</Text>
+        ) : null}
+        {sub ? <Text style={styles.sub} numberOfLines={stacked ? 2 : 1}>{sub}</Text> : null}
       </View>
-      <View style={styles.right}>
-        <Text style={styles.distance} numberOfLines={1}>{report.distance_mi.toFixed(1)} mi</Text>
-        <Text style={styles.time} numberOfLines={1}>{agoShort(report.created_at)}</Text>
-      </View>
+      {stacked ? null : (
+        <View style={styles.right}>
+          <Text style={styles.distance} numberOfLines={1}>{report.distance_mi.toFixed(1)} mi</Text>
+          <Text style={styles.time} numberOfLines={1}>{agoShort(report.created_at)}</Text>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -50,6 +61,7 @@ const styles = StyleSheet.create({
   mine: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, borderWidth: 1, borderColor: C.ink, backgroundColor: C.white },
   mineT: { fontFamily: font.bodyBold, fontSize: 11, color: C.ink },
   sub: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700 },
+  meta: { fontFamily: font.bodyBold, fontSize: 13, color: C.ink },
   right: { flexShrink: 0, alignItems: "flex-end", gap: 2, paddingTop: 2 },
   distance: { fontFamily: font.bodyBold, fontSize: 13, color: C.ink },
   time: { fontFamily: font.bodySemi, fontSize: 12, color: C.slate500 },
