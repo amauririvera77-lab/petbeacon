@@ -10,7 +10,7 @@
 export type LiveReportStatus = "lost" | "sighted" | "reunited"; // los únicos que devuelven el feed y el mapa
 export type ReportStatus = LiveReportStatus | "closed" | "resolved";
 export type Species = "dog" | "cat" | "other";
-export type ResourceCategory = "food" | "foster" | "legal";
+export type ResourceCategory = "food" | "foster" | "legal" | "shelter"; // shelter = "Rehoming & shelters" (migración 0021)
 export type ReportCondition = "calm" | "scared" | "injured" | "unsure";
 export type MatchConfidence = "possible" | "strong";
 
@@ -93,6 +93,11 @@ export type ResourceRow = {
   icon: string | null;
   hours: string | null;
   photo_url: string | null;
+  is_sample: boolean;
+  opening_hours: Record<string, [string, string][]> | null;
+  timezone: string;
+  tags: string[];
+  in_person: boolean;
   created_at: string;
 };
 
@@ -144,6 +149,11 @@ export type ResourceNearby = {
   event_starts_at?: string | null; // inicio y fin del evento (migración 0013); ausentes antes de aplicarla
   event_ends_at?: string | null;
   photo_url: string | null;
+  is_sample?: boolean; // 0022: recurso ficticio → "Sample data" y acciones deshabilitadas
+  opening_hours?: Record<string, [string, string][]> | null;
+  timezone?: string | null;
+  tags?: string[] | null; // free, low_cost, income_based, walk_ins
+  in_person?: boolean; // atención presencial (por defecto true)
   lat: number;
   lng: number;
   distance_mi: number;

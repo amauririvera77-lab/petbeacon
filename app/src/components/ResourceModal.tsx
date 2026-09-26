@@ -4,7 +4,10 @@ import { useState } from "react";
 import { Alert, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ResourceNearby } from "../lib/database.types";
-import { directionsUrl, phoneDigits, webUrl, whatsappUrl } from "../lib/resources";
+import { directionsUrl, isSample, phoneDigits, resourceAction, webUrl, whatsappUrl } from "../lib/resources";
+import { eventLabel, isActiveEvent } from "../lib/events";
+import { OpenNow, SampleTag, TagChips } from "./resources/parts";
+import { useNow } from "../hooks/useNow";
 import { C, MIN_HIT, font, radius } from "../theme/tokens";
 
 export type ResourceSheetMode = "detail" | "contact";
@@ -40,6 +43,16 @@ function Handle() {
 function Detail({ r, bottom, onClose, onContact }: { r: ResourceNearby; bottom: number; onClose: () => void; onContact: () => void }) {
   const [photoFailed, setPhotoFailed] = useState(false);
   const place = [`${r.distance_mi.toFixed(1)} mi away`, r.address].filter(Boolean).join(" · ");
+  const now = useNow();
+  const event = isActiveEvent(r, now);
+  const action = resourceAction(r, event);
+  const sample = isSample(r);
+  const when = event ? eventLabel(r, now) : null;
+  const run = () => {
+    if (sample) return;
+    if (action.kind === "contact") onContact();
+    else open(action.kind === "directions" ? directionsUrl(r) : webUrl(r.website_url));
+  };
   return (
     <View style={[styles.sheet, { height: "78%", paddingBottom: bottom }]}>
       <Handle />
@@ -53,15 +66,18 @@ function Detail({ r, bottom, onClose, onContact }: { r: ResourceNearby; bottom: 
         </View>
         <View style={styles.titleRow}><HeartHandshake size={20} color={C.info} /><Text style={styles.h}>{r.name}</Text></View>
         <Text style={styles.kind}>Community resource</Text>
+        {sample ? <View style={{ marginBottom: 12 }}><SampleTag /></View> : null}
         <View style={{ gap: 16, marginBottom: 24 }}>
-          {r.hours ? <Row Icon={Clock} tone={C.info} strong>{r.hours}</Row> : null}
+          {when ? <Row Icon={Clock} tone={C.info} strong>{when}</Row> : !event && r.opening_hours ? <View style={styles.row}><View style={{ marginTop: 2 }}><Clock size={18} color={C.info} /></View><OpenNow r={r} now={now} /></View> : r.hours ? <Row Icon={Clock} tone={C.info} strong>{r.hours}</Row> : null}
           <Row Icon={MapPin} tone={C.info} strong>{place}</Row>
           <Row Icon={Info} tone={C.slate500}>{r.description}</Row>
+          <TagChips r={r} />
+          {sample ? <Text style={styles.sampleNote}>This is sample data. The contact details, website and directions aren't real yet.</Text> : null}
         </View>
       </ScrollView>
       <View style={{ paddingHorizontal: 20, gap: 8 }}>
-        <Pressable accessibilityRole="button" onPress={onContact} style={styles.primary}>
-          <Phone size={18} color={C.white} /><Text style={styles.primaryT}>Contact</Text>
+        <Pressable accessibilityRole="button" accessibilityState={{ disabled: sample }} disabled={sample} onPress={run} style={[styles.primary, sample && { backgroundColor: C.border }]}>
+          <action.Icon size={18} color={sample ? C.slate500 : C.white} /><Text style={[styles.primaryT, sample && { color: C.slate500 }]}>{action.label}</Text>
         </Pressable>
         <Pressable accessibilityRole="link" onPress={() => { onClose(); setTimeout(() => router.navigate("/(tabs)/support"), 400); }} style={styles.viewAll}>
           <Text style={styles.viewAllT}>View all local resources</Text><ChevronRight size={14} color={C.slate500} />
@@ -83,6 +99,7 @@ function Row({ Icon, tone, strong, children }: { Icon: LucideIcon; tone: string;
 function Contact({ r, bottom }: { r: ResourceNearby; bottom: number }) {
   const wa = whatsappUrl(r.phone);
   const web = webUrl(r.website_url);
+  const sample = isSample(r);
   const actions: { key: string; label: string; Icon: LucideIcon; tint: string; color: string; run: () => void }[] = [
     r.phone ? { key: "call", label: `Call ${r.phone}`, Icon: Phone, tint: C.okTint, color: C.ok, run: () => open(`tel:${phoneDigits(r.phone)}`) } : null,
     wa ? { key: "wa", label: "Message on WhatsApp", Icon: MessageCircle, tint: C.okTint, color: "#0F7B3F", run: () => open(wa) } : null,
@@ -95,10 +112,11 @@ function Contact({ r, bottom }: { r: ResourceNearby; bottom: number }) {
       <View style={styles.contactHead}>
         <Text style={styles.contactName}>{r.name}</Text>
         {r.address ? <Text style={styles.contactAddr}>{r.address}</Text> : null}
+        {sample ? <View style={{ marginTop: 8 }}><SampleTag /></View> : null}
       </View>
       <View style={{ padding: 8 }}>
         {actions.map(({ key, label, Icon, tint, color, run }) => (
-          <Pressable key={key} accessibilityRole="button" onPress={run} style={({ pressed }) => [styles.action, pressed && { backgroundColor: C.surface }]}>
+          <Pressable key={key} accessibilityRole="button" accessibilityState={{ disabled: sample }} disabled={sample} onPress={run} style={({ pressed }) => [styles.action, sample && { opacity: 0.45 }, pressed && { backgroundColor: C.surface }]}>
             <View style={[styles.actionIcon, { backgroundColor: tint }]}><Icon size={20} color={color} /></View>
             <Text style={styles.actionT}>{label}</Text>
           </Pressable>
@@ -127,6 +145,7 @@ const styles = StyleSheet.create({
   primaryT: { fontFamily: font.bodyBold, fontSize: 16, color: C.white },
   viewAll: { minHeight: MIN_HIT, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center" },
   viewAllT: { fontFamily: font.bodySemi, fontSize: 14, color: C.slate500 },
+  sampleNote: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 19, color: C.slate500 },
   contactHead: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: C.border },
   contactName: { fontFamily: font.head, fontSize: 18, color: C.ink },
   contactAddr: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700, marginTop: 4 },

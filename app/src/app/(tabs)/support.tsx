@@ -1,7 +1,7 @@
 import { HeartHandshake, Search, X } from "lucide-react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OfflineBanner } from "../../components/OfflineBanner";
 import { EventResourceCard, ResourceCard } from "../../components/ResourceCard";
@@ -12,7 +12,7 @@ import { useNow } from "../../hooks/useNow";
 import { useResourcesState } from "../../hooks/useResources";
 import type { ResourceNearby } from "../../lib/database.types";
 import { mapEventResources } from "../../lib/homeFilters";
-import { CATEGORIES } from "../../lib/resources";
+import { CATEGORIES, directionsUrl, isSample, supportOrder, webUrl } from "../../lib/resources";
 import { useSession } from "../../state/session";
 import { C, font, radius } from "../../theme/tokens";
 
@@ -46,9 +46,17 @@ export default function Support() {
     const list = resources.filter((r) => (category === "all" || r.category === category) && (!q || r.name.toLowerCase().includes(q) || r.description.toLowerCase().includes(q)));
     const events = mapEventResources(list, now); // en curso primero, luego por fecha; un evento terminado deja de destacarse
     const ids = new Set(events.map((r) => r.id));
-    return { filtered: [...events, ...list.filter((r) => !ids.has(r.id))], eventIds: ids };
+    // Eventos vigentes primero; el resto por distancia; los recursos de entrega o ingreso a refugio, SIEMPRE al final (5.5).
+    return { filtered: [...events, ...supportOrder(list.filter((r) => !ids.has(r.id)))], eventIds: ids };
   }, [resources, category, q, now]);
   const reset = () => { setQuery(""); setCategory("all"); };
+  // Acción principal de cada tarjeta (5.3). Con datos de muestra no hace nada: la tarjeta ya la muestra deshabilitada.
+  const act = (r: ResourceNearby, kind: "directions" | "learn" | "contact") => {
+    if (isSample(r)) return;
+    if (kind === "contact") { setMode("contact"); setContact(r); return; }
+    const url = kind === "directions" ? directionsUrl(r) : webUrl(r.website_url);
+    if (url) Linking.openURL(url).catch(() => Alert.alert("Couldn't open that", "Your device couldn't handle this action."));
+  };
 
   return (
     <View style={styles.root}>
@@ -95,8 +103,8 @@ export default function Support() {
             {resources.length > 0 ? <Pressable accessibilityRole="button" onPress={reset} style={styles.emptyBtn}><Text style={styles.emptyBtnT}>Clear filters</Text></Pressable> : null}
           </View>
         ) : filtered.map((r) => {
-          const onContact = () => { setMode("contact"); setContact(r); };
-          return eventIds.has(r.id) ? <EventResourceCard key={r.id} resource={r} onContact={onContact} /> : <ResourceCard key={r.id} resource={r} onContact={onContact} />;
+          const onAction = (kind: "directions" | "learn" | "contact") => act(r, kind);
+          return eventIds.has(r.id) ? <EventResourceCard key={r.id} resource={r} onAction={onAction} /> : <ResourceCard key={r.id} resource={r} onAction={onAction} />;
         })}
       </ScrollView>
 

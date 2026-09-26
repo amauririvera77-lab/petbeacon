@@ -56,3 +56,6 @@ export function eventLabel(r: EventLike & { hours?: string | null }, now = Date.
   }
   return eventWhen(r.event_date, r.hours ?? null, new Date(now));
 }
+
+// ¿Es un evento vigente (en curso, hoy o futuro)? Un evento terminado se trata como un recurso normal.
+export const isActiveEvent = (r: EventLike, now = Date.now()): boolean => { const p = eventPhase(r, now); return p === "live" || p === "today" || p === "future"; };
