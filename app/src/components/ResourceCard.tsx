@@ -2,7 +2,8 @@ import { CalendarDays, ChevronRight, HeartHandshake, Phone } from "lucide-react-
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { ResourceNearby } from "../lib/database.types";
 import { CATEGORY_STYLE, resourceIcon } from "../lib/resources";
-import { eventWhen } from "../lib/time";
+import { eventLabel } from "../lib/events";
+import { useNow } from "../hooks/useNow";
 import { C, MIN_HIT, font, radius } from "../theme/tokens";
 
 // Tarjeta de Support and care: ícono tintado por categoría, descripción, distancia y botón Contact.
@@ -29,7 +30,7 @@ export function ResourceCard({ resource: r, onContact }: { resource: ResourceNea
 // Evento vigente en Support and care: va SIEMPRE arriba de la lista y con otro tratamiento (fondo y borde de los tokens `info`, etiqueta
 // "Event" y la fecha concreta en grande) para que no se lea como un recurso más. Solo usa colores ya existentes.
 export function EventResourceCard({ resource: r, onContact }: { resource: ResourceNearby; onContact: () => void }) {
-  const when = eventWhen(r.event_date, r.hours);
+  const when = eventLabel(r, useNow());
   return (
     <View style={styles.event} accessibilityLabel={`Event: ${r.name}${when ? `, ${when}` : ""}`}>
       <View style={styles.eHead}>
@@ -51,7 +52,7 @@ export function EventResourceCard({ resource: r, onContact }: { resource: Resour
 // Tarjeta de recurso comunitario del feed (fase 3.4): variante NEUTRAL (la misma tarjeta blanca con borde que usan los reportes) para
 // que no compita con los reportes urgentes ni se lea como publicidad. Etiqueta superior "Community resource" + fecha concreta.
 export function CommunityResourceCard({ resource: r, onPress }: { resource: ResourceNearby; onPress: () => void }) {
-  const when = eventWhen(r.event_date, r.hours);
+  const when = eventLabel(r, useNow());
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={`Community resource: ${r.name}`} onPress={onPress} style={({ pressed }) => [styles.neutral, pressed && { opacity: 0.9 }]}>
       <View style={styles.nIcon}><HeartHandshake size={22} color={C.slate700} /></View>

@@ -39,12 +39,13 @@ import { useFeed } from "../../hooks/useFeed";
 import { useLocationPermission } from "../../hooks/useLocationPermission";
 import { useHome } from "../../hooks/useHome";
 import { useMyPosition } from "../../hooks/useMyPosition";
+import { useNow } from "../../hooks/useNow";
 import { useMyMatches } from "../../hooks/useMyMatches";
 import { useMyReports } from "../../hooks/useMyReports";
 import { useNotificationsFeed } from "../../hooks/useNotificationsFeed";
 import { useResourcesState } from "../../hooks/useResources";
 import { geocode, type Place } from "../../lib/geocode";
-import { activeFilterCount, applyHomeFilters, localDateKey, mapEventResources } from "../../lib/homeFilters";
+import { activeFilterCount, applyHomeFilters, mapEventResources } from "../../lib/homeFilters";
 import { reportShareText } from "../../lib/shareText";
 import { sortReports } from "../../lib/sort";
 import { useFab } from "../../state/fab";
@@ -92,13 +93,16 @@ export default function Home() {
   const feedReports = useMemo(() => reports.filter((r) => !ownLostIds.has(r.id)), [reports, ownLostIds]);
   const listFiltered = useMemo(() => applyHomeFilters(feedReports, prefs, listQuery), [feedReports, prefs, listQuery]);
   const mapReports = useMemo(() => applyHomeFilters(reports, prefs), [reports, prefs]);
-  // Mapa: solo eventos vigentes (hoy o futuros); se recalcula si cambia el día. La lista (tarjeta destacada) no cambia.
-  const today = localDateKey();
+  // Eventos vigentes (en curso, hoy o futuros): el reloj se refresca solo, así un evento desaparece del mapa y del feed al pasar su hora de fin.
+  // La lista se memoiza por ids: un array nuevo en cada tick reenviaría los datos al WebView sin que nada cambie.
+  const now = useNow();
+  const events = mapEventResources(resources, now);
+  const eventsKey = events.map((r) => r.id).join(",");
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const mapResources = useMemo(() => mapEventResources(resources), [resources, today]);
+  const mapResources = useMemo(() => events, [eventsKey, resources]);
+  const featured = events[0] ?? null;
   // Avistamientos que coinciden con un Lost tuyo (no descartadas): etiqueta en el feed e indicador del pin.
   const matchNames = useMemo(() => matchNamesBySighting(matches), [matches]);
-  const featured = resources.find((r) => r.is_featured_event) ?? null;
   // Orden elegido (persiste al cambiar List/Map y al volver a la Home). Por defecto: más recientes primero.
   // Tarjeta de vista previa del pin tocado (misma ReportCard del feed); si un filtro lo oculta, desaparece sola.
   const preview = useMemo(() => mapReports.find((r) => r.id === previewId) ?? null, [mapReports, previewId]);

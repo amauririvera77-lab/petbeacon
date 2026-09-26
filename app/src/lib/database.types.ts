@@ -114,6 +114,8 @@ export type ResourceNearby = {
   icon: string | null;
   hours: string | null;
   event_date?: string | null; // fecha real del evento (migración 0011); ausente antes de aplicarla
+  event_starts_at?: string | null; // inicio y fin del evento (migración 0013); ausentes antes de aplicarla
+  event_ends_at?: string | null;
   photo_url: string | null;
   lat: number;
   lng: number;

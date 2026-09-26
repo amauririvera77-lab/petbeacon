@@ -1,5 +1,6 @@
 import type { ReportNearby } from "./database.types";
 import { DEFAULT_PREFS, Prefs } from "../state/homePrefs";
+import { activeEvents, type EventLike } from "./events";
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
@@ -41,9 +42,8 @@ export function localDateKey(now = new Date()): string {
   return `${now.getFullYear()}-${m}-${d}`;
 }
 
-// Pines de recurso del mapa de Home: SOLO eventos (is_featured_event) con event_date de hoy o futura. Un evento pasado, o sin fecha
-// real, no se muestra; el resto de recursos (clínicas, legal, foster…) vive solo en Support and care.
-export function mapEventResources<T extends { is_featured_event: boolean; event_date?: string | null }>(resources: T[], now = new Date()): T[] {
-  const today = localDateKey(now);
-  return resources.filter((r) => r.is_featured_event && !!r.event_date && r.event_date >= today);
+// Pines de recurso del mapa de Home: SOLO eventos vigentes (en curso, hoy o futuros; ver lib/events.ts). Un evento terminado desaparece al pasar su
+// hora de fin (o al terminar su día si no tiene horas); el resto de recursos (clínicas, legal, foster…) vive solo en Support and care.
+export function mapEventResources<T extends EventLike & { distance_mi?: number }>(resources: T[], now = Date.now()): T[] {
+  return activeEvents(resources, now);
 }

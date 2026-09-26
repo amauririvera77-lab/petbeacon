@@ -27,6 +27,9 @@ declare
   v_me          uuid             := null;   -- tu id en Authentication → Users. null = el perfil real (no demo) creado más recientemente
   v_center_lng  double precision := null;   -- centro de la demo. null = tu ubicación base (profiles.home) o, si no hay, White Plains
   v_center_lat  double precision := null;   --   (solo informativo: las posiciones de los reportes ahora son coordenadas fijas de North Bergen)
+  v_event_mode  text             := 'upcoming'; -- estado del evento "Free pet food pantry" (0013): 'upcoming' = próximo sábado 9am–1pm ·
+                                                 -- 'live' = en curso ahora (termina en 2 h) · 'later_today' = hoy, empieza en 2 h ·
+                                                 -- 'ended' = terminó hace 1 h (debe desaparecer del feed y del mapa)
   v_send_push   boolean          := false;  -- true = deja activos los triggers que envían push reales
   -- ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   demo_owner    constant uuid := '00000000-0000-0000-0000-000000000001';
@@ -142,6 +145,19 @@ begin
   if has_event then
     execute $q$update resources set event_date = current_date + ((6 - extract(dow from current_date)::int + 7) % 7)
                where name = 'Free pet food pantry'$q$;
+  end if;
+  -- Horas del evento (0013), solo si esas columnas existen. Las horas 'live' / 'later_today' / 'ended' se fijan respecto a ahora.
+  if exists (select 1 from information_schema.columns where table_name = 'resources' and column_name = 'event_ends_at') then
+    if v_event_mode = 'live' then
+      update resources set event_date = current_date, event_starts_at = now() - interval '1 hour', event_ends_at = now() + interval '2 hours' where name = 'Free pet food pantry';
+    elsif v_event_mode = 'later_today' then
+      update resources set event_date = current_date, event_starts_at = now() + interval '2 hours', event_ends_at = now() + interval '5 hours' where name = 'Free pet food pantry';
+    elsif v_event_mode = 'ended' then
+      update resources set event_date = current_date, event_starts_at = now() - interval '4 hours', event_ends_at = now() - interval '1 hour' where name = 'Free pet food pantry';
+    else
+      update resources set event_starts_at = (event_date::timestamp + time '09:00') at time zone 'America/New_York',
+                           event_ends_at   = (event_date::timestamp + time '13:00') at time zone 'America/New_York' where name = 'Free pet food pantry';
+    end if;
   end if;
   select exists (select 1 from information_schema.columns where table_name = 'reports' and column_name = 'alerted_count') into has_alerted;
   if has_alerted then

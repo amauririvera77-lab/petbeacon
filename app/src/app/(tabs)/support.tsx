@@ -8,6 +8,7 @@ import { EventResourceCard, ResourceCard } from "../../components/ResourceCard";
 import { ResourceModal, ResourceSheetMode } from "../../components/ResourceModal";
 import { SetupNotice } from "../../components/SetupNotice";
 import { useHome } from "../../hooks/useHome";
+import { useNow } from "../../hooks/useNow";
 import { useResourcesState } from "../../hooks/useResources";
 import type { ResourceNearby } from "../../lib/database.types";
 import { mapEventResources } from "../../lib/homeFilters";
@@ -22,6 +23,7 @@ export default function Support() {
   const insets = useSafeAreaInsets();
   const { city } = useSession();
   const center = useHome();
+  const now = useNow();
   const { resources, loading, error, refresh } = useResourcesState(SUPPORT_RADIUS_MI, center.lat, center.lng);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]["key"]>("all");
@@ -42,10 +44,10 @@ export default function Support() {
   // Un evento ya pasado deja de destacarse y vuelve a su lugar normal.
   const { filtered, eventIds } = useMemo(() => {
     const list = resources.filter((r) => (category === "all" || r.category === category) && (!q || r.name.toLowerCase().includes(q) || r.description.toLowerCase().includes(q)));
-    const events = mapEventResources(list).sort((a, b) => (a.event_date ?? "").localeCompare(b.event_date ?? "") || a.distance_mi - b.distance_mi);
+    const events = mapEventResources(list, now); // en curso primero, luego por fecha; un evento terminado deja de destacarse
     const ids = new Set(events.map((r) => r.id));
     return { filtered: [...events, ...list.filter((r) => !ids.has(r.id))], eventIds: ids };
-  }, [resources, category, q]);
+  }, [resources, category, q, now]);
   const reset = () => { setQuery(""); setCategory("all"); };
 
   return (
