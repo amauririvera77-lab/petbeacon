@@ -5,11 +5,11 @@ import { SORT_LABEL, SortMode } from "../lib/sort";
 import { C, MIN_HIT, font, radius } from "../theme/tokens";
 
 // Control visible encima del feed: "Most recent ▾" con las opciones "Most recent" y "Nearest".
-export function SortControl({ value, onChange, count }: { value: SortMode; onChange: (m: SortMode) => void; count: number }) {
+export function SortControl({ value, onChange, count, radiusMi }: { value: SortMode; onChange: (m: SortMode) => void; count: number; radiusMi: number }) {
   const [open, setOpen] = useState(false);
   return (
     <View style={styles.wrap}>
-      <Text style={styles.count}>{count} {count === 1 ? "report" : "reports"}</Text>
+      <Text style={styles.count}>{count} {count === 1 ? "report" : "reports"} within {radiusMi} mi</Text>
       <View>
         <Pressable accessibilityRole="button" accessibilityLabel={`Sort by: ${SORT_LABEL[value]}`} accessibilityState={{ expanded: open }} onPress={() => setOpen((o) => !o)} style={styles.btn}>
           <Text style={styles.btnT}>{SORT_LABEL[value]}</Text>
@@ -32,7 +32,7 @@ export function SortControl({ value, onChange, count }: { value: SortMode; onCha
 
 const styles = StyleSheet.create({
   wrap: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", zIndex: 5 },
-  count: { fontFamily: font.bodySemi, fontSize: 13, color: C.slate500 },
+  count: { flexShrink: 1, fontFamily: font.bodySemi, fontSize: 13, color: C.slate500 },
   btn: { minHeight: MIN_HIT, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 4 },
   btnT: { fontFamily: font.bodyBold, fontSize: 14, color: C.ink },
   menu: {

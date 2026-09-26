@@ -26,7 +26,9 @@ type Value = {
   prefs: Prefs;
   setPrefs: (patch: Partial<Prefs>) => void;
   setSort: (s: SortMode) => void;
-  resetFilters: () => void; // restablece estado, especie, radio, antigüedad y "Show reunited" (el orden se conserva)
+  // Filtros de la hoja (especie, antigüedad, "Show reunited"). NO toca el radio (no cuenta como filtro) ni los chips Lost/Sighted ni el orden.
+  resetFilters: () => void;
+  resetAll: () => void; // además reactiva los chips Lost y Sighted (para los estados vacíos)
   // Búsqueda: en List filtra por raza, color o nombre; en Map es una dirección/zona. Cada modo conserva su propio texto.
   listQuery: string; setListQuery: (q: string) => void;
   mapQuery: string; setMapQuery: (q: string) => void;
@@ -49,12 +51,11 @@ export function HomePrefsProvider({ children }: { children: ReactNode }) {
     setPrefsState((p) => { const next = { ...p, ...patch }; AsyncStorage.setItem(KEY, JSON.stringify(next)).catch(() => {}); return next; });
   }, []);
   const setSort = useCallback((sort: SortMode) => setPrefs({ sort }), [setPrefs]);
-  const resetFilters = useCallback(() => {
-    setPrefs({ lost: true, sighted: true, species: "all", viewRadiusMi: DEFAULT_PREFS.viewRadiusMi, age: "all", showReunited: false });
-  }, [setPrefs]);
+  const resetFilters = useCallback(() => setPrefs({ species: "all", age: "all", showReunited: false }), [setPrefs]);
+  const resetAll = useCallback(() => setPrefs({ lost: true, sighted: true, species: "all", age: "all", showReunited: false }), [setPrefs]);
 
-  const value = useMemo(() => ({ prefs, setPrefs, setSort, resetFilters, listQuery, setListQuery, mapQuery, setMapQuery, view, setView }),
-    [prefs, setPrefs, setSort, resetFilters, listQuery, mapQuery, view]);
+  const value = useMemo(() => ({ prefs, setPrefs, setSort, resetFilters, resetAll, listQuery, setListQuery, mapQuery, setMapQuery, view, setView }),
+    [prefs, setPrefs, setSort, resetFilters, resetAll, listQuery, mapQuery, view]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

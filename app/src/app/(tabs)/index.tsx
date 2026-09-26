@@ -10,7 +10,9 @@ import { NewReportsPill } from "../../components/NewReportsPill";
 import { ReportCardSkeleton } from "../../components/ReportCardSkeleton";
 import { EnableAlertsCard } from "../../components/EnableAlertsCard";
 import { HomeHeader } from "../../components/HomeHeader";
+import { ActiveFilters } from "../../components/ActiveFilters";
 import { CompactSegmented } from "../../components/CompactSegmented";
+import { FilterButton } from "../../components/FilterButton";
 import { FilterSheet } from "../../components/FilterSheet";
 import { MapRadiusChip } from "../../components/MapRadiusChip";
 import { PinDetailSheet } from "../../components/PinDetailSheet";
@@ -64,7 +66,7 @@ export default function Home() {
   const { city, alertRadiusMi, notifSeenAt, update } = useSession();
   const mapRef = useRef<MapHandle>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
-  const { prefs, setPrefs, setSort, resetFilters, listQuery, setListQuery, mapQuery, setMapQuery, view, setView } = useHomePrefs();
+  const { prefs, setPrefs, setSort, resetFilters, resetAll, listQuery, setListQuery, mapQuery, setMapQuery, view, setView } = useHomePrefs();
   const { setCollapsed } = useFab();
   const uid = useAuthUser();
   const center = useHome();
@@ -107,8 +109,6 @@ export default function Home() {
   const activeLost = useMemo(() => sortByRelevance(myReports.filter((r) => r.status === "lost"), matches), [myReports, matches]);
   const mineIds = useMemo(() => myReports.map((r) => r.id), [myReports]);
   const [matchesFor, setMatchesFor] = useState<{ id: string; name: string } | null>(null);
-  // Con un Lost activo, Sighted se destaca con un contador de coincidencias pendientes (sin preseleccionarlo: ocultaría los Lost).
-  const sightedDot = activeLost.length > 0 ? matches.filter((m) => !m.dismissed).length : 0;
   const filterCount = activeFilterCount(prefs);
 
   const lastY = useRef(0);
@@ -202,11 +202,15 @@ export default function Home() {
         <View style={styles.controls}>
           <SearchBar
             value={view === "map" ? mapQuery : listQuery} onChange={view === "map" ? changeMapQuery : setListQuery} onSubmit={view === "map" ? searchMap : undefined}
-            placeholder={view === "map" ? "Search an area or address" : "Search breed, color or name"} filterCount={filterCount} onOpenFilters={() => setFiltersOpen(true)} />
+            placeholder={view === "map" ? "Search an area or address" : "Search breed, color or name"} />
           <View style={styles.chipRow}>
-            <StatusChips lost={prefs.lost} sighted={prefs.sighted} sightedDot={sightedDot} onToggle={(k) => setPrefs({ [k]: !prefs[k] })} />
-            <CompactSegmented value={view} onChange={setView} />
+            <StatusChips lost={prefs.lost} sighted={prefs.sighted} onToggle={(k) => setPrefs({ [k]: !prefs[k] })} />
+            <View style={styles.rightCluster}>
+              <FilterButton count={filterCount} onPress={() => setFiltersOpen(true)} />
+              <CompactSegmented value={view} onChange={setView} />
+            </View>
           </View>
+          <ActiveFilters prefs={prefs} onChange={setPrefs} onClearAll={resetFilters} />
         </View>
       </View>
       <OfflineBanner lastUpdated={lastUpdated ?? null} failed={failed && !error} onRetry={refresh} />
@@ -237,7 +241,7 @@ export default function Home() {
               ) : noReportsInRadius && !preview ? (
                 <EmptyState style={styles.mapEmpty} {...emptyRadiusProps} />
               ) : !loading && reports.length > 0 && mapReports.length === 0 ? (
-                <EmptyState style={styles.mapEmpty} title="No reports match your filters" actionLabel="Reset filters" onAction={resetFilters} />
+                <EmptyState style={styles.mapEmpty} title="No reports match your filters" actionLabel="Reset filters" onAction={resetAll} />
               ) : null}
               <MapRadiusChip value={prefs.viewRadiusMi} onChange={(mi) => setPrefs({ viewRadiusMi: mi as ViewRadius })} />
               <Pressable accessibilityRole="button" accessibilityLabel="Center map on my location" onPress={() => mapRef.current?.recenter()} style={styles.recenter}>
@@ -279,10 +283,10 @@ export default function Home() {
           ) : feedReports.length === 0 ? (
             <EmptyState {...emptyRadiusProps} />
           ) : sorted.length === 0 ? (
-            <EmptyState title="No reports match your filters" actionLabel="Reset filters" onAction={() => { resetFilters(); setListQuery(""); }} />
+            <EmptyState title="No reports match your filters" actionLabel="Reset filters" onAction={() => { resetAll(); setListQuery(""); }} />
           ) : (
             <>
-              <SortControl value={prefs.sort} onChange={setSort} count={sorted.length} />
+              <SortControl value={prefs.sort} onChange={setSort} count={sorted.length} radiusMi={prefs.viewRadiusMi} />
               {sorted.slice(0, resourceAt).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} matchFor={matchNames[r.id]} onPress={() => setPinReport(r)} />)}
               {featured ? <CommunityResourceCard resource={featured} onPress={() => router.navigate({ pathname: "/(tabs)/support", params: { resourceId: featured.id } })} /> : null}
               {sorted.slice(resourceAt).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} matchFor={matchNames[r.id]} onPress={() => setPinReport(r)} />)}
@@ -307,6 +311,7 @@ export default function Home() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.surface },
   controls: { paddingHorizontal: 16, paddingVertical: 10, gap: 10, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
+  rightCluster: { flexDirection: "row", alignItems: "center", gap: 8 },
   chipRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 },
   recenter: { position: "absolute", right: 16, bottom: 16 + 73 + 12, width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: C.white, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
   // Deja libre la columna derecha del FAB (73 px + márgenes).

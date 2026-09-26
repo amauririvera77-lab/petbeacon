@@ -22,11 +22,18 @@ export function applyHomeFilters<T extends ReportNearby>(reports: T[], prefs: Pr
   });
 }
 
-// Filtros de la HOJA distintos de sus valores por defecto (badge del botón de filtros). Los chips Lost/Sighted son visibles fuera de la hoja.
-export function activeFilterCount(p: Prefs): number {
-  return [p.species !== DEFAULT_PREFS.species, p.viewRadiusMi !== DEFAULT_PREFS.viewRadiusMi, p.age !== DEFAULT_PREFS.age, p.showReunited !== DEFAULT_PREFS.showReunited]
-    .filter(Boolean).length;
+// Filtros de la HOJA distintos de sus valores por defecto: especie, antigüedad y "Show reunited". El RADIO no cuenta como filtro (se muestra
+// junto al conteo de la lista: "10 reports within 10 mi") y los chips Lost/Sighted son visibles fuera de la hoja.
+export type ActiveFilterChip = { key: "species" | "age" | "showReunited"; label: string; clear: Partial<Prefs> };
+const SPECIES_LABEL: Record<"dog" | "cat" | "other", string> = { dog: "Dogs only", cat: "Cats only", other: "Other pets only" };
+export function activeFilterChips(p: Prefs): ActiveFilterChip[] {
+  const out: ActiveFilterChip[] = [];
+  if (p.species !== "all") out.push({ key: "species", label: SPECIES_LABEL[p.species], clear: { species: DEFAULT_PREFS.species } });
+  if (p.age !== DEFAULT_PREFS.age) out.push({ key: "age", label: p.age === "24h" ? "Last 24h" : "Last 7 days", clear: { age: DEFAULT_PREFS.age } });
+  if (p.showReunited !== DEFAULT_PREFS.showReunited) out.push({ key: "showReunited", label: "Incl. reunited", clear: { showReunited: DEFAULT_PREFS.showReunited } });
+  return out;
 }
+export const activeFilterCount = (p: Prefs): number => activeFilterChips(p).length;
 
 // "YYYY-MM-DD" de hoy en la zona horaria del dispositivo (event_date es una fecha de calendario, sin hora).
 export function localDateKey(now = new Date()): string {

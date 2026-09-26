@@ -25,7 +25,8 @@ function Pills<T extends string | number>({ label, options, value, onChange }: {
 }
 
 // Hoja de filtros (fase 4.3): especie, radio (1/5/10 mi), antigüedad (24h / 7 days / All) y "Show reunited" (apagado por defecto).
-// El radio es el de VISUALIZACIÓN: no cambia el radio de alertas del perfil.
+// El radio es el de VISUALIZACIÓN (no cambia el de alertas del perfil) y es el MISMO estado (`prefs.viewRadiusMi`) que el chip "10 mi" del
+// mapa: cambiar uno actualiza el otro al instante. No cuenta como filtro: ni en el badge ni en "Reset filters".
 export function FilterSheet({ visible, prefs, onChange, onReset, onClose }: {
   visible: boolean; prefs: Prefs; onChange: (p: Partial<Prefs>) => void; onReset: () => void; onClose: () => void;
 }) {
