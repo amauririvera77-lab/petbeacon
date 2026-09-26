@@ -68,11 +68,14 @@ export function buildMapHtml(token: string): string {
     (p.reports || []).forEach(function (r) {
       var f = { type: "Feature", geometry: { type: "Point", coordinates: [r.lng, r.lat] },
         properties: { kind: "report", rid: r.id, icon: r.status, mine: !!r.mine, sel: r.id === p.selectedId } };
-      // Pines que NUNCA se agrupan (fuente "solo", sin cluster): hoy, los avistamientos que coinciden con un Lost del usuario.
-      if (r.matchName) { f.properties.matchName = r.matchName; solo.push(f); } else feats.push(f);
+      // Pines que NUNCA se agrupan (fuente "solo", sin cluster): TODOS los Lost (un Lost nunca queda escondido dentro de un cluster) y los
+      // avistamientos que coinciden con un Lost del usuario. Solo Sighted y Reunited se agrupan.
+      if (r.matchName) f.properties.matchName = r.matchName;
+      if (r.status === "lost" || r.matchName) solo.push(f); else feats.push(f);
     });
     (p.resources || []).forEach(function (r) {
-      feats.push({ type: "Feature", geometry: { type: "Point", coordinates: [r.lng, r.lat] },
+      // Los recursos (en Home, solo eventos vigentes) tampoco se agrupan nunca.
+      solo.push({ type: "Feature", geometry: { type: "Point", coordinates: [r.lng, r.lat] },
         properties: { kind: "resource", rid: r.id, icon: "resource" } });
     });
     map.getSource("items").setData({ type: "FeatureCollection", features: feats });
@@ -130,43 +133,53 @@ export function buildMapHtml(token: string): string {
         layout: { "text-field": ["get", "point_count_abbreviated"], "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-size": 14, "text-allow-overlap": true },
         paint: { "text-color": "#fff" } });
       map.addLayer({ id: "pins", type: "symbol", source: "items", filter: ["!", ["has", "point_count"]],
-        layout: { "icon-image": ["concat", "pin-", ["get", "icon"]], "icon-anchor": "bottom", "icon-allow-overlap": true, "icon-size": ["case", ["==", ["get", "sel"], true], 1.1, 0.9], "symbol-sort-key": ["case", ["==", ["get", "sel"], true], 1, 0] } });
+        layout: { "icon-image": ["concat", "pin-", ["get", "icon"]], "icon-anchor": "bottom", "icon-allow-overlap": true, "icon-size": ["interpolate", ["linear"], ["zoom"], 9, ["case", ["==", ["get", "sel"], true], 0.66, 0.55], 12, ["case", ["==", ["get", "sel"], true], 0.96, 0.8], 14, ["case", ["==", ["get", "sel"], true], 1.08, 0.9]], "symbol-sort-key": ["case", ["==", ["get", "sel"], true], 1, 0] } });
 
-      // Pines sin cluster (fase A.4): aro con el token de éxito y etiqueta "Match for [pet]".
+      // Pines SIN cluster (fuente "solo"): Lost, avistamientos que coinciden con un Lost tuyo y eventos. Orden de capas: aros → pin → etiquetas.
       map.addSource("solo", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-      map.addLayer({ id: "pins-match-ring", type: "circle", source: "solo",
-        paint: { "circle-radius": 25, "circle-translate": [0, -30], "circle-color": "rgba(0,0,0,0)", "circle-stroke-width": 3, "circle-stroke-color": "${C.ok}" } });
+      // Reporte propio: aro ink (el mismo criterio que en la Fase 2). Coincidencia: aro con el token de éxito.
+      map.addLayer({ id: "pins-mine-ring", type: "circle", source: "solo", filter: ["==", ["get", "mine"], true],
+        paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 15, 12, 22, 14, 25], "circle-translate": ["interpolate", ["linear"], ["zoom"], 9, ["literal", [0, -19]], 12, ["literal", [0, -27]], 14, ["literal", [0, -31]]], "circle-color": "rgba(0,0,0,0)", "circle-stroke-width": 2.5, "circle-stroke-color": "${C.ink}" } });
+      map.addLayer({ id: "pins-match-ring", type: "circle", source: "solo", filter: ["has", "matchName"],
+        paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 15, 12, 22, 14, 25], "circle-translate": ["interpolate", ["linear"], ["zoom"], 9, ["literal", [0, -19]], 12, ["literal", [0, -27]], 14, ["literal", [0, -31]]], "circle-color": "rgba(0,0,0,0)", "circle-stroke-width": 3, "circle-stroke-color": "${C.ok}" } });
       map.addLayer({ id: "pins-solo", type: "symbol", source: "solo",
-        layout: { "icon-image": ["concat", "pin-", ["get", "icon"]], "icon-anchor": "bottom", "icon-allow-overlap": true, "icon-size": ["case", ["==", ["get", "sel"], true], 1.1, 0.9], "symbol-sort-key": ["case", ["==", ["get", "sel"], true], 1, 0] } });
-      map.addLayer({ id: "pins-match-label", type: "symbol", source: "solo",
-        layout: { "text-field": ["concat", "Match for ", ["get", "matchName"]], "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-size": 11, "text-offset": [0, -5.9], "text-anchor": "bottom", "text-allow-overlap": true },
+        layout: { "icon-image": ["concat", "pin-", ["get", "icon"]], "icon-anchor": "bottom", "icon-allow-overlap": true, "icon-size": ["interpolate", ["linear"], ["zoom"], 9, ["case", ["==", ["get", "sel"], true], 0.66, 0.55], 12, ["case", ["==", ["get", "sel"], true], 0.96, 0.8], 14, ["case", ["==", ["get", "sel"], true], 1.08, 0.9]], "symbol-sort-key": ["case", ["==", ["get", "sel"], true], 1, 0] } });
+      // Etiquetas: Mapbox coloca primero los símbolos de las capas SUPERIORES, así que "Your report" (arriba) gana a "Match for …" si chocan.
+      map.addLayer({ id: "pins-match-label", type: "symbol", source: "solo", filter: ["has", "matchName"],
+        layout: { "text-field": ["concat", "Match for ", ["get", "matchName"]], "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-size": 11, "text-offset": ["interpolate", ["linear"], ["zoom"], 9, ["literal", [0, -3.8]], 12, ["literal", [0, -5.2]], 14, ["literal", [0, -5.9]]], "text-anchor": "bottom", "text-allow-overlap": false },
         paint: { "text-color": "${C.ok}", "text-halo-color": "#fff", "text-halo-width": 2 } });
+      map.addLayer({ id: "pins-mine-label", type: "symbol", source: "solo", filter: ["==", ["get", "mine"], true],
+        layout: { "text-field": "Your report", "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-size": 11, "text-offset": ["interpolate", ["linear"], ["zoom"], 9, ["literal", [0, -3.8]], 12, ["literal", [0, -5.2]], 14, ["literal", [0, -5.9]]], "text-anchor": "bottom", "text-allow-overlap": false },
+        paint: { "text-color": "${C.ink}", "text-halo-color": "#fff", "text-halo-width": 2 } });
 
       // Resultado de la búsqueda de zona: punto blanco con borde ink (distinto del punto negro de "tú").
       map.addSource("focus", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       map.addLayer({ id: "focus-dot", type: "circle", source: "focus", paint: { "circle-color": "#ffffff", "circle-radius": 8, "circle-stroke-width": 3, "circle-stroke-color": "${C.ink}" } });
 
-      // Reportes propios ("Your report"): aro negro bajo el pin y etiqueta encima.
-      map.addLayer({ id: "pins-mine-ring", type: "circle", source: "items", filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "mine"], true]],
-        paint: { "circle-radius": 25, "circle-translate": [0, -30], "circle-color": "rgba(0,0,0,0)", "circle-stroke-width": 2.5, "circle-stroke-color": "${C.ink}" } }, "pins");
-      map.addLayer({ id: "pins-mine-label", type: "symbol", source: "items", filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "mine"], true]],
-        layout: { "text-field": "Your report", "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-size": 11, "text-offset": [0, -5.9], "text-anchor": "bottom", "text-allow-overlap": true },
-        paint: { "text-color": "${C.ink}", "text-halo-color": "#fff", "text-halo-width": 2 } });
-
-      // Ubicación actual: SIEMPRE por encima de clusters y pines (se añade la última, sin capa de referencia).
-      // Halo de precisión (radio real del GPS), anillo que pulsa cada 2 s y punto negro de 16 px con borde blanco de 3 px.
+      // Ubicación actual: SIEMPRE por encima de clusters y pines (se añade la última, sin capa de referencia). Se distingue de un cluster
+      // por FORMA, no por color (ambos son oscuros): punto pequeño y sin número (6 px + borde blanco de 4 px), rodeado de un halo negro
+      // semitransparente claramente MÁS GRANDE que cualquier cluster (34 px de radio; un cluster mide 18–30) y un pulso sutil en ese halo.
+      // Además, el halo de precisión real del GPS (en metros).
       map.addSource("accuracy", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-      map.addLayer({ id: "me-accuracy", type: "fill", source: "accuracy", paint: { "fill-color": "#000", "fill-opacity": 0.1 } });
+      map.addLayer({ id: "me-accuracy", type: "fill", source: "accuracy", paint: { "fill-color": "#000", "fill-opacity": 0.08 } });
       map.addLayer({ id: "me-accuracy-line", type: "line", source: "accuracy", paint: { "line-color": "#000", "line-opacity": 0.25, "line-width": 1 } });
       map.addSource("me", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-      map.addLayer({ id: "me-halo", type: "circle", source: "me", paint: { "circle-color": "#2A6B63", "circle-radius": 8, "circle-opacity": 0.45 } });
-      map.addLayer({ id: "me-dot", type: "circle", source: "me", paint: { "circle-color": "#000000", "circle-radius": 8, "circle-stroke-width": 3, "circle-stroke-color": "#ffffff" } });
+      map.addLayer({ id: "me-halo", type: "circle", source: "me", paint: { "circle-color": "#000000", "circle-radius": 34, "circle-opacity": 0.12, "circle-stroke-width": 1.5, "circle-stroke-color": "#000000", "circle-stroke-opacity": 0.3 } });
+      map.addLayer({ id: "me-pulse", type: "circle", source: "me", paint: { "circle-color": "#000000", "circle-radius": 10, "circle-opacity": 0 } });
+      map.addLayer({ id: "me-dot", type: "circle", source: "me", paint: { "circle-color": "#000000", "circle-radius": 6, "circle-stroke-width": 4, "circle-stroke-color": "#ffffff" } });
+      // El pulso respeta la preferencia del sistema "reducir movimiento": con ella activa el halo queda quieto.
+      var mq = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+      var reduce = !!(mq && mq.matches);
+      if (mq && mq.addEventListener) mq.addEventListener("change", function (e) { reduce = e.matches; });
       var t0 = performance.now();
       (function pulse(now) {
-        if (meOn && map.getLayer("me-halo")) {
-          var k = ((now - t0) % 2000) / 2000;
-          map.setPaintProperty("me-halo", "circle-radius", 8 + 14 * k);
-          map.setPaintProperty("me-halo", "circle-opacity", 0.45 * (1 - k));
+        if (meOn && map.getLayer("me-pulse")) {
+          if (reduce) map.setPaintProperty("me-pulse", "circle-opacity", 0);
+          else {
+            var k = ((now - t0) % 2400) / 2400;
+            map.setPaintProperty("me-pulse", "circle-radius", 10 + 24 * k);
+            map.setPaintProperty("me-pulse", "circle-opacity", 0.28 * (1 - k));
+          }
         }
         requestAnimationFrame(pulse);
       })(t0);
