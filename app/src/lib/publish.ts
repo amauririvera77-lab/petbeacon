@@ -3,13 +3,16 @@ import { ensureAccount } from "./account";
 import { uploadPhoto } from "./photos";
 import { registerPush } from "./push";
 import { supabase } from "./supabase";
-import type { ReportCondition, ReportStatus, Species } from "./database.types";
+import type { PetSize, ReportCondition, ReportStatus, Species } from "./database.types";
 
 export type PublishInput = {
   status: Extract<ReportStatus, "lost" | "sighted">;
   species: Species;
   name: string | null;
   breed: string | null;
+  breedId?: string | null; // raza canónica (0016)
+  color?: string | null; // de la mascota registrada (0017)
+  size?: PetSize | null;
   features: string | null;
   condition?: ReportCondition | null; // solo avistamientos (columna propia desde 0012)
   contact: string | null;
@@ -37,6 +40,9 @@ export async function publishReport(input: PublishInput): Promise<PublishResult>
   if (input.status === "lost" && !petId) {
     const { data: pet, error: petErr } = await supabase.from("pets").insert({
       user_id: uid, name: input.name?.trim() || `Unnamed ${input.species}`, species: input.species, breed: input.breed, photo_url,
+      // Columnas de las migraciones 0016/0017: solo se envían con valor, para no fallar si aún no se aplicaron.
+      ...(input.breedId ? { breed_id: input.breedId } : {}), ...(input.color ? { color: input.color } : {}),
+      ...(input.size ? { size: input.size } : {}), ...(input.features ? { features: input.features } : {}),
     }).select("id").single();
     if (petErr) throw new Error(`Couldn't register your pet: ${petErr.message}`);
     petId = (pet as { id: string }).id;
@@ -51,6 +57,9 @@ export async function publishReport(input: PublishInput): Promise<PublishResult>
       species: input.species,
       name: input.name,
       breed: input.breed,
+      ...(input.breedId ? { breed_id: input.breedId } : {}),
+      ...(input.color ? { color: input.color } : {}),
+      ...(input.size ? { size: input.size } : {}),
       photo_url,
       features_description: input.features,
       condition: input.condition ?? null,

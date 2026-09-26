@@ -1,6 +1,6 @@
 -- seed_demo_reset.sql — regenera los datos de DEMO con fechas relativas a now(). Se puede correr las veces que quieras.
 --
--- CUÁNDO CORRERLO: DESPUÉS de aplicar 0009, 0010, 0011 y 0012 (las reglas de matching y las columnas nuevas ya deben existir) y con tu
+-- CUÁNDO CORRERLO: DESPUÉS de aplicar 0009 … 0017 (las reglas de matching y las columnas nuevas ya deben existir) y con tu
 -- cuenta ya creada en la app (para que el reporte de Max sea "mío"). Pégalo entero en el SQL Editor y ejecuta Run.
 --
 -- QUÉ HACE
@@ -208,6 +208,22 @@ begin
     ('Free pet food pantry',           'Free pet food pantry',          'Community Hall, Tonnelle Ave & 51st St, North Bergen, NJ', -74.030946, 40.787819, '(201) 555-0110', 'hudsoncountypetpantry.org/pantry')
   ) as v(old_name, new_name, addr, lng, lat, phone, web)
   where r.name in (v.old_name, v.new_name);
+
+  -- 6. Razas canónicas (0016) y color/tamaño (0017), solo si esas migraciones ya se aplicaron. Luego se recalculan las coincidencias de los Lost.
+  if exists (select 1 from information_schema.columns where table_name = 'reports' and column_name = 'breed_id') then
+    execute $q$update reports set breed_id = map_breed_or_mixed(breed, species) where id::text like '20000000-0000-0000-0000-0000000000__'$q$;
+    execute $q$update pets set breed_id = map_breed_or_mixed(breed, species) where breed_id is null and breed is not null and user_id in ($1, $2)$q$ using me, demo_owner;
+  end if;
+  if exists (select 1 from information_schema.columns where table_name = 'pets' and column_name = 'color') then
+    -- Max (Golden, grande) y Lazy (crema, pequeña); el Golden con foto también es dorado y grande, así que su coincidencia sigue siendo 'strong'.
+    execute $q$update pets set color = 'golden', size = 'large' where id = $1$q$ using max_pet;
+    execute $q$update pets set color = 'cream', size = 'small' where id = $1$q$ using lazy_pet;
+    execute $q$update reports set color = 'golden', size = 'large' where id in ('20000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000010')$q$;
+    execute $q$update reports set color = 'cream', size = 'small' where id = '20000000-0000-0000-0000-000000000011'$q$;
+  end if;
+  if exists (select 1 from pg_proc where proname = 'recompute_matches_for_lost') then
+    perform recompute_matches_for_lost(id) from reports where id::text like '20000000-0000-0000-0000-0000000000__' and status = 'lost';
+  end if;
 
   -- Reactiva los triggers de push.
   if not v_send_push then

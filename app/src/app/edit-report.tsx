@@ -7,8 +7,10 @@ import { Primary } from "../components/Primary";
 import { TextField } from "../components/TextField";
 import { Chips } from "../components/report/Chips";
 import { LocationPicker } from "../components/report/LocationPicker";
+import { BreedPicker } from "../components/report/BreedPicker";
 import { PhotoPicker } from "../components/report/PhotoPicker";
 import { useHome } from "../hooks/useHome";
+import { EMPTY_BREED, breedById, breedValueFrom, type BreedValue } from "../lib/breeds";
 import type { Report, Species } from "../lib/database.types";
 import type { Place } from "../lib/geocode";
 import { uploadPhoto } from "../lib/photos";
@@ -17,7 +19,7 @@ import { useSession } from "../state/session";
 import { C, MIN_HIT, font } from "../theme/tokens";
 
 const SPECIES = [{ value: "dog", label: "Dog" }, { value: "cat", label: "Cat" }, { value: "other", label: "Other" }] as const;
-type Loaded = Pick<Report, "id" | "status" | "name" | "species" | "breed" | "photo_url" | "features_description" | "location_label">;
+type Loaded = Pick<Report, "id" | "status" | "name" | "species" | "breed" | "breed_id" | "pet_id" | "photo_url" | "features_description" | "location_label">;
 
 // Edit report (prototipo): mismos campos que el paso 2 de Report lost pet, prellenados, y un solo botón "Save changes".
 // El contacto no se edita aquí (es privado y solo lo lee su dueño).
@@ -31,7 +33,8 @@ export default function EditReport() {
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
   const [species, setSpecies] = useState<Species | null>(null);
-  const [breed, setBreed] = useState("");
+  const [breed, setBreed] = useState<BreedValue>(EMPTY_BREED);
+  const [petId, setPetId] = useState<string | null>(null);
   const [features, setFeatures] = useState("");
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -43,10 +46,10 @@ export default function EditReport() {
 
   useEffect(() => {
     if (!supabase || !id) return;
-    supabase.from("reports").select("id,status,name,species,breed,photo_url,features_description,location_label").eq("id", id).maybeSingle().then(({ data, error }) => {
+    supabase.from("reports").select("id,status,name,species,breed,breed_id,pet_id,photo_url,features_description,location_label").eq("id", id).maybeSingle().then(({ data, error }) => {
       if (error || !data) { Alert.alert("Couldn't load this report", error?.message ?? "It may have been removed."); router.back(); return; }
       const r = data as Loaded;
-      setName(r.name ?? ""); setSpecies(r.species); setBreed(r.breed ?? ""); setFeatures(r.features_description ?? "");
+      setName(r.name ?? ""); setSpecies(r.species); setBreed(breedValueFrom(r.breed_id, r.breed, r.species)); setPetId(r.pet_id); setFeatures(r.features_description ?? "");
       setPhotoUrl(r.photo_url); setOrigPhoto(r.photo_url); setExistingLabel(r.location_label); setLoading(false);
     });
   }, [id]);
@@ -60,7 +63,7 @@ export default function EditReport() {
       const { data: s } = await supabase.auth.getSession();
       if (!s.session) throw new Error("You're signed out.");
       const patch: Partial<Report> = {
-        name: name.trim(), species, breed: breed.trim() || null, features_description: features.trim() || null,
+        name: name.trim(), species, breed: breed.text.trim() || null, breed_id: breed.id, features_description: features.trim() || null,
       };
       if (photoUri) {
         patch.photo_url = await uploadPhoto(s.session.user.id, photoUri);
@@ -75,6 +78,8 @@ export default function EditReport() {
       }
       const { error } = await supabase.from("reports").update(patch).eq("id", id);
       if (error) throw new Error(error.message);
+      // La mascota registrada es la fuente de los datos públicos: se mantiene igual que el reporte (nombre, tipo y raza).
+      if (petId) await supabase.from("pets").update({ name: name.trim(), species, breed: breed.text.trim() || null, breed_id: breed.id }).eq("id", petId);
       router.back();
     } catch (e) {
       Alert.alert("Couldn't save your changes", e instanceof Error ? e.message : "Something went wrong.");
@@ -95,8 +100,8 @@ export default function EditReport() {
               <PhotoPicker uri={photoUri ?? photoUrl} onChange={(u) => { setPhotoUri(u); if (!u) setPhotoUrl(null); }} />
             </View>
             <TextField label="Pet's name" placeholder="Max" value={name} onChangeText={setName} />
-            <Chips label="Type" options={SPECIES} value={species} onChange={setSpecies} />
-            <TextField label="Breed (optional)" placeholder="Golden Retriever" value={breed} onChangeText={setBreed} />
+            <Chips label="Type" options={SPECIES} value={species} onChange={(s) => { const b = breedById(breed.id); if (b?.species && b.species !== s) setBreed(EMPTY_BREED); setSpecies(s); }} />
+            <BreedPicker optional species={species} value={breed} onChange={setBreed} />
             <TextField label="Distinctive features (optional)" placeholder="Blue collar, limps on left leg" value={features} onChangeText={setFeatures} multiline />
             <View style={{ gap: 8 }}>
               <Text style={styles.label}>Last seen</Text>

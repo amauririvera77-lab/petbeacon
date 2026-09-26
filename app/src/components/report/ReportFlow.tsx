@@ -8,7 +8,8 @@ import { reportShareText } from "../../lib/shareText";
 import { publishReport } from "../../lib/publish";
 import { supabase } from "../../lib/supabase";
 import { validateContact } from "../../lib/validation";
-import type { Species } from "../../lib/database.types";
+import { EMPTY_BREED, breedById, breedValueFrom, type BreedValue } from "../../lib/breeds";
+import type { PetSize, Species } from "../../lib/database.types";
 import { useHome } from "../../hooks/useHome";
 import { useMyReports } from "../../hooks/useMyReports";
 import { usePets } from "../../hooks/usePets";
@@ -23,6 +24,7 @@ import { useSnackbar } from "../Snackbar";
 import { TextField } from "../TextField";
 import { ConditionGrid, TypeButtons, type Condition } from "../flow/OptionButtons";
 import { PhotoDropzone } from "../flow/PhotoDropzone";
+import { BreedPicker } from "./BreedPicker";
 import { FlowHeader } from "../layout/Headers";
 import { ScreenLayout } from "../layout/ScreenLayout";
 import { SuccessBlock, successText } from "../layout/Success";
@@ -62,7 +64,11 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   const { reports: myReports, loading: mineLoading } = useMyReports();
   const homePets = useMemo(() => petsAtHome(pets, myReports), [pets, myReports]);
   const [species, setSpecies] = useState<Species | null>(speciesParam === "dog" || speciesParam === "cat" || speciesParam === "other" ? speciesParam : null);
-  const [breed, setBreed] = useState("");
+  const [breed, setBreed] = useState<BreedValue>(EMPTY_BREED);
+  const [petColor, setPetColor] = useState<string | null>(null); // color y tamaño de la mascota registrada: viajan con el reporte
+  const [petSize, setPetSize] = useState<PetSize | null>(null);
+  // Una raza de perro no vale para un gato: al cambiar la especie se limpia la raza elegida.
+  const changeSpecies = (s: Species) => { const b = breedById(breed.id); if (b?.species && b.species !== s) setBreed(EMPTY_BREED); setSpecies(s); };
   const [features, setFeatures] = useState("");
   const [condition, setCondition] = useState<Condition | null>(null);
   const [place, setPlace] = useState<Place | null>(null);
@@ -83,9 +89,12 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         if (act && act.length > 0) Alert.alert("Already reported", "This pet already has an active Lost report.", [{ text: "OK", onPress: () => router.back() }]);
       });
     }
-    supabase.from("pets").select("name,species,breed,photo_url").eq("id", petId).maybeSingle().then(({ data }) => {
+    supabase.from("pets").select("name,species,breed,breed_id,photo_url,features,color,size").eq("id", petId).maybeSingle().then(({ data }) => {
       if (data) {
-        setPetName(data.name); setSpecies(data.species as Species); setBreed(data.breed ?? ""); setPetPhotoUrl(data.photo_url);
+        setPetName(data.name); setSpecies(data.species as Species); setBreed(breedValueFrom(data.breed_id, data.breed, data.species as Species)); setPetPhotoUrl(data.photo_url);
+        // Datos que ayudan a encontrarla: rasgos, color y tamaño de la mascota se precargan en el reporte express.
+        if (data.features) setFeatures(data.features);
+        setPetColor(data.color ?? null); setPetSize((data.size as PetSize | null) ?? null);
         if (kind === "lost" && data.name?.trim() && data.species) setI(ORDER.lost.indexOf("where"));
       }
       setPetLoading(false);
@@ -114,7 +123,10 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         status: kind,
         species,
         name: isLost ? petName.trim() : null,
-        breed: breed.trim() || null,
+        breed: breed.text.trim() || null,
+        breedId: breed.id,
+        color: petColor,
+        size: petSize,
         features: features.trim() || null,
         condition: !isLost ? condition : null,
         contact: c.value,
@@ -192,8 +204,8 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         <Text style={[st.h2, { marginBottom: 24 }]}>Tell us about your pet</Text>
         <View style={st.field}><TextField variant="form" label="Pet's name" placeholder="Max" value={petName} onChangeText={setPetName} /></View>
         <Text style={st.label}>Type</Text>
-        <View style={st.field}><TypeButtons value={species} onChange={setSpecies} /></View>
-        <View style={st.field}><TextField variant="form" label="Breed" labelSuffix="(optional)" placeholder="Golden Retriever" value={breed} onChangeText={setBreed} /></View>
+        <View style={st.field}><TypeButtons value={species} onChange={changeSpecies} /></View>
+        <View style={st.field}><BreedPicker optional species={species} value={breed} onChange={setBreed} /></View>
         <TextField variant="form" label="Distinctive features" labelSuffix="(optional)" placeholder="Blue collar, limps on left leg"
           value={features} onChangeText={setFeatures} multiline maxLength={100} />
         <Text style={st.counter}>{features.length}/100</Text>
@@ -228,10 +240,11 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         <Text style={[st.h2, { marginBottom: 24 }]}>How do they seem?</Text>
         {/* "Type" no está en el prototipo, pero el matching exige especie exacta: se conserva con el mismo estilo de botones. */}
         <Text style={st.label}>Type</Text>
-        <View style={st.field}><TypeButtons value={species} onChange={setSpecies} /></View>
+        <View style={st.field}><TypeButtons value={species} onChange={changeSpecies} /></View>
+        <View style={st.field}><BreedPicker optional species={species} value={breed} onChange={setBreed} /></View>
         <View style={{ marginBottom: 32 }}><ConditionGrid value={condition} onChange={setCondition} /></View>
         <View style={st.field}>
-          <TextField variant="form" label="Breed or description" labelSuffix="(optional)" placeholder="Beagle mix, no collar" value={features} onChangeText={setFeatures} multiline />
+          <TextField variant="form" label="Description" labelSuffix="(optional)" placeholder="No collar, white paws, very friendly" value={features} onChangeText={setFeatures} multiline />
         </View>
         <Text style={st.label}>Want updates on this pet? <Text style={st.optional}>(optional)</Text></Text>
         <View style={[st.iconField, !!contactError && { borderColor: C.sosDark }]}>
@@ -272,7 +285,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   const shareAlert = () => {
     if (!publishedId || !species) return;
     Share.share({ message: reportShareText({
-      id: publishedId, status: kind, species, name: isLost ? petName.trim() || null : null, breed: breed.trim() || null,
+      id: publishedId, status: kind, species, name: isLost ? petName.trim() || null : null, breed: breed.text.trim() || null,
       features_description: features.trim() || null, location_label: place?.label ?? null, created_at: new Date().toISOString(),
     }) }).catch(() => Alert.alert("Couldn't open sharing"));
   };

@@ -9,6 +9,7 @@ import { FLYERS_READY } from "../lib/flyer";
 import { reportShareText } from "../lib/shareText";
 import { cleanFeatures, reportTitle } from "../lib/reportText";
 import { whenLabel } from "../lib/time";
+import { colorLabel, sizeLabel } from "../lib/petOptions";
 import { CONDITION_LABEL } from "./flow/OptionButtons";
 import { Badge } from "./Badge";
 import { FocusImage } from "./FocusImage";
@@ -95,6 +96,12 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited }: {
                     <Text style={styles.muted}>{r.distance_mi.toFixed(1)} mi from you</Text>
                   </View>
                 </View>
+                {colorLabel(r.color) || sizeLabel(r.size) ? (
+                  <View style={styles.row}>
+                    <View style={{ marginTop: 2 }}><PawPrint size={18} color={C.slate500} /></View>
+                    <Text style={styles.features}>{[colorLabel(r.color), sizeLabel(r.size)].filter(Boolean).join(" · ")}</Text>
+                  </View>
+                ) : null}
                 {r.condition ? (
                   <View style={styles.row}>
                     <View style={{ marginTop: 2 }}><Eye size={18} color={C.slate500} /></View>

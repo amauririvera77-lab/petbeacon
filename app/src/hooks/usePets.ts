@@ -11,7 +11,7 @@ export function usePets() {
 
   const refresh = useCallback(async () => {
     if (!supabase || !uid) { setPets([]); setLoading(false); return; }
-    const { data, error } = await supabase.from("pets").select("*").eq("user_id", uid).order("created_at", { ascending: true });
+    const { data, error } = await supabase.from("pets").select("*").eq("user_id", uid).is("archived_at", null).order("created_at", { ascending: true });
     if (error) console.warn("pets:", error.message);
     else setPets((data ?? []) as Pet[]);
     setLoading(false);
