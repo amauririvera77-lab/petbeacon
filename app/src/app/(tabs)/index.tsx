@@ -1,8 +1,13 @@
 import { router, useFocusEffect } from "expo-router";
 import { LocateFixed, X } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { EditLocationSheet } from "../../components/EditLocationSheet";
+import { EmptyState } from "../../components/EmptyState";
+import { LocationOffStrip } from "../../components/LocationOffStrip";
+import { NewReportsPill } from "../../components/NewReportsPill";
+import { ReportCardSkeleton } from "../../components/ReportCardSkeleton";
 import { EnableAlertsCard } from "../../components/EnableAlertsCard";
 import { HomeHeader } from "../../components/HomeHeader";
 import { CompactSegmented } from "../../components/CompactSegmented";
@@ -23,11 +28,11 @@ import { StatusChips } from "../../components/StatusChips";
 import { ResourceModal, ResourceSheetMode } from "../../components/ResourceModal";
 import { ReportCard } from "../../components/ReportCard";
 import { SetupNotice } from "../../components/SetupNotice";
-import { Placeholder } from "../../components/TabScreen";
 import type { ReportNearby, ResourceNearby } from "../../lib/database.types";
 import { fetchReportNearby } from "../../lib/reportLookup";
 import { useAuthUser } from "../../hooks/useAuthUser";
 import { useFeed } from "../../hooks/useFeed";
+import { useLocationPermission } from "../../hooks/useLocationPermission";
 import { useHome } from "../../hooks/useHome";
 import { useMyPosition } from "../../hooks/useMyPosition";
 import { useMyMatches } from "../../hooks/useMyMatches";
@@ -63,8 +68,16 @@ export default function Home() {
   const { setCollapsed } = useFab();
   const uid = useAuthUser();
   const center = useHome();
-  const me = useMyPosition(view === "map");
-  const { reports, loading, error, refresh } = useFeed(prefs.viewRadiusMi, center.lat, center.lng);
+  const { pos: me, status: posStatus } = useMyPosition(view === "map");
+  const { status: locPerm, recheck: recheckLoc } = useLocationPermission();
+  const [locDismissed, setLocDismissed] = useState(false);
+  const [zoneOpen, setZoneOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [pulling, setPulling] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  // El polling y las coincidencias se refrescan juntos; `onPoll` se completa más abajo (los callbacks vienen de hooks posteriores).
+  const pollRef = useRef<() => void>(() => {});
+  const { reports, loading, error, lastUpdated, failed, pending, applyPending, refresh } = useFeed(prefs.viewRadiusMi, center.lat, center.lng, { poll: focused, onPoll: () => pollRef.current() });
   const { resources, refresh: refreshResources } = useResourcesState(prefs.viewRadiusMi, center.lat, center.lng);
   const { matches, refresh: refreshMatches, dismiss, restore } = useMyMatches();
   const snackbar = useSnackbar();
@@ -113,12 +126,37 @@ export default function Home() {
   };
   const changeMapQuery = (q: string) => { setMapQuery(q); if (!q.trim()) setFocus(null); };
 
-  // Solo novedades de otros usuarios (lo propio no es una notificación).
-  const others = reports.filter((r) => !mineIds.includes(r.id));
+  // Solo novedades de otros usuarios (lo propio no es una notificación). Incluye lo detectado por el polling aunque aún no se haya
+  // mostrado en la lista: así el badge de la campana y la píldora "new reports" cuentan lo mismo (fase 6.7).
+  pollRef.current = () => { refreshMatches(); refreshMine(); };
+  const newOnes = useMemo(() => {
+    if (!pending) return [];
+    const have = new Set(reports.map((r) => r.id));
+    return pending.filter((r) => !have.has(r.id) && !mineIds.includes(r.id));
+  }, [pending, reports, mineIds]);
+  const newVisible = useMemo(() => applyHomeFilters(newOnes, prefs, view === "list" ? listQuery : "").length, [newOnes, prefs, listQuery, view]);
+  const others = useMemo(() => [...reports.filter((r) => !mineIds.includes(r.id)), ...newOnes], [reports, mineIds, newOnes]);
+  const showNew = () => { applyPending(); if (view === "list") scrollRef.current?.scrollTo({ y: 0, animated: true }); };
+  // Deslizar hacia abajo en la lista: refresca todo y muestra el indicador hasta terminar.
+  const onPull = async () => {
+    setPulling(true);
+    await Promise.allSettled([refresh(), refreshMatches(), refreshMine(), refreshResources()]);
+    setPulling(false);
+  };
+  // Radio siguiente (1 → 5 → 10) para el botón "Expand" de los estados vacíos.
+  const nextRadius: ViewRadius | null = prefs.viewRadiusMi === 1 ? 5 : prefs.viewRadiusMi === 5 ? 10 : null;
+  const noReportsInRadius = !loading && !error && reports.length === 0;
+  const emptyRadiusProps = nextRadius
+    ? { title: `No reports within ${prefs.viewRadiusMi} mi`, body: "Nothing has been reported in this area recently.", actionLabel: `Expand to ${nextRadius} mi`, onAction: () => setPrefs({ viewRadiusMi: nextRadius }) }
+    : { title: "No reports within 10 mi", body: "Nothing has been reported nearby recently. We'll alert you when something is." };
   const { items, unread } = useNotificationsFeed(others, matches, uid, notifSeenAt);
 
   // Al volver de publicar un reporte, el feed se actualiza sin tener que reiniciar la app.
-  useFocusEffect(useCallback(() => { refresh(); refreshMatches(); refreshMine(); refreshResources(); }, [refresh, refreshMatches, refreshMine, refreshResources]));
+  useFocusEffect(useCallback(() => {
+    setFocused(true); recheckLoc();
+    refresh(); refreshMatches(); refreshMine(); refreshResources();
+    return () => setFocused(false);
+  }, [refresh, refreshMatches, refreshMine, refreshResources, recheckLoc]));
 
 
   // Abrir la hoja limpia el badge (CLAUDE.md §2).
@@ -162,8 +200,10 @@ export default function Home() {
           </View>
         </View>
       </View>
-      <OfflineBanner />
+      <OfflineBanner lastUpdated={lastUpdated ?? null} failed={failed && !error} onRetry={refresh} />
+      {locPerm === "denied" && !locDismissed ? <LocationOffStrip onSetZone={() => setZoneOpen(true)} onDismiss={() => setLocDismissed(true)} /> : null}
 
+      <View style={{ flex: 1 }}>
       {view === "map" ? (
         <View style={styles.mapWrap}>
           {!MAPBOX_TOKEN ? (
@@ -177,6 +217,19 @@ export default function Home() {
                 if (sel.kind === "resource") { setPreviewId(null); const r = resources.find((x) => x.id === sel.id); if (r) openResource(r); }
                 else setPreviewId(sel.id);
               }} />
+              {posStatus === "finding" ? (
+                <View style={styles.finding} accessibilityLiveRegion="polite">
+                  <ActivityIndicator size="small" color={C.ink} />
+                  <Text style={styles.findingT}>Finding your location…</Text>
+                </View>
+              ) : null}
+              {error ? (
+                <EmptyState style={styles.mapEmpty} title="We couldn't load reports" body="Check your connection and try again." actionLabel="Try again" onAction={refresh} />
+              ) : noReportsInRadius && !preview ? (
+                <EmptyState style={styles.mapEmpty} {...emptyRadiusProps} />
+              ) : !loading && reports.length > 0 && mapReports.length === 0 ? (
+                <EmptyState style={styles.mapEmpty} title="No reports match your filters" actionLabel="Reset filters" onAction={resetFilters} />
+              ) : null}
               <MapRadiusChip value={prefs.viewRadiusMi} onChange={(mi) => setPrefs({ viewRadiusMi: mi as ViewRadius })} />
               <Pressable accessibilityRole="button" accessibilityLabel="Center map on my location" onPress={() => mapRef.current?.recenter()} style={styles.recenter}>
                 <LocateFixed size={22} color={C.ink} />
@@ -196,7 +249,8 @@ export default function Home() {
           )}
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.listC} onScroll={onScroll} scrollEventThrottle={16}>
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.listC} onScroll={onScroll} scrollEventThrottle={16}
+          refreshControl={<RefreshControl refreshing={pulling} onRefresh={onPull} tintColor={C.ink} />}>
           <EnableAlertsCard />
           {celebrate ? <ReunitedCelebration name={celebrate.name} onDone={endCelebration} /> : null}
           <MyReportCarousel reports={activeLost} matches={matches}
@@ -208,19 +262,15 @@ export default function Home() {
           {error === "supabase-not-configured" ? (
             <SetupNotice />
           ) : error ? (
-            <View style={styles.errBox}>
-              <Text style={styles.errT}>Couldn't load the feed: {error}</Text>
-              <Pressable accessibilityRole="button" onPress={refresh} style={styles.retry}><Text style={styles.retryT}>Retry</Text></Pressable>
-            </View>
+            <EmptyState title="We couldn't load reports" body="Check your connection and try again." actionLabel="Try again" onAction={refresh} />
           ) : loading ? (
-            <ActivityIndicator style={{ marginTop: 24 }} color={C.teal} />
-          ) : reports.length === 0 ? (
-            <Placeholder text={`No activity within ${prefs.viewRadiusMi} mi yet.`} />
-          ) : sorted.length === 0 ? (
-            <View style={styles.noMatch}>
-              <Text style={styles.noMatchT}>No reports match your filters</Text>
-              <Pressable accessibilityRole="button" onPress={() => { resetFilters(); setListQuery(""); }} style={styles.retry}><Text style={styles.retryT}>Reset filters</Text></Pressable>
+            <View style={{ gap: 10 }} accessibilityLabel="Loading reports" accessibilityRole="progressbar">
+              {[0, 1, 2, 3].map((i) => <ReportCardSkeleton key={i} />)}
             </View>
+          ) : reports.length === 0 ? (
+            <EmptyState {...emptyRadiusProps} />
+          ) : sorted.length === 0 ? (
+            <EmptyState title="No reports match your filters" actionLabel="Reset filters" onAction={() => { resetFilters(); setListQuery(""); }} />
           ) : (
             <>
               <SortControl value={prefs.sort} onChange={setSort} count={sorted.length} />
@@ -231,7 +281,10 @@ export default function Home() {
           )}
         </ScrollView>
       )}
+      <NewReportsPill count={newVisible} top={view === "map" ? 68 : 12} onPress={showNew} />
+      </View>
 
+      <EditLocationSheet visible={zoneOpen} onClose={() => { setZoneOpen(false); recheckLoc(); }} />
       <FilterSheet visible={filtersOpen} prefs={prefs} onChange={setPrefs} onReset={resetFilters} onClose={() => setFiltersOpen(false)} />
       <PinDetailSheet report={pinReport} mine={!!pinReport && mineIds.includes(pinReport.id)} onMarkReunited={onMarkReunited} onClose={() => setPinReport(null)} />
       <MatchesSheet lostName={matchesFor?.name ?? ""} matches={matchesFor ? matches.filter((m) => m.lost_report_id === matchesFor.id) : null}
@@ -251,6 +304,9 @@ const styles = StyleSheet.create({
   preview: { position: "absolute", left: 12, right: 16 + 73 + 8, bottom: 16, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 4 },
   focusChip: { position: "absolute", top: 12, right: 12, maxWidth: "55%", minHeight: 44, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: C.white, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
   focusT: { flexShrink: 1, fontFamily: font.bodyBold, fontSize: 13, color: C.ink },
+  finding: { position: "absolute", top: 68, left: 12, minHeight: 40, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: C.white, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
+  findingT: { fontFamily: font.bodySemi, fontSize: 13, color: C.ink },
+  mapEmpty: { position: "absolute", left: 12, right: 16 + 73 + 8, bottom: 16 },
   noMatch: { alignItems: "center", gap: 12, padding: 24, borderRadius: radius.lg, borderWidth: 1, borderStyle: "dashed", borderColor: C.border2, backgroundColor: C.white },
   noMatchT: { fontFamily: font.head, fontSize: 16, color: C.ink },
   // Padding inferior = FAB + su margen: la última tarjeta se ve completa al llegar al final del scroll.

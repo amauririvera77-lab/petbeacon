@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { readCache, writeCache } from "../lib/cache";
 import { supabase } from "../lib/supabase";
 import type { ResourceNearby } from "../lib/database.types";
 import { DEFAULT_CENTER } from "../lib/geo";
@@ -9,15 +10,22 @@ export function useResourcesState(radiusMi: number, lat: number = DEFAULT_CENTER
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const key = `resources.${radiusMi}.${lat.toFixed(2)},${lng.toFixed(2)}`;
+  const haveRef = useRef(false);
+
+  // Con la última copia buena como respaldo: sin conexión se siguen mostrando los recursos guardados (fase 6.3).
   const refresh = useCallback(async () => {
     if (!supabase) { setLoading(false); setError("supabase-not-configured"); return; }
     const { data, error: err } = await supabase.rpc("resources_nearby", { lat, lng, radius_mi: radiusMi });
-    if (err) setError(err.message);
-    else { setError(null); setResources(data ?? []); }
+    if (!err) { haveRef.current = true; setError(null); setResources(data ?? []); writeCache(key, data ?? []); }
+    else if (!haveRef.current) {
+      const c = await readCache<ResourceNearby[]>(key);
+      if (c) { haveRef.current = true; setResources(c.data); setError(null); } else setError(err.message);
+    }
     setLoading(false);
-  }, [lat, lng, radiusMi]);
+  }, [lat, lng, radiusMi, key]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => { haveRef.current = false; refresh(); }, [refresh]);
   return { resources, loading, error, refresh };
 }
 

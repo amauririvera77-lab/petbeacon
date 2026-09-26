@@ -35,7 +35,7 @@ export function EditLocationSheet({ visible, onClose }: { visible: boolean; onCl
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.handleWrap}><View style={styles.handle} /></View>
           <Text style={styles.title} accessibilityRole="header">Edit location</Text>
-          <TextField label="City or ZIP code" value={draft} onChangeText={setDraft} placeholder="White Plains, NY" autoCapitalize="words"
+          <TextField label="City or ZIP code" value={draft} onChangeText={setDraft} placeholder="North Bergen, NJ" autoCapitalize="words"
             helper={error ?? "Use this if your location was detected incorrectly."} />
           <View style={{ height: 24 }} />
           <Primary label={busy ? "Saving…" : "Save"} onPress={save} disabled={busy} />

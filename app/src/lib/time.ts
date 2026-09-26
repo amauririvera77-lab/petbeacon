@@ -42,3 +42,14 @@ export function whenLabel(iso: string, now = new Date()): string {
   const same = (a: Date, b: Date) => a.toDateString() === b.toDateString();
   return `${same(d, now) ? "Today" : same(d, y) ? "Yesterday" : d.toLocaleDateString([], { month: "short", day: "numeric" })}, ${time}`;
 }
+
+// "just now", "5 min ago", "2 hr ago", "3 days ago": para "Last updated …" (sin abreviar tanto como agoShort).
+export function agoLong(at: number, now = Date.now()): string {
+  const m = Math.max(0, Math.floor((now - at) / 60_000));
+  if (m < 1) return "just now";
+  if (m < 60) return `${m} min ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} hr ago`;
+  const d = Math.floor(h / 24);
+  return `${d} ${d === 1 ? "day" : "days"} ago`;
+}
