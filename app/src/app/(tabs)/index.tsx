@@ -40,7 +40,7 @@ import { useMyReports } from "../../hooks/useMyReports";
 import { useNotificationsFeed } from "../../hooks/useNotificationsFeed";
 import { useResourcesState } from "../../hooks/useResources";
 import { geocode, type Place } from "../../lib/geocode";
-import { activeFilterCount, applyHomeFilters } from "../../lib/homeFilters";
+import { activeFilterCount, applyHomeFilters, localDateKey, mapEventResources } from "../../lib/homeFilters";
 import { reportShareText } from "../../lib/shareText";
 import { sortReports } from "../../lib/sort";
 import { useFab } from "../../state/fab";
@@ -84,6 +84,10 @@ export default function Home() {
   // Memoizado: un array nuevo en cada render reenviaría los datos al WebView.
   const listFiltered = useMemo(() => applyHomeFilters(reports, prefs, listQuery), [reports, prefs, listQuery]);
   const mapReports = useMemo(() => applyHomeFilters(reports, prefs), [reports, prefs]);
+  // Mapa: solo eventos vigentes (hoy o futuros); se recalcula si cambia el día. La lista (tarjeta destacada) no cambia.
+  const today = localDateKey();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const mapResources = useMemo(() => mapEventResources(resources), [resources, today]);
   const featured = resources.find((r) => r.is_featured_event) ?? null;
   // Orden elegido (persiste al cambiar List/Map y al volver a la Home). Por defecto: más recientes primero.
   // Tarjeta de vista previa del pin tocado (misma ReportCard del feed); si un filtro lo oculta, desaparece sola.
@@ -211,9 +215,9 @@ export default function Home() {
             <View style={styles.pad}><SetupNotice /></View>
           ) : (
             <>
-              <MapboxWebView ref={mapRef} alertRadiusMi={alertRadiusMi} selectedId={preview?.id ?? null} token={MAPBOX_TOKEN} reports={mapReports} resources={resources} center={center} radiusMi={prefs.viewRadiusMi} me={me} mineIds={mineIds} focus={focus} onSelect={(sel) => {
+              <MapboxWebView ref={mapRef} alertRadiusMi={alertRadiusMi} selectedId={preview?.id ?? null} token={MAPBOX_TOKEN} reports={mapReports} resources={mapResources} center={center} radiusMi={prefs.viewRadiusMi} me={me} mineIds={mineIds} focus={focus} onSelect={(sel) => {
                 if (!sel) { setPreviewId(null); return; }
-                if (sel.kind === "resource") { setPreviewId(null); const r = resources.find((x) => x.id === sel.id); if (r) openResource(r); }
+                if (sel.kind === "resource") { setPreviewId(null); const r = mapResources.find((x) => x.id === sel.id); if (r) openResource(r); }
                 else setPreviewId(sel.id);
               }} />
               {posStatus === "finding" ? (

@@ -27,3 +27,16 @@ export function activeFilterCount(p: Prefs): number {
   return [p.species !== DEFAULT_PREFS.species, p.viewRadiusMi !== DEFAULT_PREFS.viewRadiusMi, p.age !== DEFAULT_PREFS.age, p.showReunited !== DEFAULT_PREFS.showReunited]
     .filter(Boolean).length;
 }
+
+// "YYYY-MM-DD" de hoy en la zona horaria del dispositivo (event_date es una fecha de calendario, sin hora).
+export function localDateKey(now = new Date()): string {
+  const m = String(now.getMonth() + 1).padStart(2, "0"), d = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${m}-${d}`;
+}
+
+// Pines de recurso del mapa de Home: SOLO eventos (is_featured_event) con event_date de hoy o futura. Un evento pasado, o sin fecha
+// real, no se muestra; el resto de recursos (clínicas, legal, foster…) vive solo en Support and care.
+export function mapEventResources<T extends { is_featured_event: boolean; event_date?: string | null }>(resources: T[], now = new Date()): T[] {
+  const today = localDateKey(now);
+  return resources.filter((r) => r.is_featured_event && !!r.event_date && r.event_date >= today);
+}
