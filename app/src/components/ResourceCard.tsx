@@ -1,4 +1,4 @@
-import { ChevronRight, HeartHandshake, Phone } from "lucide-react-native";
+import { CalendarDays, ChevronRight, HeartHandshake, Phone } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { ResourceNearby } from "../lib/database.types";
 import { CATEGORY_STYLE, resourceIcon } from "../lib/resources";
@@ -21,6 +21,28 @@ export function ResourceCard({ resource: r, onContact }: { resource: ResourceNea
             {({ pressed }) => (<><Phone size={14} color={pressed ? C.white : C.ink} /><Text style={[styles.btnT, pressed && { color: C.white }]}>Contact</Text></>)}
           </Pressable>
         </View>
+      </View>
+    </View>
+  );
+}
+
+// Evento vigente en Support and care: va SIEMPRE arriba de la lista y con otro tratamiento (fondo y borde de los tokens `info`, etiqueta
+// "Event" y la fecha concreta en grande) para que no se lea como un recurso más. Solo usa colores ya existentes.
+export function EventResourceCard({ resource: r, onContact }: { resource: ResourceNearby; onContact: () => void }) {
+  const when = eventWhen(r.event_date, r.hours);
+  return (
+    <View style={styles.event} accessibilityLabel={`Event: ${r.name}${when ? `, ${when}` : ""}`}>
+      <View style={styles.eHead}>
+        <View style={styles.eTag}><CalendarDays size={14} color={C.white} /><Text style={styles.eTagT}>Event</Text></View>
+        {when ? <Text style={styles.eWhen} numberOfLines={2}>{when}</Text> : null}
+      </View>
+      <Text style={styles.eName}>{r.name}</Text>
+      <Text style={styles.eDesc}>{r.description}</Text>
+      <View style={styles.foot}>
+        <Text style={styles.eDist}>{r.distance_mi.toFixed(1)} mi away</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Contact ${r.name}`} onPress={onContact} style={({ pressed }) => [styles.eBtn, pressed && { opacity: 0.85 }]}>
+          <Phone size={14} color={C.white} /><Text style={styles.eBtnT}>Contact</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -53,6 +75,16 @@ const styles = StyleSheet.create({
   dist: { fontFamily: font.bodyBold, fontSize: 12, color: C.teal },
   btn: { minHeight: MIN_HIT - 4, paddingHorizontal: 16, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.ink, backgroundColor: C.white, flexDirection: "row", gap: 6, alignItems: "center" },
   btnT: { fontFamily: font.bodyBold, fontSize: 13, color: C.ink },
+  event: { gap: 8, padding: 16, borderRadius: radius.lg, backgroundColor: C.infoTint, borderWidth: 2, borderColor: C.info },
+  eHead: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 10, rowGap: 4 },
+  eTag: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, height: 26, borderRadius: radius.pill, backgroundColor: C.info },
+  eTagT: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 0.5, textTransform: "uppercase", color: C.white },
+  eWhen: { flexShrink: 1, fontFamily: font.bodyBold, fontSize: 15, color: C.info },
+  eName: { fontFamily: font.head, fontSize: 19, color: C.ink },
+  eDesc: { fontFamily: font.bodyRegular, fontSize: 14, lineHeight: 20, color: C.slate700 },
+  eDist: { fontFamily: font.bodyBold, fontSize: 12, color: C.info },
+  eBtn: { minHeight: MIN_HIT - 4, paddingHorizontal: 18, borderRadius: radius.md, backgroundColor: C.info, flexDirection: "row", gap: 6, alignItems: "center" },
+  eBtnT: { fontFamily: font.bodyBold, fontSize: 13, color: C.white },
   neutral: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: C.border, backgroundColor: C.white },
   nIcon: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: C.surface, alignItems: "center", justifyContent: "center" },
   nKind: { fontFamily: font.bodyBold, fontSize: 11, letterSpacing: 0.5, textTransform: "uppercase", color: C.slate500 },

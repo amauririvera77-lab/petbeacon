@@ -4,12 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OfflineBanner } from "../../components/OfflineBanner";
-import { ResourceCard } from "../../components/ResourceCard";
+import { EventResourceCard, ResourceCard } from "../../components/ResourceCard";
 import { ResourceModal, ResourceSheetMode } from "../../components/ResourceModal";
 import { SetupNotice } from "../../components/SetupNotice";
 import { useHome } from "../../hooks/useHome";
 import { useResourcesState } from "../../hooks/useResources";
 import type { ResourceNearby } from "../../lib/database.types";
+import { mapEventResources } from "../../lib/homeFilters";
 import { CATEGORIES } from "../../lib/resources";
 import { useSession } from "../../state/session";
 import { C, font, radius } from "../../theme/tokens";
@@ -37,10 +38,14 @@ export default function Support() {
   }, [resourceId, resources]);
 
   const q = query.trim().toLowerCase();
-  const filtered = useMemo(
-    () => resources.filter((r) => (category === "all" || r.category === category) && (!q || r.name.toLowerCase().includes(q) || r.description.toLowerCase().includes(q))),
-    [resources, category, q],
-  );
+  // Eventos vigentes (hoy o futuros) SIEMPRE arriba, del más próximo al más lejano en fecha; el resto conserva el orden por distancia.
+  // Un evento ya pasado deja de destacarse y vuelve a su lugar normal.
+  const { filtered, eventIds } = useMemo(() => {
+    const list = resources.filter((r) => (category === "all" || r.category === category) && (!q || r.name.toLowerCase().includes(q) || r.description.toLowerCase().includes(q)));
+    const events = mapEventResources(list).sort((a, b) => (a.event_date ?? "").localeCompare(b.event_date ?? "") || a.distance_mi - b.distance_mi);
+    const ids = new Set(events.map((r) => r.id));
+    return { filtered: [...events, ...list.filter((r) => !ids.has(r.id))], eventIds: ids };
+  }, [resources, category, q]);
   const reset = () => { setQuery(""); setCategory("all"); };
 
   return (
@@ -87,7 +92,10 @@ export default function Support() {
             <Text style={styles.emptyS}>{resources.length === 0 ? "We're still adding local resources in your area." : "Try a different category or search term."}</Text>
             {resources.length > 0 ? <Pressable accessibilityRole="button" onPress={reset} style={styles.emptyBtn}><Text style={styles.emptyBtnT}>Clear filters</Text></Pressable> : null}
           </View>
-        ) : filtered.map((r) => <ResourceCard key={r.id} resource={r} onContact={() => { setMode("contact"); setContact(r); }} />)}
+        ) : filtered.map((r) => {
+          const onContact = () => { setMode("contact"); setContact(r); };
+          return eventIds.has(r.id) ? <EventResourceCard key={r.id} resource={r} onContact={onContact} /> : <ResourceCard key={r.id} resource={r} onContact={onContact} />;
+        })}
       </ScrollView>
 
       <ResourceModal resource={contact} mode={mode} onMode={setMode} onClose={() => setContact(null)} />
