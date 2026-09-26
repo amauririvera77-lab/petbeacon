@@ -15,7 +15,7 @@ export function MatchBanner({ match, onViewSighting, onDismiss }: { match: MyMat
       {match.sighted_photo_url ? (
         <FocusImage uri={match.sighted_photo_url} focusX={match.sighted_focus_x} focusY={match.sighted_focus_y} zoom={(match.sighted_zoom ?? 100) / 100} style={styles.photo} />
       ) : (
-        <SpeciesPlaceholder species={match.sighted_species ?? "other"} size={56} style={styles.photo} />
+        <SpeciesPlaceholder species={match.sighted_species ?? "other"} size={48} style={styles.photo} />
       )}
       <View style={styles.body}>
         <Text style={styles.title}>{matchTitle(match)}</Text>
@@ -31,12 +31,12 @@ export function MatchBanner({ match, onViewSighting, onDismiss }: { match: MyMat
 }
 
 const styles = StyleSheet.create({
-  box: { flexDirection: "row", gap: 12, padding: 12, borderRadius: radius.lg, backgroundColor: C.okTint, borderWidth: 1, borderColor: C.ok },
-  photo: { width: 56, height: 56, borderRadius: radius.md, backgroundColor: C.white },
+  box: { flexDirection: "row", gap: 10, padding: 10, borderRadius: radius.lg, backgroundColor: C.okTint, borderWidth: 1, borderColor: C.ok },
+  photo: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: C.white },
   body: { flex: 1, gap: 2 },
   title: { fontFamily: font.head, fontSize: 16, color: C.ink },
   sub: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 18, color: C.slate700 },
-  cta: { minHeight: MIN_HIT, alignSelf: "flex-start", justifyContent: "center", paddingHorizontal: 16, marginTop: 6, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.ok, backgroundColor: C.white },
+  cta: { minHeight: MIN_HIT, alignSelf: "flex-start", justifyContent: "center", paddingHorizontal: 16, marginTop: 2, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.ok, backgroundColor: C.white },
   ctaT: { fontFamily: font.bodyBold, fontSize: 14, color: C.ink },
   x: { width: MIN_HIT, height: MIN_HIT, alignItems: "center", justifyContent: "center", marginTop: -8, marginRight: -8 },
 });

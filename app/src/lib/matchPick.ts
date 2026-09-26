@@ -21,3 +21,13 @@ export function matchNamesBySighting(matches: MyMatch[]): Record<string, string>
     .forEach((m) => { out[m.sighted_report_id] = m.lost_name?.trim() || "your pet"; });
   return out;
 }
+
+// Orden del carrusel de estado (evaluación UX, B.1): primero los reportes con coincidencias NO descartadas (strong antes que possible),
+// luego el resto; a igual relevancia, el más reciente (por fecha de la pérdida) primero.
+export function sortByRelevance<T extends { id: string; created_at: string }>(reports: T[], matches: MyMatch[]): T[] {
+  const rank = (id: string) => {
+    const open = matches.filter((m) => m.lost_report_id === id && !m.dismissed);
+    return open.some((m) => matchStrength(m) === "strong") ? 2 : open.length > 0 ? 1 : 0;
+  };
+  return [...reports].sort((a, b) => rank(b.id) - rank(a.id) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}

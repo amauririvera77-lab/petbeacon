@@ -29,7 +29,7 @@ import { ResourceModal, ResourceSheetMode } from "../../components/ResourceModal
 import { ReportCard } from "../../components/ReportCard";
 import { SetupNotice } from "../../components/SetupNotice";
 import type { ReportNearby, ResourceNearby } from "../../lib/database.types";
-import { matchNamesBySighting } from "../../lib/matchPick";
+import { matchNamesBySighting, sortByRelevance } from "../../lib/matchPick";
 import { fetchReportNearby } from "../../lib/reportLookup";
 import { useAuthUser } from "../../hooks/useAuthUser";
 import { useFeed } from "../../hooks/useFeed";
@@ -83,7 +83,11 @@ export default function Home() {
   const snackbar = useSnackbar();
   // Mismos filtros en List y Map (fase 5.3); la búsqueda de texto solo filtra la lista (en el mapa es una dirección).
   // Memoizado: un array nuevo en cada render reenviaría los datos al WebView.
-  const listFiltered = useMemo(() => applyHomeFilters(reports, prefs, listQuery), [reports, prefs, listQuery]);
+  const { reports: myReports, refresh: refreshMine, markReunited } = useMyReports();
+  // El feed NO repite tus Lost activos (ya están en la tarjeta de estado de arriba); siguen en el mapa y en My Reports. Tus avistamientos sí salen.
+  const ownLostIds = useMemo(() => new Set(myReports.filter((r) => r.status === "lost").map((r) => r.id)), [myReports]);
+  const feedReports = useMemo(() => reports.filter((r) => !ownLostIds.has(r.id)), [reports, ownLostIds]);
+  const listFiltered = useMemo(() => applyHomeFilters(feedReports, prefs, listQuery), [feedReports, prefs, listQuery]);
   const mapReports = useMemo(() => applyHomeFilters(reports, prefs), [reports, prefs]);
   // Mapa: solo eventos vigentes (hoy o futuros); se recalcula si cambia el día. La lista (tarjeta destacada) no cambia.
   const today = localDateKey();
@@ -98,10 +102,9 @@ export default function Home() {
   const sorted = useMemo(() => sortReports(listFiltered, prefs.sort), [listFiltered, prefs.sort]);
   // El recurso comunitario va al final del feed o, como máximo, tras 9 reportes: nunca entre los primeros resultados.
   const resourceAt = Math.min(9, sorted.length);
-  const { reports: myReports, refresh: refreshMine, markReunited } = useMyReports();
   const [celebrate, setCelebrate] = useState<{ id: string; name: string } | null>(null);
   const endCelebration = useCallback(() => setCelebrate(null), []);
-  const activeLost = useMemo(() => myReports.filter((r) => r.status === "lost"), [myReports]);
+  const activeLost = useMemo(() => sortByRelevance(myReports.filter((r) => r.status === "lost"), matches), [myReports, matches]);
   const mineIds = useMemo(() => myReports.map((r) => r.id), [myReports]);
   const [matchesFor, setMatchesFor] = useState<{ id: string; name: string } | null>(null);
   // Con un Lost activo, Sighted se destaca con un contador de coincidencias pendientes (sin preseleccionarlo: ocultaría los Lost).
@@ -273,7 +276,7 @@ export default function Home() {
             <View style={{ gap: 10 }} accessibilityLabel="Loading reports" accessibilityRole="progressbar">
               {[0, 1, 2, 3].map((i) => <ReportCardSkeleton key={i} />)}
             </View>
-          ) : reports.length === 0 ? (
+          ) : feedReports.length === 0 ? (
             <EmptyState {...emptyRadiusProps} />
           ) : sorted.length === 0 ? (
             <EmptyState title="No reports match your filters" actionLabel="Reset filters" onAction={() => { resetFilters(); setListQuery(""); }} />
