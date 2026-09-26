@@ -15,7 +15,7 @@ import { useSession } from "../../state/session";
 import { C, font, radius } from "../../theme/tokens";
 import { Cta } from "../Cta";
 import { TextField } from "../TextField";
-import { ConditionGrid, CONDITION_LABEL, TypeButtons, type Condition } from "../flow/OptionButtons";
+import { ConditionGrid, TypeButtons, type Condition } from "../flow/OptionButtons";
 import { PhotoDropzone } from "../flow/PhotoDropzone";
 import { FlowHeader } from "../layout/Headers";
 import { ScreenLayout } from "../layout/ScreenLayout";
@@ -95,7 +95,8 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         species,
         name: isLost ? petName.trim() : null,
         breed: breed.trim() || null,
-        features: [!isLost && condition ? `Condition: ${CONDITION_LABEL[condition]}.` : "", features.trim()].filter(Boolean).join(" ") || null,
+        features: features.trim() || null,
+        condition: !isLost ? condition : null,
         contact: c.value,
         location: place,
         photoUri,

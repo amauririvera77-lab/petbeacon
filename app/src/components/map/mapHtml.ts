@@ -64,16 +64,19 @@ export function buildMapHtml(token: string): string {
   }
 
   function apply(p) {
-    var feats = [];
+    var feats = [], solo = [];
     (p.reports || []).forEach(function (r) {
-      feats.push({ type: "Feature", geometry: { type: "Point", coordinates: [r.lng, r.lat] },
-        properties: { kind: "report", rid: r.id, icon: r.status, mine: !!r.mine, sel: r.id === p.selectedId } });
+      var f = { type: "Feature", geometry: { type: "Point", coordinates: [r.lng, r.lat] },
+        properties: { kind: "report", rid: r.id, icon: r.status, mine: !!r.mine, sel: r.id === p.selectedId } };
+      // Pines que NUNCA se agrupan (fuente "solo", sin cluster): hoy, los avistamientos que coinciden con un Lost del usuario.
+      if (r.matchName) { f.properties.matchName = r.matchName; solo.push(f); } else feats.push(f);
     });
     (p.resources || []).forEach(function (r) {
       feats.push({ type: "Feature", geometry: { type: "Point", coordinates: [r.lng, r.lat] },
         properties: { kind: "resource", rid: r.id, icon: "resource" } });
     });
     map.getSource("items").setData({ type: "FeatureCollection", features: feats });
+    map.getSource("solo").setData({ type: "FeatureCollection", features: solo });
     lastP = p;
     // Círculo del radio de ALERTA centrado en tu ubicación real (o en tu zona si no hay GPS). El encuadre sigue el radio de vista.
     var ac = p.me ? [p.me.lng, p.me.lat] : p.center;
@@ -129,6 +132,16 @@ export function buildMapHtml(token: string): string {
       map.addLayer({ id: "pins", type: "symbol", source: "items", filter: ["!", ["has", "point_count"]],
         layout: { "icon-image": ["concat", "pin-", ["get", "icon"]], "icon-anchor": "bottom", "icon-allow-overlap": true, "icon-size": ["case", ["==", ["get", "sel"], true], 1.1, 0.9], "symbol-sort-key": ["case", ["==", ["get", "sel"], true], 1, 0] } });
 
+      // Pines sin cluster (fase A.4): aro con el token de éxito y etiqueta "Match for [pet]".
+      map.addSource("solo", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addLayer({ id: "pins-match-ring", type: "circle", source: "solo",
+        paint: { "circle-radius": 25, "circle-translate": [0, -30], "circle-color": "rgba(0,0,0,0)", "circle-stroke-width": 3, "circle-stroke-color": "${C.ok}" } });
+      map.addLayer({ id: "pins-solo", type: "symbol", source: "solo",
+        layout: { "icon-image": ["concat", "pin-", ["get", "icon"]], "icon-anchor": "bottom", "icon-allow-overlap": true, "icon-size": ["case", ["==", ["get", "sel"], true], 1.1, 0.9], "symbol-sort-key": ["case", ["==", ["get", "sel"], true], 1, 0] } });
+      map.addLayer({ id: "pins-match-label", type: "symbol", source: "solo",
+        layout: { "text-field": ["concat", "Match for ", ["get", "matchName"]], "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-size": 11, "text-offset": [0, -5.9], "text-anchor": "bottom", "text-allow-overlap": true },
+        paint: { "text-color": "${C.ok}", "text-halo-color": "#fff", "text-halo-width": 2 } });
+
       // Resultado de la búsqueda de zona: punto blanco con borde ink (distinto del punto negro de "tú").
       map.addSource("focus", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       map.addLayer({ id: "focus-dot", type: "circle", source: "focus", paint: { "circle-color": "#ffffff", "circle-radius": 8, "circle-stroke-width": 3, "circle-stroke-color": "${C.ink}" } });
@@ -164,14 +177,18 @@ export function buildMapHtml(token: string): string {
           if (!err) map.easeTo({ center: f.geometry.coordinates, zoom: z + 0.5 });
         });
       });
+      map.on("click", "pins-solo", function (e) {
+        var p = e.features[0].properties;
+        post({ type: "select", kind: p.kind, id: p.rid });
+      });
       map.on("click", "pins", function (e) {
         var p = e.features[0].properties;
         post({ type: "select", kind: p.kind, id: p.rid });
       });
       map.on("click", function (e) {
-        if (!map.queryRenderedFeatures(e.point, { layers: ["pins", "clusters"] }).length) post({ type: "select", kind: null, id: null });
+        if (!map.queryRenderedFeatures(e.point, { layers: ["pins", "pins-solo", "clusters"] }).length) post({ type: "select", kind: null, id: null });
       });
-      ["clusters", "pins"].forEach(function (l) {
+      ["clusters", "pins", "pins-solo"].forEach(function (l) {
         map.on("mouseenter", l, function () { map.getCanvas().style.cursor = "pointer"; });
         map.on("mouseleave", l, function () { map.getCanvas().style.cursor = ""; });
       });

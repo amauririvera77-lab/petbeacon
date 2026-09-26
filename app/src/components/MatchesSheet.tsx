@@ -5,6 +5,7 @@ import type { MyMatch } from "../lib/database.types";
 import { matchSubtitle, matchTitle } from "../lib/matchCopy";
 import { C, MIN_HIT, font, radius } from "../theme/tokens";
 import { FocusImage } from "./FocusImage";
+import { SpeciesPlaceholder } from "./SpeciesPlaceholder";
 
 // Coincidencias de un reporte Lost, incluidas las descartadas (fase 1.3): nada se borra, todo se puede recuperar.
 export function MatchesSheet({ lostName, matches, onClose, onView, onDismiss, onRestore }: {
@@ -30,7 +31,7 @@ export function MatchesSheet({ lostName, matches, onClose, onView, onDismiss, on
                 <View style={styles.row}>
                   {m.sighted_photo_url ? (
                     <FocusImage uri={m.sighted_photo_url} focusX={m.sighted_focus_x} focusY={m.sighted_focus_y} zoom={(m.sighted_zoom ?? 100) / 100} style={styles.photo} />
-                  ) : <View style={styles.photo} />}
+                  ) : <SpeciesPlaceholder species={m.sighted_species ?? "other"} size={48} style={styles.photo} />}
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={styles.itemT}>{matchTitle(m)}{m.dismissed ? "  ·  Dismissed" : ""}</Text>
                     <Text style={styles.itemS}>{matchSubtitle(m)}</Text>

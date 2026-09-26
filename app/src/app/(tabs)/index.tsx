@@ -29,6 +29,7 @@ import { ResourceModal, ResourceSheetMode } from "../../components/ResourceModal
 import { ReportCard } from "../../components/ReportCard";
 import { SetupNotice } from "../../components/SetupNotice";
 import type { ReportNearby, ResourceNearby } from "../../lib/database.types";
+import { matchNamesBySighting } from "../../lib/matchPick";
 import { fetchReportNearby } from "../../lib/reportLookup";
 import { useAuthUser } from "../../hooks/useAuthUser";
 import { useFeed } from "../../hooks/useFeed";
@@ -88,6 +89,8 @@ export default function Home() {
   const today = localDateKey();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const mapResources = useMemo(() => mapEventResources(resources), [resources, today]);
+  // Avistamientos que coinciden con un Lost tuyo (no descartadas): etiqueta en el feed e indicador del pin.
+  const matchNames = useMemo(() => matchNamesBySighting(matches), [matches]);
   const featured = resources.find((r) => r.is_featured_event) ?? null;
   // Orden elegido (persiste al cambiar List/Map y al volver a la Home). Por defecto: más recientes primero.
   // Tarjeta de vista previa del pin tocado (misma ReportCard del feed); si un filtro lo oculta, desaparece sola.
@@ -215,7 +218,7 @@ export default function Home() {
             <View style={styles.pad}><SetupNotice /></View>
           ) : (
             <>
-              <MapboxWebView ref={mapRef} alertRadiusMi={alertRadiusMi} selectedId={preview?.id ?? null} token={MAPBOX_TOKEN} reports={mapReports} resources={mapResources} center={center} radiusMi={prefs.viewRadiusMi} me={me} mineIds={mineIds} focus={focus} onSelect={(sel) => {
+              <MapboxWebView ref={mapRef} alertRadiusMi={alertRadiusMi} selectedId={preview?.id ?? null} token={MAPBOX_TOKEN} reports={mapReports} resources={mapResources} center={center} radiusMi={prefs.viewRadiusMi} me={me} mineIds={mineIds} matchNames={matchNames} focus={focus} onSelect={(sel) => {
                 if (!sel) { setPreviewId(null); return; }
                 if (sel.kind === "resource") { setPreviewId(null); const r = mapResources.find((x) => x.id === sel.id); if (r) openResource(r); }
                 else setPreviewId(sel.id);
@@ -239,7 +242,7 @@ export default function Home() {
               </Pressable>
               {preview ? (
                 <View style={styles.preview}>
-                  <ReportCard report={preview} mine={mineIds.includes(preview.id)} onPress={() => setPinReport(preview)} />
+                  <ReportCard report={preview} mine={mineIds.includes(preview.id)} matchFor={matchNames[preview.id]} onPress={() => setPinReport(preview)} />
                 </View>
               ) : null}
               {focus ? (
@@ -277,9 +280,9 @@ export default function Home() {
           ) : (
             <>
               <SortControl value={prefs.sort} onChange={setSort} count={sorted.length} />
-              {sorted.slice(0, resourceAt).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} onPress={() => setPinReport(r)} />)}
+              {sorted.slice(0, resourceAt).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} matchFor={matchNames[r.id]} onPress={() => setPinReport(r)} />)}
               {featured ? <CommunityResourceCard resource={featured} onPress={() => router.navigate({ pathname: "/(tabs)/support", params: { resourceId: featured.id } })} /> : null}
-              {sorted.slice(resourceAt).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} onPress={() => setPinReport(r)} />)}
+              {sorted.slice(resourceAt).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} matchFor={matchNames[r.id]} onPress={() => setPinReport(r)} />)}
             </>
           )}
         </ScrollView>

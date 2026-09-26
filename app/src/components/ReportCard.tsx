@@ -16,7 +16,8 @@ const SPECIES_LABEL: Record<string, string> = { dog: "Dog", cat: "Cat", other: "
 // En iOS los tamaños de texto de accesibilidad de Dynamic Type (AX1 = 1.64×) empiezan bien por encima de xxxLarge (1.35×).
 const ACCESSIBILITY_FONT_SCALE = 1.5;
 
-export function ReportCard({ report, onPress, mine }: { report: ReportNearby; onPress?: () => void; mine?: boolean }) {
+// `matchFor`: nombre de tu mascota perdida con la que coincide este avistamiento (solo el dueño lo recibe; fase A.4).
+export function ReportCard({ report, onPress, mine, matchFor }: { report: ReportNearby; onPress?: () => void; mine?: boolean; matchFor?: string }) {
   const { fontScale } = useWindowDimensions();
   // Con texto de accesibilidad, distancia y tiempo pasan DEBAJO del nombre (columna central) para no robarle ancho.
   const stacked = fontScale >= ACCESSIBILITY_FONT_SCALE;
@@ -34,6 +35,7 @@ export function ReportCard({ report, onPress, mine }: { report: ReportNearby; on
           <Text style={styles.name} numberOfLines={2}>{title}</Text>
           <Badge status={report.status as BadgeStatus} />
           {mine ? <View style={styles.mine}><Text style={styles.mineT}>Your report</Text></View> : null}
+          {matchFor ? <View style={styles.match} accessibilityLabel={`Match for ${matchFor}`}><Text style={styles.matchT} numberOfLines={1}>Match for {matchFor}</Text></View> : null}
         </View>
         {stacked ? (
           <Text style={styles.meta}>{report.distance_mi.toFixed(1)} mi · {agoShort(report.created_at)}</Text>
@@ -59,6 +61,9 @@ const styles = StyleSheet.create({
   name: { flexShrink: 1, fontFamily: font.head, fontSize: 17, color: C.ink },
   // Etiqueta neutra (borde y texto ink): el rojo queda reservado a Lost y al badge de notificaciones.
   mine: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, borderWidth: 1, borderColor: C.ink, backgroundColor: C.white },
+  // Mismos tokens de éxito que la tarjeta de coincidencia (fondo okTint, borde ok).
+  match: { flexShrink: 1, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, borderWidth: 1, borderColor: C.ok, backgroundColor: C.okTint },
+  matchT: { fontFamily: font.bodyBold, fontSize: 11, color: C.ink },
   mineT: { fontFamily: font.bodyBold, fontSize: 11, color: C.ink },
   sub: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700 },
   meta: { fontFamily: font.bodyBold, fontSize: 13, color: C.ink },

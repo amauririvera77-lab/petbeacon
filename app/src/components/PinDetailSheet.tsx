@@ -8,6 +8,7 @@ import { C, font, radius } from "../theme/tokens";
 import { FLYERS_READY } from "../lib/flyer";
 import { reportShareText } from "../lib/shareText";
 import { whenLabel } from "../lib/time";
+import { CONDITION_LABEL } from "./flow/OptionButtons";
 import { Badge } from "./Badge";
 import { FocusImage } from "./FocusImage";
 
@@ -93,6 +94,12 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited }: {
                     <Text style={styles.muted}>{r.distance_mi.toFixed(1)} mi from you</Text>
                   </View>
                 </View>
+                {r.condition ? (
+                  <View style={styles.row}>
+                    <View style={{ marginTop: 2 }}><Eye size={18} color={C.slate500} /></View>
+                    <Text style={styles.features}>Condition: {CONDITION_LABEL[r.condition]}</Text>
+                  </View>
+                ) : null}
                 {r.features_description ? (
                   <View style={styles.row}>
                     <View style={{ marginTop: 2 }}><PawPrint size={18} color={C.slate500} /></View>

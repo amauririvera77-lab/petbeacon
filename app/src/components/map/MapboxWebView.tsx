@@ -16,6 +16,7 @@ type Props = {
   focus?: { lat: number; lng: number } | null; // zona/dirección buscada: la cámara vuela allí
   mineIds?: string[]; // ids de los reportes del propio usuario (llevan aro y etiqueta "Your report")
   me?: { lat: number; lng: number; accuracy?: number | null } | null; // ubicación actual del dispositivo (punto negro pulsante + halo de precisión)
+  matchNames?: Record<string, string>; // id de avistamiento → nombre de tu mascota (coincidencias no descartadas): pin con aro de éxito y sin cluster
   alertRadiusMi?: number; // radio de alertas del perfil: se dibuja centrado en `me`
   selectedId?: string | null; // pin seleccionado (más grande y por encima)
   onSelect: (s: MapSelection) => void;
@@ -24,7 +25,7 @@ type Props = {
 // Mapbox GL JS dentro de un WebView (funciona en Expo Go; el SDK nativo requeriría development build).
 export type MapHandle = { recenter: () => void };
 
-export const MapboxWebView = forwardRef<MapHandle, Props>(function MapboxWebView({ token, reports, resources, center, radiusMi, alertRadiusMi, selectedId, me, mineIds, focus, onSelect }, handle) {
+export const MapboxWebView = forwardRef<MapHandle, Props>(function MapboxWebView({ token, reports, resources, center, radiusMi, alertRadiusMi, selectedId, matchNames, me, mineIds, focus, onSelect }, handle) {
   const ref = useRef<WebView>(null);
   useImperativeHandle(handle, () => ({ recenter: () => ref.current?.injectJavaScript("window.__recenter && window.__recenter(); true;") }), []);
   const [ready, setReady] = useState(false);
@@ -39,11 +40,11 @@ export const MapboxWebView = forwardRef<MapHandle, Props>(function MapboxWebView
       selectedId: selectedId ?? null,
       me: me ? { lat: me.lat, lng: me.lng, accuracy: me.accuracy ?? null } : null,
       focus: focus ? { lat: focus.lat, lng: focus.lng } : null,
-      reports: reports.map((r) => ({ id: r.id, status: r.status, lat: r.lat, lng: r.lng, mine: mineIds?.includes(r.id) ?? false })),
+      reports: reports.map((r) => ({ id: r.id, status: r.status, lat: r.lat, lng: r.lng, mine: mineIds?.includes(r.id) ?? false, matchName: matchNames?.[r.id] ?? null })),
       resources: resources.map((r) => ({ id: r.id, lat: r.lat, lng: r.lng })),
     };
     ref.current?.injectJavaScript(`window.__update(${JSON.stringify(payload)}); true;`);
-  }, [reports, resources, center.lat, center.lng, radiusMi, alertRadiusMi, selectedId, me?.lat, me?.lng, me?.accuracy, mineIds, focus?.lat, focus?.lng]);
+  }, [reports, resources, center.lat, center.lng, radiusMi, alertRadiusMi, selectedId, matchNames, me?.lat, me?.lng, me?.accuracy, mineIds, focus?.lat, focus?.lng]);
 
   useEffect(() => { if (ready) push(); }, [ready, push]);
 

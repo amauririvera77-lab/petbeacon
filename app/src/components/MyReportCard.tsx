@@ -28,7 +28,7 @@ export function MyReportCard({ report, matchCount, onMatches, onEdit, onMarkReun
       </View>
       {matchCount > 0 && report.status === "lost" ? (
         <Pressable accessibilityRole="button" accessibilityLabel="View matches" onPress={onMatches} style={styles.match}>
-          <Text style={styles.matchT}>{matchCount} possible {matchCount === 1 ? "match" : "matches"} ›</Text>
+          <Text style={styles.matchT}>{matchCount} {matchCount === 1 ? "match" : "matches"} ›</Text>
         </Pressable>
       ) : null}
       {report.status === "reunited" ? (

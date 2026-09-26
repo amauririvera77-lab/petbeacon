@@ -48,7 +48,7 @@ export function MyReportStatusCard({ report, matches, width, onOpen, onViewSight
         ) : null}
         <View style={styles.stat}>
           <Sparkles size={14} color={C.slate700} />
-          <Text style={styles.statT}>{openCount === 0 ? "No matches yet" : `${openCount} possible ${openCount === 1 ? "match" : "matches"}`}</Text>
+          <Text style={styles.statT}>{openCount === 0 ? "No matches yet" : `${openCount} ${openCount === 1 ? "match" : "matches"}`}</Text>
         </View>
       </View>
       {alerted === 0 ? (

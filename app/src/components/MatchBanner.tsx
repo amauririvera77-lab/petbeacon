@@ -1,9 +1,10 @@
-import { Sparkles, X } from "lucide-react-native";
+import { X } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { MyMatch } from "../lib/database.types";
 import { matchSubtitle, matchTitle } from "../lib/matchCopy";
 import { C, MIN_HIT, font, radius } from "../theme/tokens";
 import { FocusImage } from "./FocusImage";
+import { SpeciesPlaceholder } from "./SpeciesPlaceholder";
 
 // Coincidencia (fase 1.2): título, MOTIVO ("Similar dog seen 0.9 mi from where Max was lost · 1h ago") y un botón explícito
 // "View sighting" (el área tocable no depende de adivinar que toda la tarjeta lo es). Color: tokens de éxito (una coincidencia es
@@ -14,7 +15,7 @@ export function MatchBanner({ match, onViewSighting, onDismiss }: { match: MyMat
       {match.sighted_photo_url ? (
         <FocusImage uri={match.sighted_photo_url} focusX={match.sighted_focus_x} focusY={match.sighted_focus_y} zoom={(match.sighted_zoom ?? 100) / 100} style={styles.photo} />
       ) : (
-        <View style={[styles.photo, styles.icon]}><Sparkles size={22} color={C.ok} /></View>
+        <SpeciesPlaceholder species={match.sighted_species ?? "other"} size={56} style={styles.photo} />
       )}
       <View style={styles.body}>
         <Text style={styles.title}>{matchTitle(match)}</Text>
@@ -32,7 +33,6 @@ export function MatchBanner({ match, onViewSighting, onDismiss }: { match: MyMat
 const styles = StyleSheet.create({
   box: { flexDirection: "row", gap: 12, padding: 12, borderRadius: radius.lg, backgroundColor: C.okTint, borderWidth: 1, borderColor: C.ok },
   photo: { width: 56, height: 56, borderRadius: radius.md, backgroundColor: C.white },
-  icon: { alignItems: "center", justifyContent: "center" },
   body: { flex: 1, gap: 2 },
   title: { fontFamily: font.head, fontSize: 16, color: C.ink },
   sub: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 18, color: C.slate700 },

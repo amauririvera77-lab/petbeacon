@@ -9,6 +9,7 @@
 export type ReportStatus = "lost" | "sighted" | "reunited";
 export type Species = "dog" | "cat" | "other";
 export type ResourceCategory = "food" | "foster" | "legal";
+export type ReportCondition = "calm" | "scared" | "injured" | "unsure";
 export type MatchConfidence = "possible" | "strong";
 
 export type Profile = {
@@ -45,6 +46,7 @@ export type Report = {
   photo_focus_y: number | null;
   photo_zoom: number | null; // % (100 = sin zoom) para miniaturas
   features_description: string | null;
+  condition: ReportCondition | null; // condición del animal en un avistamiento (0012); ya no va dentro de features_description
   location: string; // geography: EWKT al insertar ('SRID=4326;POINT(lng lat)'), hex EWKB al leer
   location_label: string | null;
   contact_phone_or_email: string | null;
@@ -91,6 +93,7 @@ export type ReportNearby = {
   photo_focus_y: number | null;
   photo_zoom: number | null;
   features_description: string | null;
+  condition?: ReportCondition | null; // ausente hasta aplicar 0012
   location_label: string | null;
   created_at: string;
   lat: number;
@@ -121,6 +124,7 @@ export type ResourceNearby = {
 export type MatchReasons = {
   same_species?: boolean;
   breed?: "exact" | "similar" | "different" | "unknown" | "incompatible";
+  has_photo?: boolean;
   passes_rules?: boolean;
   distance_mi?: number;
   radius_mi?: number;

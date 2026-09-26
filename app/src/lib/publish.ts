@@ -3,7 +3,7 @@ import { ensureAccount } from "./account";
 import { uploadPhoto } from "./photos";
 import { registerPush } from "./push";
 import { supabase } from "./supabase";
-import type { ReportStatus, Species } from "./database.types";
+import type { ReportCondition, ReportStatus, Species } from "./database.types";
 
 export type PublishInput = {
   status: Extract<ReportStatus, "lost" | "sighted">;
@@ -11,6 +11,7 @@ export type PublishInput = {
   name: string | null;
   breed: string | null;
   features: string | null;
+  condition?: ReportCondition | null; // solo avistamientos (columna propia desde 0012)
   contact: string | null;
   location: { lat: number; lng: number; label: string };
   photoUri: string | null; // foto local recién elegida (se sube)
@@ -37,6 +38,7 @@ export async function publishReport(input: PublishInput): Promise<{ id: string }
       breed: input.breed,
       photo_url,
       features_description: input.features,
+      condition: input.condition ?? null,
       // PostGIS acepta EWKT como texto (lng primero).
       location: `SRID=4326;POINT(${input.location.lng} ${input.location.lat})`,
       location_label: input.location.label,

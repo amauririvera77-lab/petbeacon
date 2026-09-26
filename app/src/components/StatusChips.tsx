@@ -12,7 +12,7 @@ export function StatusChips({ lost, sighted, onToggle, sightedDot }: {
   return (
     <View style={styles.row}>
       {items.map(([k, label, Icon, on, color]) => (
-        <Pressable key={k} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${label} reports${k === "sighted" && sightedDot ? `, ${sightedDot} possible matches` : ""}`}
+        <Pressable key={k} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${label} reports${k === "sighted" && sightedDot ? `, ${sightedDot} matches` : ""}`}
           onPress={() => onToggle(k)} style={[styles.chip, on && styles.chipOn]}>
           <Icon size={16} color={on ? color : C.slate500} />
           <Text style={[styles.t, { color: on ? C.ink : C.slate500 }]}>{label}</Text>

@@ -1,17 +1,17 @@
 -- seed_demo_reset.sql — regenera los datos de DEMO con fechas relativas a now(). Se puede correr las veces que quieras.
 --
--- CUÁNDO CORRERLO: DESPUÉS de aplicar 0009, 0010 y 0011 (las reglas de matching y las columnas nuevas ya deben existir) y con tu
+-- CUÁNDO CORRERLO: DESPUÉS de aplicar 0009, 0010, 0011 y 0012 (las reglas de matching y las columnas nuevas ya deben existir) y con tu
 -- cuenta ya creada en la app (para que el reporte de Max sea "mío"). Pégalo entero en el SQL Editor y ejecuta Run.
 --
 -- QUÉ HACE
 --   1. Borra SOLO las filas de demo, por ID fijo: los reportes '20000000-0000-0000-0000-0000000000NN' y los del seed antiguo
 --      '10000000-0000-0000-0000-00000000000N' (sus coincidencias caen en cascada). No toca nada más: ni tus reportes reales,
 --      ni perfiles, ni mascotas, ni recursos.
---   2. Recrea 9 reportes con fechas relativas a now(), en direcciones reales de North Bergen / Union City (coordenadas fijas
+--   2. Recrea 11 reportes (incl. 'Lazy', segundo Lost tuyo sin coincidencias) con fechas relativas a now(), en direcciones reales de North Bergen / Union City (coordenadas fijas
 --      obtenidas con geocoding; el avistamiento Golden se ubica a 320 m de Max para que genere la coincidencia STRONG):
 --        Lost      Max (Golden, TUYO, 3 h, 0.4 mi) · Luna (gata Siamese, 30 h, 2.0 mi) · "Bartholomew Maximilian von Schnauzenberg"
 --                  (nombre largo, 48 h, 3.2 mi, sin foto) · Whiskers (gato Persian, 80 h, 4.5 mi, sin foto)
---        Sighted   Golden Retriever SIN FOTO (30 min, a 0.2 mi de Max → coincidencia STRONG para Max) · Beagle mix (1 h, 0.9 mi →
+--        Sighted   Golden Retriever SIN FOTO (30 min, a 0.2 mi de Max → 'possible': sin foto nunca es strong, 0012) · Golden Retriever CON foto (2 h, 0.4 mi → STRONG para Max) · Beagle mix (1 h, 0.9 mi →
 --                  NO coincide con Max: tamaños incompatibles) · gato tabby (6 h, 1.1 mi → 'possible' para Luna) ·
 --                  Labrador mix (40 h → NO coincide con Max: es anterior a su pérdida)
 --        Reunited  Biscuit (perro Labrador mix, reunido hace 5 h, 1.6 mi)
@@ -74,48 +74,67 @@ begin
 
   -- 2a. Reportes Lost y Reunited (primero: los avistamientos necesitan que el Lost ya exista para generar coincidencias).
   insert into reports (id, user_id, status, species, name, breed, photo_url, photo_focus_x, photo_focus_y, photo_zoom,
-                       features_description, location, location_label, contact_phone_or_email, created_at, reunited_at) values
+                       features_description, condition, location, location_label, contact_phone_or_email, created_at, reunited_at) values
     ('20000000-0000-0000-0000-000000000001', me, 'lost', 'dog', 'Max', 'Golden Retriever',
       'https://images.unsplash.com/photo-1552053831-71594a27632d', 52, 37, 190,
       'Blue collar with a silver tag, limps slightly on his left leg.',
+      null,
       st_setsrid(st_makepoint(-74.03518, 40.782693), 4326)::geography, 'Tonnelle Ave & 42nd St', '(201) 555-0100', now() - interval '3 hours', null),
     ('20000000-0000-0000-0000-000000000002', demo_owner, 'lost', 'cat', 'Luna', 'Siamese cat',
       'https://images.unsplash.com/photo-1695708794933-57424f0bf14e', 50, 30, 190,
       'Very shy — may not approach strangers, please don''t chase.',
+      null,
       st_setsrid(st_makepoint(-74.01639, 40.795797), 4326)::geography, 'Kennedy Blvd & 67th St', 'luna.owner@example.com', now() - interval '30 hours', null),
     ('20000000-0000-0000-0000-000000000003', demo_owner, 'lost', 'dog', 'Bartholomew Maximilian von Schnauzenberg', 'Miniature Schnauzer',
       null, null, null, null,
       'Grey and white beard, answers to Barty. Wearing a red harness.',
+      null,
       st_setsrid(st_makepoint(-74.024186, 40.791013), 4326)::geography, 'Meadowview Ave', '(201) 555-0142', now() - interval '48 hours', null),
     ('20000000-0000-0000-0000-000000000004', demo_owner, 'lost', 'cat', 'Whiskers', 'Persian',
       null, null, null, null,
       'Flat-faced, long white fur. Indoor cat that slipped out through the back door.',
+      null,
       st_setsrid(st_makepoint(-74.044975, 40.76351), 4326)::geography, 'Paterson Plank Rd', 'whiskers.family@example.com', now() - interval '80 hours', null),
+    ('20000000-0000-0000-0000-000000000011', me, 'lost', 'dog', 'Lazy', 'Great Dane',
+      null, null, null, null,                                                        -- sin foto y sin coincidencias (tamaño incompatible con todos los avistamientos)
+      'Very tall and gentle, brindle coat, wearing a green collar.',
+      null,
+      st_setsrid(st_makepoint(-74.018217, 40.786395), 4326)::geography, 'Bergenline Ave & 56th St', '(201) 555-0100', now() - interval '20 hours', null),
     ('20000000-0000-0000-0000-000000000008', demo_owner, 'reunited', 'dog', 'Biscuit', 'Labrador mix',
       'https://images.unsplash.com/photo-1585588640338-2c3dc723e638', 56, 25, 190,
       'Reunited with owner within 3 hours of the alert going live.',
+      null,
       st_setsrid(st_makepoint(-74.022272, 40.781078), 4326)::geography, 'Bergenline Ave & 47th St', '(201) 555-0100', now() - interval '18 hours', now() - interval '5 hours');
 
   select location into max_loc from reports where id = '20000000-0000-0000-0000-000000000001';
 
   -- 2b. Avistamientos (el trigger de matching los cruza con los Lost de arriba).
   insert into reports (id, user_id, status, species, name, breed, photo_url, photo_focus_x, photo_focus_y, photo_zoom,
-                       features_description, location, location_label, contact_phone_or_email, created_at, reunited_at) values
+                       features_description, condition, location, location_label, contact_phone_or_email, created_at, reunited_at) values
     ('20000000-0000-0000-0000-000000000005', demo_reporter, 'sighted', 'dog', null, 'Golden Retriever',
       null, null, null, null,                                                        -- SIN FOTO a propósito (muestra la silueta)
       'Golden coat, blue collar. Stayed near the park entrance and let people approach.',
+      'calm',
       st_project(max_loc, 320, radians(60))::geography, 'Near Tonnelle Ave & 42nd St', null, now() - interval '30 minutes', null),
+    ('20000000-0000-0000-0000-000000000010', demo_reporter, 'sighted', 'dog', null, 'Golden Retriever',
+      'https://images.unsplash.com/photo-1611250282006-4484dd3fba6b', 60, 30, 150,   -- CON foto: la única coincidencia 'strong' de Max
+      'Golden puppy-like dog with a blue collar, very friendly.',
+      'calm',
+      st_project(max_loc, 700, radians(200))::geography, 'Near Tonnelle Ave & 38th St', null, now() - interval '2 hours', null),
     ('20000000-0000-0000-0000-000000000006', demo_reporter, 'sighted', 'dog', null, 'Beagle mix',
       'https://images.unsplash.com/photo-1703721025121-26d64508482b', 28, 46, 150,
       'No collar visible. Friendly, approached the reporter calmly.',
+      'calm',
       st_setsrid(st_makepoint(-74.022914, 40.78319), 4326)::geography, 'Kennedy Blvd & 50th St', null, now() - interval '1 hour', null),
     ('20000000-0000-0000-0000-000000000007', demo_reporter, 'sighted', 'cat', null, 'Domestic shorthair, gray tabby',
       'https://images.unsplash.com/photo-1557735802-ef14538b00a4', 43, 35, 240,
       'Skittish — seen hiding under a porch, did not approach.',
+      'scared',
       st_setsrid(st_makepoint(-74.014293, 40.799959), 4326)::geography, 'Kennedy Blvd & 73rd St', null, now() - interval '6 hours', null),
     ('20000000-0000-0000-0000-000000000009', demo_reporter, 'sighted', 'dog', null, 'Labrador mix',
       null, null, null, null,
       'Black lab mix, no collar, drinking from a puddle.',
+      'unsure',
       st_setsrid(st_makepoint(-74.011318, 40.795557), 4326)::geography, 'Bergenline Ave & 69th St', null, now() - interval '40 hours', null);
 
   -- 3. Evento con fecha concreta (0011) y conteo de demostración (0010), solo si esas columnas existen.
