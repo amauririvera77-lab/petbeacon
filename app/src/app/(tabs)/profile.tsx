@@ -10,6 +10,7 @@ import { EditLocationSheet } from "../../components/EditLocationSheet";
 import { FocusImage } from "../../components/FocusImage";
 import { OfflineBanner } from "../../components/OfflineBanner";
 import { RadiusChips } from "../../components/RadiusChips";
+import { ScreenTitle } from "../../components/ScreenTitle";
 import { useSnackbar } from "../../components/Snackbar";
 import { ToggleRow } from "../../components/ToggleRow";
 import { useAccount } from "../../hooks/useAccount";
@@ -72,6 +73,7 @@ export default function Profile() {
     <View style={styles.root}>
       <View style={{ paddingTop: insets.top, backgroundColor: C.white }}>
         <OfflineBanner />
+        <View style={styles.titleWrap}><ScreenTitle title="Profile" /></View>
         <View style={styles.head}>
           <Avatar uri={avatarUrl} name={name} size={64} />
           <View style={{ flex: 1 }}>
@@ -192,7 +194,8 @@ function NavRow({ title, subtitle, onPress }: { title: string; subtitle?: string
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.surface },
-  head: { flexDirection: "row", alignItems: "center", gap: 16, paddingHorizontal: 16, paddingVertical: 24, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
+  titleWrap: { paddingHorizontal: 16, paddingTop: 24 },
+  head: { flexDirection: "row", alignItems: "center", gap: 16, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 20, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
   name: { fontFamily: font.head, fontSize: 20, color: C.ink },
   cityBtn: { flexDirection: "row", alignItems: "center", gap: 4, minHeight: 28, alignSelf: "flex-start" },
   city: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700, flexShrink: 1 },

@@ -38,7 +38,7 @@ export function SaveAccountSheet({ visible, mode, onClose, onDone }: { visible: 
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.handleWrap}><View style={styles.handle} /></View>
           <View style={styles.head}>
-            <Text style={styles.title} accessibilityRole="header">{save ? "Save your account" : "Log in"}</Text>
+            <Text style={styles.title} accessibilityRole="header">{save ? "Save Your Account" : "Log In"}</Text>
             <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={C.slate700} /></Pressable>
           </View>
           <View style={styles.body}>

@@ -29,7 +29,7 @@ export default function FlyerScreen() {
 
   const url = id ? reportUrl(id) : null;
   const isLost = data?.report.status === "lost";
-  const title = isLost ? "Share flyer" : "Share sighting";
+  const title = isLost ? "Share Flyer" : "Share Sighting";
 
   const render = async () => {
     const uri = await captureRef(shot, { format: "png", quality: 1, width: 1080, height: 1440, result: "tmpfile" });

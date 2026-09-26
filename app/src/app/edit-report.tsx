@@ -94,7 +94,7 @@ export default function EditReport() {
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={C.ink} /></Pressable>
-        <Text style={styles.h} accessibilityRole="header">{isSighting ? "Edit sighting" : "Edit report"}</Text>
+        <Text style={styles.h} accessibilityRole="header">{isSighting ? "Edit Sighting" : "Edit Report"}</Text>
       </View>
       {loading ? <View style={styles.center}><ActivityIndicator color={C.teal} /></View> : (
         <>

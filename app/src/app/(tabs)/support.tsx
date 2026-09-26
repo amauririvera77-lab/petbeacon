@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OfflineBanner } from "../../components/OfflineBanner";
+import { ScreenTitle } from "../../components/ScreenTitle";
 import { EventResourceCard, ResourceCard } from "../../components/ResourceCard";
 import { ResourceModal, ResourceSheetMode } from "../../components/ResourceModal";
 import { SetupNotice } from "../../components/SetupNotice";
@@ -61,8 +62,8 @@ export default function Support() {
   return (
     <View style={styles.root}>
       <View style={[styles.head, { paddingTop: insets.top + 24 }]}>
-        <Text style={styles.h} accessibilityRole="header">Support and care</Text>
-        <Text style={styles.sub}>Local resources near {city || "you"}</Text>
+        <ScreenTitle title="Support" subtitle={`Local resources near ${city || "you"}`} />
+        <View style={{ height: 16 }} />
         <View style={styles.search}>
           <Search size={18} color={C.slate500} />
           <TextInput value={query} onChangeText={setQuery} placeholder="Search by name or need" placeholderTextColor={C.slate500}
@@ -116,8 +117,6 @@ export default function Support() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.surface },
   head: { paddingHorizontal: 16, paddingBottom: 16, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
-  h: { fontFamily: font.displayMedium, fontSize: 24, letterSpacing: -0.24, color: C.ink, marginBottom: 4 },
-  sub: { fontFamily: font.bodyRegular, fontSize: 14, color: C.slate700, marginBottom: 16 },
   search: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, height: 52, borderRadius: radius.md, backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.border },
   input: { flex: 1, fontFamily: font.body, fontSize: 16, color: C.ink },
   clear: { width: 32, height: 32, borderRadius: 16, backgroundColor: C.border, alignItems: "center", justifyContent: "center" },

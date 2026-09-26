@@ -40,7 +40,7 @@ export default function DeleteAccount() {
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back" disabled={busy} onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={C.ink} /></Pressable>
-        <Text style={styles.h} accessibilityRole="header">Delete account</Text>
+        <Text style={styles.h} accessibilityRole="header">Delete Account</Text>
       </View>
       <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: insets.bottom + 32 }} keyboardShouldPersistTaps="handled">
         <Text style={styles.lead}>This permanently deletes your PetBeacon account and everything in it. It can't be undone.</Text>

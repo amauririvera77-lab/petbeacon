@@ -158,7 +158,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   const accent = isLost ? C.sos : C.warn;
   const inSteps = n <= 3;
   const header = (
-    <FlowHeader title={isLost ? "Report lost pet" : "Report a sighting"} step={n} accent={accent} onBack={back}
+    <FlowHeader title={isLost ? "Report Lost Pet" : "Report a Sighting"} step={n} accent={accent} onBack={back}
       showRow={isLost ? true : inSteps} showBars={inSteps} />
   );
   const pad = { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 24 } as const;
@@ -166,7 +166,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
 
   if (chooserActive && homePets.length > 0) {
     return (
-      <ScreenLayout header={<FlowHeader title="Report lost pet" step={1} accent={accent} onBack={close} showBars={false} showCount={false} />} contentStyle={pad}>
+      <ScreenLayout header={<FlowHeader title="Report Lost Pet" step={1} accent={accent} onBack={close} showBars={false} showCount={false} />} contentStyle={pad}>
         <Text style={[st.h2, { marginBottom: 8 }]}>Which pet is missing?</Text>
         <Text style={[st.sub, { marginBottom: 24 }]}>Pick one of your pets and we'll fill in the details for you.</Text>
         <View style={{ gap: 10 }}>

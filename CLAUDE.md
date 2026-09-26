@@ -146,6 +146,8 @@ Estos quedaron anotados a lo largo de la sesión como pendientes deliberados par
 
 ---
 
+- **Convención de títulos (Fase 6 de la evaluación UX):** *Title Case* para los nombres de pestañas y de pantallas ("My Reports", "Support", "Profile", "Edit Profile", "Report Lost Pet"); *sentence case* para todo lo demás (botones, secciones, etiquetas). El título de cada pestaña coincide con el nombre de su ícono; las tres pestañas con título (My Reports, Support, Profile) usan el mismo componente `ScreenTitle`. Home no lleva título de texto: su cabecera es el logo.
+
 ## 8. Decisiones y preguntas abiertas
 
 Ninguna pendiente — las tres preguntas que estaban abiertas en este documento (formato descargable del flyer, estrictitud del matching automático, proveedor de mapas) ya quedaron resueltas y documentadas en las secciones 5 y 6 correspondientes, con su razonamiento completo conservado para referencia futura (incluyendo la preparación de un Case Study de este proyecto).

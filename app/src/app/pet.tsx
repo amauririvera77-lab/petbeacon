@@ -127,7 +127,7 @@ export default function PetScreen() {
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={C.ink} /></Pressable>
-        <Text style={styles.h} accessibilityRole="header" numberOfLines={1}>{isNew ? "Add a pet" : f.name.trim() || "Pet"}</Text>
+        <Text style={styles.h} accessibilityRole="header" numberOfLines={1}>{isNew ? "Add a Pet" : f.name.trim() || "Pet"}</Text>
       </View>
       {loading ? <View style={styles.center}><ActivityIndicator color={C.teal} /></View> : (
         <ScrollView contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: insets.bottom + 32 }} keyboardShouldPersistTaps="handled">

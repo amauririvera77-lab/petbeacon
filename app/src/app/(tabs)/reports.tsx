@@ -79,7 +79,7 @@ export default function Reports() {
 
   const hasActive = lost.length + buckets.reunitedRecent.length > 0;
   return (
-    <TabScreen title="My reports" subtitle="Manage your active alerts and logged sightings">
+    <TabScreen title="My Reports" subtitle="Manage your active alerts and logged sightings">
       {loading ? <ActivityIndicator style={{ marginTop: 24 }} color={C.teal} /> : error ? (
         <Text style={styles.err}>Couldn't load your reports: {error}</Text>
       ) : (
