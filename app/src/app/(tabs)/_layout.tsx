@@ -2,9 +2,10 @@ import { ClipboardList, HeartHandshake, House, User } from "lucide-react-native"
 import { Tabs } from "expo-router";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Fab } from "../../components/Fab";
+import { ExtendedFab } from "../../components/ExtendedFab";
 import { usePushNotifications } from "../../hooks/usePushNotifications";
 import { useSyncRadius } from "../../hooks/useSyncRadius";
+import { FabProvider } from "../../state/fab";
 import { C, font } from "../../theme/tokens";
 
 const TAB_HEIGHT = 56;
@@ -16,6 +17,7 @@ export default function TabsLayout() {
   usePushNotifications();
   const barHeight = TAB_HEIGHT + insets.bottom;
   return (
+    <FabProvider>
     <View style={{ flex: 1 }}>
       <Tabs
         screenOptions={{
@@ -31,7 +33,8 @@ export default function TabsLayout() {
         <Tabs.Screen name="support" options={{ title: "Support", tabBarIcon: ({ color }) => <HeartHandshake size={24} color={color} /> }} />
         <Tabs.Screen name="profile" options={{ title: "Profile", tabBarIcon: ({ color }) => <User size={24} color={color} /> }} />
       </Tabs>
-      <Fab bottom={barHeight + 16} />
+      <ExtendedFab bottom={barHeight + 16} />
     </View>
+    </FabProvider>
   );
 }

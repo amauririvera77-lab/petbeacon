@@ -1,11 +1,12 @@
 import { router, useFocusEffect } from "expo-router";
-import { List, Map as MapIcon } from "lucide-react-native";
-import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { X } from "lucide-react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Alert, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EnableAlertsCard } from "../../components/EnableAlertsCard";
 import { HomeHeader } from "../../components/HomeHeader";
-import { ALL_FILTERS, MapFilters, type MapFilterState } from "../../components/MapFilters";
+import { CompactSegmented } from "../../components/CompactSegmented";
+import { FilterSheet } from "../../components/FilterSheet";
 import { MapRadiusChip } from "../../components/MapRadiusChip";
 import { PinDetailSheet } from "../../components/PinDetailSheet";
 import { MatchesSheet } from "../../components/MatchesSheet";
@@ -16,7 +17,9 @@ import { ReunitedCelebration } from "../../components/ReunitedCelebration";
 import { NotificationsSheet } from "../../components/NotificationsSheet";
 import { OfflineBanner } from "../../components/OfflineBanner";
 import { CommunityResourceCard } from "../../components/ResourceCard";
+import { SearchBar } from "../../components/SearchBar";
 import { SortControl } from "../../components/SortControl";
+import { StatusChips } from "../../components/StatusChips";
 import { ResourceModal, ResourceSheetMode } from "../../components/ResourceModal";
 import { ReportCard } from "../../components/ReportCard";
 import { SetupNotice } from "../../components/SetupNotice";
@@ -31,9 +34,12 @@ import { useMyMatches } from "../../hooks/useMyMatches";
 import { useMyReports } from "../../hooks/useMyReports";
 import { useNotificationsFeed } from "../../hooks/useNotificationsFeed";
 import { useResourcesState } from "../../hooks/useResources";
+import { geocode, type Place } from "../../lib/geocode";
+import { activeFilterCount, applyHomeFilters } from "../../lib/homeFilters";
 import { reportShareText } from "../../lib/shareText";
 import { sortReports } from "../../lib/sort";
-import { useHomePrefs } from "../../state/homePrefs";
+import { useFab } from "../../state/fab";
+import { useHomePrefs, type ViewRadius } from "../../state/homePrefs";
 import { useSession } from "../../state/session";
 import { C, FAB_CLEARANCE, font, radius } from "../../theme/tokens";
 
@@ -45,24 +51,28 @@ export default function Home() {
   const [view, setView] = useState<"list" | "map">("list");
   const [pinReport, setPinReport] = useState<ReportNearby | null>(null);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [filters, setFilters] = useState<MapFilterState>(ALL_FILTERS);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [focus, setFocus] = useState<Place | null>(null); // zona buscada en el mapa
   const [sheetResource, setSheetResource] = useState<ResourceNearby | null>(null);
   const [sheetMode, setSheetMode] = useState<ResourceSheetMode>("detail");
   const openResource = (r: ResourceNearby) => { setSheetMode("detail"); setSheetResource(r); };
-  const { alertRadiusMi, notifSeenAt, update } = useSession();
-  const { prefs, setSort } = useHomePrefs();
+  const { city, notifSeenAt, update } = useSession();
+  const { prefs, setPrefs, setSort, resetFilters, listQuery, setListQuery, mapQuery, setMapQuery } = useHomePrefs();
+  const { setCollapsed } = useFab();
   const uid = useAuthUser();
   const center = useHome();
   const me = useMyPosition(view === "map");
-  const { reports, loading, error, refresh } = useFeed(alertRadiusMi, center.lat, center.lng);
-  const { resources, refresh: refreshResources } = useResourcesState(alertRadiusMi, center.lat, center.lng);
+  const { reports, loading, error, refresh } = useFeed(prefs.viewRadiusMi, center.lat, center.lng);
+  const { resources, refresh: refreshResources } = useResourcesState(prefs.viewRadiusMi, center.lat, center.lng);
   const { matches, refresh: refreshMatches, dismiss, restore } = useMyMatches();
   const snackbar = useSnackbar();
-  // Los filtros solo afectan a los pines del mapa (memoizado: un array nuevo en cada render reenviaría los datos al WebView).
-  const mapReports = useMemo(() => reports.filter((r) => filters[r.status]), [reports, filters]);
+  // Mismos filtros en List y Map (fase 5.3); la búsqueda de texto solo filtra la lista (en el mapa es una dirección).
+  // Memoizado: un array nuevo en cada render reenviaría los datos al WebView.
+  const listFiltered = useMemo(() => applyHomeFilters(reports, prefs, listQuery), [reports, prefs, listQuery]);
+  const mapReports = useMemo(() => applyHomeFilters(reports, prefs), [reports, prefs]);
   const featured = resources.find((r) => r.is_featured_event) ?? null;
   // Orden elegido (persiste al cambiar List/Map y al volver a la Home). Por defecto: más recientes primero.
-  const sorted = useMemo(() => sortReports(reports, prefs.sort), [reports, prefs.sort]);
+  const sorted = useMemo(() => sortReports(listFiltered, prefs.sort), [listFiltered, prefs.sort]);
   // El recurso comunitario va al final del feed o, como máximo, tras 9 reportes: nunca entre los primeros resultados.
   const resourceAt = Math.min(9, sorted.length);
   const { reports: myReports, refresh: refreshMine, markReunited } = useMyReports();
@@ -71,6 +81,31 @@ export default function Home() {
   const activeLost = useMemo(() => myReports.filter((r) => r.status === "lost"), [myReports]);
   const mineIds = useMemo(() => myReports.map((r) => r.id), [myReports]);
   const [matchesFor, setMatchesFor] = useState<{ id: string; name: string } | null>(null);
+  // Con un Lost activo, Sighted se destaca con un contador de coincidencias pendientes (sin preseleccionarlo: ocultaría los Lost).
+  const sightedDot = activeLost.length > 0 ? matches.filter((m) => !m.dismissed).length : 0;
+  const filterCount = activeFilterCount(prefs);
+
+  const lastY = useRef(0);
+  const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = e.nativeEvent.contentOffset.y, dy = y - lastY.current;
+    if (Math.abs(dy) < 6) return;
+    lastY.current = y;
+    setCollapsed(y > 24 && dy > 0);
+  }, [setCollapsed]);
+  useEffect(() => { if (view === "map") setCollapsed(false); }, [view, setCollapsed]);
+  useFocusEffect(useCallback(() => () => setCollapsed(false), [setCollapsed]));
+
+  // Búsqueda de zona o dirección (modo Map): geocodifica cerca de tu centro y la cámara vuela allí.
+  const searchMap = async () => {
+    const q = mapQuery.trim();
+    if (!q) { setFocus(null); return; }
+    try {
+      const res = await geocode(q, city, center);
+      if (res[0]) setFocus(res[0]);
+      else snackbar.show({ message: "We couldn't find that place" });
+    } catch { snackbar.show({ message: "Search failed. Check your connection." }); }
+  };
+  const changeMapQuery = (q: string) => { setMapQuery(q); if (!q.trim()) setFocus(null); };
 
   // Solo novedades de otros usuarios (lo propio no es una notificación).
   const others = reports.filter((r) => !mineIds.includes(r.id));
@@ -107,26 +142,19 @@ export default function Home() {
     if (r) setTimeout(() => setPinReport(r), 400);
   };
 
-  const switcher = (
-    <View style={styles.segBar} accessibilityRole="tablist">
-      {([["list", "List", List], ["map", "Map", MapIcon]] as const).map(([v, label, Icon]) => {
-        const on = view === v;
-        return (
-          <Pressable key={v} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => setView(v)} style={[styles.segItem, on && styles.segOn]}>
-            <Icon size={16} color={on ? C.white : C.slate700} />
-            <Text style={[styles.segT, on && { color: C.white }]}>{label}</Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-
   return (
     <View style={styles.root}>
       <View style={{ paddingTop: insets.top, backgroundColor: C.white }}>
         <HomeHeader unread={unread} onBell={openNotifs} />
-        {switcher}
-        {view === "map" ? <MapFilters value={filters} onChange={setFilters} /> : null}
+        <View style={styles.controls}>
+          <SearchBar
+            value={view === "map" ? mapQuery : listQuery} onChange={view === "map" ? changeMapQuery : setListQuery} onSubmit={view === "map" ? searchMap : undefined}
+            placeholder={view === "map" ? "Search an area or address" : "Search breed, color or name"} filterCount={filterCount} onOpenFilters={() => setFiltersOpen(true)} />
+          <View style={styles.chipRow}>
+            <StatusChips lost={prefs.lost} sighted={prefs.sighted} sightedDot={sightedDot} onToggle={(k) => setPrefs({ [k]: !prefs[k] })} />
+            <CompactSegmented value={view} onChange={setView} />
+          </View>
+        </View>
       </View>
       <OfflineBanner />
 
@@ -138,17 +166,23 @@ export default function Home() {
             <View style={styles.pad}><SetupNotice /></View>
           ) : (
             <>
-              <MapboxWebView token={MAPBOX_TOKEN} reports={mapReports} resources={resources} center={center} radiusMi={alertRadiusMi} me={me} mineIds={mineIds} onSelect={(sel) => {
+              <MapboxWebView token={MAPBOX_TOKEN} reports={mapReports} resources={resources} center={center} radiusMi={prefs.viewRadiusMi} me={me} mineIds={mineIds} focus={focus} onSelect={(sel) => {
                 if (!sel) return;
                 if (sel.kind === "resource") { const r = resources.find((x) => x.id === sel.id); if (r) openResource(r); }
                 else { const r = reports.find((x) => x.id === sel.id); if (r) setPinReport(r); }
               }} />
-              <MapRadiusChip value={alertRadiusMi} onChange={(mi) => update({ alertRadiusMi: mi })} />
+              <MapRadiusChip value={prefs.viewRadiusMi} onChange={(mi) => setPrefs({ viewRadiusMi: mi as ViewRadius })} />
+              {focus ? (
+                <Pressable accessibilityRole="button" accessibilityLabel="Clear searched area" onPress={() => { setFocus(null); setMapQuery(""); }} style={styles.focusChip}>
+                  <Text style={styles.focusT} numberOfLines={1}>{focus.label}</Text>
+                  <X size={14} color={C.ink} />
+                </Pressable>
+              ) : null}
             </>
           )}
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.listC}>
+        <ScrollView contentContainerStyle={styles.listC} onScroll={onScroll} scrollEventThrottle={16}>
           <EnableAlertsCard />
           {celebrate ? <ReunitedCelebration name={celebrate.name} onDone={endCelebration} /> : null}
           <MyReportCarousel reports={activeLost} matches={matches}
@@ -167,7 +201,12 @@ export default function Home() {
           ) : loading ? (
             <ActivityIndicator style={{ marginTop: 24 }} color={C.teal} />
           ) : reports.length === 0 ? (
-            <Placeholder text={`No activity within ${alertRadiusMi} mi yet.`} />
+            <Placeholder text={`No activity within ${prefs.viewRadiusMi} mi yet.`} />
+          ) : sorted.length === 0 ? (
+            <View style={styles.noMatch}>
+              <Text style={styles.noMatchT}>No reports match your filters</Text>
+              <Pressable accessibilityRole="button" onPress={() => { resetFilters(); setListQuery(""); }} style={styles.retry}><Text style={styles.retryT}>Reset filters</Text></Pressable>
+            </View>
           ) : (
             <>
               <SortControl value={prefs.sort} onChange={setSort} count={sorted.length} />
@@ -179,6 +218,7 @@ export default function Home() {
         </ScrollView>
       )}
 
+      <FilterSheet visible={filtersOpen} prefs={prefs} onChange={setPrefs} onReset={resetFilters} onClose={() => setFiltersOpen(false)} />
       <PinDetailSheet report={pinReport} mine={!!pinReport && mineIds.includes(pinReport.id)} onMarkReunited={onMarkReunited} onClose={() => setPinReport(null)} />
       <MatchesSheet lostName={matchesFor?.name ?? ""} matches={matchesFor ? matches.filter((m) => m.lost_report_id === matchesFor.id) : null}
         onClose={() => setMatchesFor(null)} onView={(m) => { setMatchesFor(null); setTimeout(() => viewSighting(m.sighted_report_id), 400); }} onDismiss={dismiss} onRestore={restore} />
@@ -190,10 +230,12 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.surface },
-  segBar: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
-  segItem: { flex: 1, height: 40, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", borderRadius: radius.md, backgroundColor: "#F1F5F9" },
-  segOn: { backgroundColor: C.teal },
-  segT: { fontFamily: font.bodyBold, fontSize: 14, color: C.slate700 },
+  controls: { paddingHorizontal: 16, paddingVertical: 10, gap: 10, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
+  chipRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 },
+  focusChip: { position: "absolute", top: 12, right: 12, maxWidth: "55%", minHeight: 44, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: C.white, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
+  focusT: { flexShrink: 1, fontFamily: font.bodyBold, fontSize: 13, color: C.ink },
+  noMatch: { alignItems: "center", gap: 12, padding: 24, borderRadius: radius.lg, borderWidth: 1, borderStyle: "dashed", borderColor: C.border2, backgroundColor: C.white },
+  noMatchT: { fontFamily: font.head, fontSize: 16, color: C.ink },
   // Padding inferior = FAB + su margen: la última tarjeta se ve completa al llegar al final del scroll.
   listC: { padding: 16, paddingBottom: FAB_CLEARANCE, gap: 10 },
   mapWrap: { flex: 1 },

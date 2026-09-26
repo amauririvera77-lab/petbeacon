@@ -3,10 +3,10 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { C, font, radius } from "../theme/tokens";
 
-const OPTIONS = [1, 2, 3, 5, 7, 10];
+const OPTIONS = [1, 5, 10]; // mismas opciones que el radio de la hoja de filtros (fase 4.3)
 
-// Chip "5 mi ⌄" del mapa. Ya no es decorativo (CLAUDE.md §5.4): cambia el radio de la sesión,
-// lo que vuelve a consultar reports_nearby/resources_nearby con el nuevo radio.
+// Chip "5 mi ⌄" del mapa (CLAUDE.md §5.4). Cambia el radio de VISUALIZACIÓN (el mismo de la hoja de filtros, no el de alertas del perfil)
+// y vuelve a consultar reports_nearby/resources_nearby con él.
 export function MapRadiusChip({ value, onChange }: { value: number; onChange: (mi: number) => void }) {
   const [open, setOpen] = useState(false);
   return (

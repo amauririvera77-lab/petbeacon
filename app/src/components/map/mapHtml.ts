@@ -34,7 +34,7 @@ export function buildMapHtml(token: string): string {
   map.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-left");
   map.touchZoomRotate.disableRotation();
 
-  var loaded = false, pending = null, lastRadius = null, meOn = false;
+  var loaded = false, pending = null, lastRadius = null, meOn = false, lastFocus = null;
 
   function pinSvg(color, inner) {
     return '<svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 44 44">' +
@@ -79,7 +79,17 @@ export function buildMapHtml(token: string): string {
     map.getSource("me").setData(p.me
       ? { type: "Feature", geometry: { type: "Point", coordinates: [p.me.lng, p.me.lat] }, properties: {} }
       : { type: "FeatureCollection", features: [] });
-    if (lastRadius !== p.radiusMi) {   // re-encuadra solo cuando cambia el radio, no en cada refresco de datos
+    // Búsqueda de zona/dirección (fase 4.3, modo Map): la cámara vuela al resultado y se marca; al limpiarla vuelve al encuadre del radio.
+    var fk = p.focus ? p.focus.lng + "," + p.focus.lat : null;
+    map.getSource("focus").setData(p.focus
+      ? { type: "Feature", geometry: { type: "Point", coordinates: [p.focus.lng, p.focus.lat] }, properties: {} }
+      : { type: "FeatureCollection", features: [] });
+    if (fk !== lastFocus) {
+      lastFocus = fk;
+      if (p.focus) map.flyTo({ center: [p.focus.lng, p.focus.lat], zoom: 14 });
+      else lastRadius = null;
+    }
+    if (!p.focus && lastRadius !== p.radiusMi) {   // re-encuadra solo cuando cambia el radio, no en cada refresco de datos
       lastRadius = p.radiusMi;
       var b = new mapboxgl.LngLatBounds();
       ring.forEach(function (c) { b.extend(c); });
@@ -105,6 +115,10 @@ export function buildMapHtml(token: string): string {
         paint: { "text-color": "#fff" } });
       map.addLayer({ id: "pins", type: "symbol", source: "items", filter: ["!", ["has", "point_count"]],
         layout: { "icon-image": ["concat", "pin-", ["get", "icon"]], "icon-allow-overlap": true, "icon-size": 0.9 } });
+
+      // Resultado de la búsqueda de zona: punto blanco con borde ink (distinto del punto negro de "tú").
+      map.addSource("focus", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addLayer({ id: "focus-dot", type: "circle", source: "focus", paint: { "circle-color": "#ffffff", "circle-radius": 8, "circle-stroke-width": 3, "circle-stroke-color": "${C.ink}" } });
 
       // Reportes propios ("Your report"): aro negro bajo el pin y etiqueta encima.
       map.addLayer({ id: "pins-mine-ring", type: "circle", source: "items", filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "mine"], true]],
