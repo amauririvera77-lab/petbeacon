@@ -43,3 +43,25 @@ export async function logout(): Promise<void> {
   }
   await supabase.auth.signOut();
 }
+
+// Eliminar la cuenta (Profile → Delete account). Primero se borran las fotos del usuario del bucket con la API de Storage (SQL no puede
+// hacerlo: borraría la fila y dejaría el archivo real); después delete_my_account() elimina reportes, mascotas, perfil y el usuario.
+export async function deleteAccount(): Promise<void> {
+  if (!supabase) throw new Error("Supabase isn't configured.");
+  const { data: s } = await supabase.auth.getSession();
+  const uid = s.session?.user.id;
+  if (!uid) throw new Error("You're signed out.");
+
+  const bucket = supabase.storage.from("report-photos");
+  for (let guard = 0; guard < 50; guard++) {            // hasta 50 páginas de 1000 archivos
+    const { data: files, error } = await bucket.list(uid, { limit: 1000 });
+    if (error) throw new Error(`Couldn't list your photos: ${error.message}`);
+    if (!files || files.length === 0) break;
+    const { error: rmErr } = await bucket.remove(files.map((f) => `${uid}/${f.name}`));
+    if (rmErr) throw new Error(`Couldn't delete your photos: ${rmErr.message}`);
+    if (files.length < 1000) break;
+  }
+  const { error } = await supabase.rpc("delete_my_account");
+  if (error) throw new Error(error.message);
+  await supabase.auth.signOut().catch(() => {});
+}

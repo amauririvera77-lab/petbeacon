@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { ReportNearby } from "../lib/database.types";
+import { activityAt } from "../lib/activity";
 import { reportSubtitle, reportTitle } from "../lib/reportText";
 import { agoShort } from "../lib/time";
 import { C, font, radius } from "../theme/tokens";
@@ -41,7 +42,7 @@ export function ReportCard({ report, onPress, mine, matchFor }: { report: Report
           <Badge status={report.status as BadgeStatus} />
         </View>
         {stacked ? (
-          <Text style={styles.meta}>{report.distance_mi.toFixed(1)} mi · {agoShort(report.created_at)}</Text>
+          <Text style={styles.meta}>{report.distance_mi.toFixed(1)} mi · {agoShort(activityAt(report))}</Text>
         ) : null}
         {label || sub ? (
           <View style={styles.subRow}>
@@ -54,7 +55,7 @@ export function ReportCard({ report, onPress, mine, matchFor }: { report: Report
       {stacked ? null : (
         <View style={styles.right}>
           <Text style={styles.distance} numberOfLines={1}>{report.distance_mi.toFixed(1)} mi</Text>
-          <Text style={styles.time} numberOfLines={1}>{agoShort(report.created_at)}</Text>
+          <Text style={styles.time} numberOfLines={1}>{agoShort(activityAt(report))}</Text>
         </View>
       )}
     </Pressable>

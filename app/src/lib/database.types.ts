@@ -32,6 +32,7 @@ export type Profile = {
   created_at: string;
 };
 
+export type SightingResolution = "returned_to_owner" | "no_longer_there" | "taken_to_shelter_or_vet";
 export type PetSize = "small" | "medium" | "large";
 
 export type Pet = {
@@ -67,6 +68,9 @@ export type Report = {
   condition: ReportCondition | null; // condición del animal en un avistamiento (0012); ya no va dentro de features_description
   color: string | null; // 0017 (copiados de la mascota en un Lost)
   size: PetSize | null;
+  last_seen_at: string | null; // 0020: "Still there" de un avistamiento
+  resolution: SightingResolution | null;
+  resolved_at: string | null;
   location: string; // geography: EWKT al insertar ('SRID=4326;POINT(lng lat)'), hex EWKB al leer
   location_label: string | null;
   contact_phone_or_email: string | null;
@@ -116,6 +120,7 @@ export type ReportNearby = {
   condition?: ReportCondition | null; // ausente hasta aplicar 0012
   color?: string | null; // ausentes hasta aplicar 0017
   size?: PetSize | null;
+  last_seen_at?: string | null; // ausente hasta aplicar 0020
   location_label: string | null;
   created_at: string;
   lat: number;
@@ -195,6 +200,9 @@ export type Database = {
       reports_nearby: { Args: { lat: number; lng: number; radius_mi: number }; Returns: ReportNearby[] };
       my_report_contact: { Args: { report_id: string }; Returns: string | null };
       my_matches: { Args: Record<PropertyKey, never>; Returns: MyMatch[] };
+      delete_my_account: { Args: Record<PropertyKey, never>; Returns: undefined };
+      sighting_still_there: { Args: { p_id: string }; Returns: undefined };
+      resolve_sighting: { Args: { p_id: string; p_resolution: SightingResolution }; Returns: undefined };
       archive_pet: { Args: { p_pet: string; p_reason: "removed" | "passed_away" }; Returns: undefined };
       resources_nearby: { Args: { lat: number; lng: number; radius_mi: number }; Returns: ResourceNearby[] };
     };

@@ -166,6 +166,9 @@ export default function Profile() {
         <Pressable accessibilityRole="button" onPress={confirmLogout} style={({ pressed }) => [styles.logout, pressed && { backgroundColor: "#F1F5F9" }]}>
           <Text style={styles.logoutT}>Log out</Text>
         </Pressable>
+        <Pressable accessibilityRole="button" onPress={() => router.push("/delete-account")} style={styles.deleteLink}>
+          <Text style={styles.deleteT}>Delete account</Text>
+        </Pressable>
       </ScrollView>
 
       <EditLocationSheet visible={cityOpen} onClose={() => setCityOpen(false)} />
@@ -211,5 +214,7 @@ const styles = StyleSheet.create({
   petBreed: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate500 },
   addT: { flex: 1, fontFamily: font.bodyBold, fontSize: 15, color: C.slate700 },
   logout: { height: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
+  deleteLink: { minHeight: MIN_HIT, alignItems: "center", justifyContent: "center", marginTop: 8 },
+  deleteT: { fontFamily: font.bodySemi, fontSize: 13, color: C.sosDark, textDecorationLine: "underline" },
   logoutT: { fontFamily: font.bodyBold, fontSize: 15, color: C.slate700 },
 });

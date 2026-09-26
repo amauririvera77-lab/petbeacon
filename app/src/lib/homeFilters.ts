@@ -1,5 +1,6 @@
 import type { ReportNearby } from "./database.types";
 import { DEFAULT_PREFS, Prefs } from "../state/homePrefs";
+import { activityMs } from "./activity";
 import { activeEvents, type EventLike } from "./events";
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -14,7 +15,7 @@ export function applyHomeFilters<T extends ReportNearby>(reports: T[], prefs: Pr
     if (r.status === "reunited" && !prefs.showReunited) return false;
     if (prefs.species !== "all" && r.species !== prefs.species) return false;
     if (r.distance_mi > prefs.viewRadiusMi) return false;
-    if (now - new Date(r.created_at).getTime() > maxAge) return false;
+    if (now - activityMs(r) > maxAge) return false;
     if (tokens.length) {
       const hay = norm([r.name, r.breed, r.features_description, r.location_label, r.species].filter(Boolean).join(" "));
       if (!tokens.every((t) => hay.includes(t))) return false;

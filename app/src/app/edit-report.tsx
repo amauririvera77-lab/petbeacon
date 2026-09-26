@@ -7,6 +7,7 @@ import { Primary } from "../components/Primary";
 import { TextField } from "../components/TextField";
 import { Chips } from "../components/report/Chips";
 import { LocationPicker } from "../components/report/LocationPicker";
+import { ConditionGrid, type Condition } from "../components/flow/OptionButtons";
 import { BreedPicker } from "../components/report/BreedPicker";
 import { PhotoPicker } from "../components/report/PhotoPicker";
 import { useHome } from "../hooks/useHome";
@@ -19,7 +20,7 @@ import { useSession } from "../state/session";
 import { C, MIN_HIT, font } from "../theme/tokens";
 
 const SPECIES = [{ value: "dog", label: "Dog" }, { value: "cat", label: "Cat" }, { value: "other", label: "Other" }] as const;
-type Loaded = Pick<Report, "id" | "status" | "name" | "species" | "breed" | "breed_id" | "pet_id" | "photo_url" | "features_description" | "location_label">;
+type Loaded = Pick<Report, "id" | "status" | "name" | "species" | "breed" | "breed_id" | "pet_id" | "photo_url" | "features_description" | "location_label"> & { condition?: Condition | null };
 
 // Edit report (prototipo): mismos campos que el paso 2 de Report lost pet, prellenados, y un solo botón "Save changes".
 // El contacto no se edita aquí (es privado y solo lo lee su dueño).
@@ -35,6 +36,8 @@ export default function EditReport() {
   const [species, setSpecies] = useState<Species | null>(null);
   const [breed, setBreed] = useState<BreedValue>(EMPTY_BREED);
   const [petId, setPetId] = useState<string | null>(null);
+  const [isSighting, setIsSighting] = useState(false);
+  const [condition, setCondition] = useState<Condition | null>(null);
   const [features, setFeatures] = useState("");
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -46,15 +49,16 @@ export default function EditReport() {
 
   useEffect(() => {
     if (!supabase || !id) return;
-    supabase.from("reports").select("id,status,name,species,breed,breed_id,pet_id,photo_url,features_description,location_label").eq("id", id).maybeSingle().then(({ data, error }) => {
+    supabase.from("reports").select("id,status,name,species,breed,breed_id,pet_id,photo_url,features_description,location_label,condition").eq("id", id).maybeSingle().then(({ data, error }) => {
       if (error || !data) { Alert.alert("Couldn't load this report", error?.message ?? "It may have been removed."); router.back(); return; }
       const r = data as Loaded;
-      setName(r.name ?? ""); setSpecies(r.species); setBreed(breedValueFrom(r.breed_id, r.breed, r.species)); setPetId(r.pet_id); setFeatures(r.features_description ?? "");
+      setName(r.name ?? ""); setSpecies(r.species); setBreed(breedValueFrom(r.breed_id, r.breed, r.species)); setPetId(r.pet_id); setIsSighting(r.status === "sighted"); setCondition(r.condition ?? null); setFeatures(r.features_description ?? "");
       setPhotoUrl(r.photo_url); setOrigPhoto(r.photo_url); setExistingLabel(r.location_label); setLoading(false);
     });
   }, [id]);
 
-  const valid = name.trim().length > 0 && !!species && (keepLocation || !!place);
+  // Un avistamiento no tiene nombre de mascota: solo hace falta el tipo (y la ubicación, si se cambió).
+  const valid = (isSighting || name.trim().length > 0) && !!species && (keepLocation || !!place);
 
   const save = async () => {
     if (!supabase || !valid || !species) return;
@@ -63,7 +67,7 @@ export default function EditReport() {
       const { data: s } = await supabase.auth.getSession();
       if (!s.session) throw new Error("You're signed out.");
       const patch: Partial<Report> = {
-        name: name.trim(), species, breed: breed.text.trim() || null, breed_id: breed.id, features_description: features.trim() || null,
+        name: isSighting ? null : name.trim(), species, ...(isSighting ? { condition } : {}), breed: breed.text.trim() || null, breed_id: breed.id, features_description: features.trim() || null,
       };
       if (photoUri) {
         patch.photo_url = await uploadPhoto(s.session.user.id, photoUri);
@@ -90,7 +94,7 @@ export default function EditReport() {
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={C.ink} /></Pressable>
-        <Text style={styles.h} accessibilityRole="header">Edit report</Text>
+        <Text style={styles.h} accessibilityRole="header">{isSighting ? "Edit sighting" : "Edit report"}</Text>
       </View>
       {loading ? <View style={styles.center}><ActivityIndicator color={C.teal} /></View> : (
         <>
@@ -99,12 +103,13 @@ export default function EditReport() {
               <Text style={styles.label}>Photo</Text>
               <PhotoPicker uri={photoUri ?? photoUrl} onChange={(u) => { setPhotoUri(u); if (!u) setPhotoUrl(null); }} />
             </View>
-            <TextField label="Pet's name" placeholder="Max" value={name} onChangeText={setName} />
+            {isSighting ? null : <TextField label="Pet's name" placeholder="Max" value={name} onChangeText={setName} />}
             <Chips label="Type" options={SPECIES} value={species} onChange={(s) => { const b = breedById(breed.id); if (b?.species && b.species !== s) setBreed(EMPTY_BREED); setSpecies(s); }} />
             <BreedPicker optional species={species} value={breed} onChange={setBreed} />
-            <TextField label="Distinctive features (optional)" placeholder="Blue collar, limps on left leg" value={features} onChangeText={setFeatures} multiline />
+            {isSighting ? <View style={{ gap: 8 }}><Text style={styles.label}>Condition</Text><ConditionGrid value={condition} onChange={setCondition} /></View> : null}
+            <TextField label={isSighting ? "Description (optional)" : "Distinctive features (optional)"} placeholder={isSighting ? "No collar, white paws, very friendly" : "Blue collar, limps on left leg"} value={features} onChangeText={setFeatures} multiline />
             <View style={{ gap: 8 }}>
-              <Text style={styles.label}>Last seen</Text>
+              <Text style={styles.label}>{isSighting ? "Where you saw them" : "Last seen"}</Text>
               <LocationPicker
                 value={keepLocation ? (existingLabel ? { label: existingLabel, lat: 0, lng: 0 } : null) : place}
                 onChange={(p) => { setKeepLocation(false); setPlace(p); }}

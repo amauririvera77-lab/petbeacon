@@ -1,37 +1,50 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { ActivityIndicator, Alert, Share, StyleSheet, Text, View } from "react-native";
 import { MatchesSheet } from "../../components/MatchesSheet";
-import { MyReportCard } from "../../components/MyReportCard";
+import { MyReportStatusCard } from "../../components/MyReportStatusCard";
+import { MySightingCard } from "../../components/myreports/MySightingCard";
+import { PastReports } from "../../components/myreports/PastReports";
+import { ResolveSightingSheet } from "../../components/myreports/ResolveSightingSheet";
 import { PinDetailSheet } from "../../components/PinDetailSheet";
+import { ReportCard } from "../../components/ReportCard";
+import { useSnackbar } from "../../components/Snackbar";
 import { Placeholder, TabScreen } from "../../components/TabScreen";
 import { useHome } from "../../hooks/useHome";
 import { useMyMatches } from "../../hooks/useMyMatches";
-import type { MyMatch, ReportNearby } from "../../lib/database.types";
+import { useMyReports, type MyReport } from "../../hooks/useMyReports";
+import type { MyMatch, ReportNearby, SightingResolution } from "../../lib/database.types";
+import { sortByRelevance } from "../../lib/matchPick";
+import { bucketReports, toNearby } from "../../lib/myReports";
 import { fetchReportNearby } from "../../lib/reportLookup";
-import { useMyReports } from "../../hooks/useMyReports";
+import { reportShareText } from "../../lib/shareText";
+import { supabase } from "../../lib/supabase";
 import { C, font } from "../../theme/tokens";
-
-const DAY = 24 * 3_600_000;
 
 export default function Reports() {
   const { reports, loading, error, refresh, markReunited } = useMyReports();
   const { matches, refresh: refreshMatches, dismiss, restore } = useMyMatches();
   const center = useHome();
+  const snackbar = useSnackbar();
   const [sheetFor, setSheetFor] = useState<{ id: string; name: string } | null>(null);
-  const [sighting, setSighting] = useState<ReportNearby | null>(null);
+  const [detail, setDetail] = useState<ReportNearby | null>(null);
+  const [resolving, setResolving] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
   // iOS ignora un Modal que se abre mientras otro se cierra: se espera a que termine la animación.
   const viewSighting = async (m: MyMatch) => {
     const r = await fetchReportNearby(m.sighted_report_id, center.lat, center.lng);
     setSheetFor(null);
-    if (r) setTimeout(() => setSighting(r), 400);
+    if (r) setTimeout(() => setDetail(r), 400);
   };
   useFocusEffect(useCallback(() => { refresh(); refreshMatches(); }, [refresh, refreshMatches]));
 
-  // Lost activos + reunited de las últimas 24h; los avistamientos van en su propia sección (§2).
-  const active = reports.filter((r) => r.status === "lost" || (r.status === "reunited" && r.reunited_at && Date.now() - new Date(r.reunited_at).getTime() < DAY));
-  const sightings = reports.filter((r) => r.status === "sighted");
-  const countFor = (id: string) => matches.filter((m) => m.lost_report_id === id).length;
+  // Activos: Lost (primero los que tienen coincidencias sin revisar, strong antes que possible; luego por recencia), reunidos hace <24 h y avistamientos
+  // vigentes. Todo lo demás va al historial.
+  const buckets = useMemo(() => bucketReports(reports), [reports]);
+  const lost = useMemo(() => sortByRelevance(buckets.lost, matches), [buckets.lost, matches]);
+  const nearby = (r: MyReport) => toNearby(r, center);
+  const openDetail = (r: MyReport) => { const n = nearby(r); if (n) setDetail(n); };
 
   const confirmReunited = (id: string) => {
     const name = reports.find((r) => r.id === id)?.name?.trim() || "your pet";
@@ -40,7 +53,31 @@ export default function Reports() {
       { text: "Yes, we're reunited", onPress: () => markReunited(id).catch((e) => Alert.alert("Couldn't update", e.message)) },
     ]);
   };
+  const share = (r: MyReport) => {
+    const n = nearby(r);
+    if (n) Share.share({ message: reportShareText(n) }).catch(() => {});
+  };
+  const editReport = (id: string) => router.push({ pathname: "/edit-report", params: { id } });
 
+  const stillThere = async (id: string) => {
+    if (!supabase) return;
+    const { error: e } = await supabase.rpc("sighting_still_there", { p_id: id });
+    if (e) { Alert.alert("Couldn't update the sighting", e.message); return; }
+    snackbar.show({ message: "Marked as still there" });
+    refresh();
+  };
+  const resolve = async (resolution: SightingResolution) => {
+    if (!supabase || !resolving) return;
+    setBusy(true);
+    const { error: e } = await supabase.rpc("resolve_sighting", { p_id: resolving, p_resolution: resolution });
+    setBusy(false);
+    if (e) { Alert.alert("Couldn't update the sighting", e.message); return; }
+    setResolving(null);
+    snackbar.show({ message: "Sighting marked as resolved" });
+    refresh();
+  };
+
+  const hasActive = lost.length + buckets.reunitedRecent.length > 0;
   return (
     <TabScreen title="My reports" subtitle="Manage your active alerts and logged sightings">
       {loading ? <ActivityIndicator style={{ marginTop: 24 }} color={C.teal} /> : error ? (
@@ -48,20 +85,37 @@ export default function Reports() {
       ) : (
         <>
           <Text style={styles.h}>Active reports</Text>
-          {active.length === 0 ? <Placeholder text="No active reports. When you publish an alert it shows up here." /> : (
+          {!hasActive ? <Placeholder text="No active reports. When you publish an alert it shows up here." /> : (
             <View style={styles.list}>
-              {active.map((r) => <MyReportCard key={r.id} report={r} matchCount={countFor(r.id)} onMatches={() => setSheetFor({ id: r.id, name: r.name ?? "your pet" })} onEdit={() => router.push({ pathname: "/edit-report", params: { id: r.id } })} onMarkReunited={() => confirmReunited(r.id)} />)}
+              {lost.map((r) => (
+                <MyReportStatusCard key={r.id} report={r} matches={matches.filter((m) => m.lost_report_id === r.id)}
+                  manage={{ onEdit: () => editReport(r.id), onMarkReunited: () => confirmReunited(r.id) }}
+                  onOpen={() => openDetail(r)} onShare={() => share(r)} onViewAll={() => setSheetFor({ id: r.id, name: r.name ?? "your pet" })}
+                  onViewSighting={(m) => viewSighting(m)} onDismiss={(m) => dismiss(m.id)} />
+              ))}
+              {buckets.reunitedRecent.map((r) => { const n = nearby(r); return n ? (
+                <View key={r.id} style={{ gap: 6 }}>
+                  <ReportCard report={n} mine onPress={() => setDetail(n)} />
+                  <Text style={styles.closed}>Case closed — thanks for updating it.</Text>
+                </View>
+              ) : null; })}
             </View>
           )}
           <Text style={[styles.h, { marginTop: 20 }]}>Sightings you've logged</Text>
-          {sightings.length === 0 ? <Placeholder text="Sightings you report will show up here." /> : (
-            <View style={styles.list}>{sightings.map((r) => <MyReportCard key={r.id} report={r} matchCount={0} />)}</View>
+          {buckets.sightings.length === 0 ? <Placeholder text="Sightings you report will show up here." /> : (
+            <View style={styles.list}>
+              {buckets.sightings.map((r) => { const n = nearby(r); return n ? (
+                <MySightingCard key={r.id} report={n} onOpen={() => setDetail(n)} onEdit={() => editReport(r.id)} onStillThere={() => stillThere(r.id)} onResolve={() => setResolving(r.id)} />
+              ) : null; })}
+            </View>
           )}
+          <PastReports reports={buckets.past} />
         </>
       )}
       <MatchesSheet lostName={sheetFor?.name ?? ""} matches={sheetFor ? matches.filter((m) => m.lost_report_id === sheetFor.id) : null}
         onClose={() => setSheetFor(null)} onView={viewSighting} onDismiss={dismiss} onRestore={restore} />
-      <PinDetailSheet report={sighting} onClose={() => setSighting(null)} />
+      <PinDetailSheet report={detail} mine onClose={() => setDetail(null)} onMarkReunited={(r) => confirmReunited(r.id)} />
+      <ResolveSightingSheet visible={!!resolving} busy={busy} onClose={() => setResolving(null)} onPick={resolve} />
     </TabScreen>
   );
 }
@@ -70,4 +124,5 @@ const styles = StyleSheet.create({
   h: { fontFamily: font.head, fontSize: 18, color: C.ink, marginTop: 12 },
   list: { gap: 10, marginTop: 4 },
   err: { fontFamily: font.body, fontSize: 14, color: C.sosDark, marginTop: 16 },
+  closed: { fontFamily: font.bodySemi, fontSize: 13, color: C.ok },
 });

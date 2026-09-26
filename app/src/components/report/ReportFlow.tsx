@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ChevronRight, Dog, Mail, MapPin, Phone, Plus, Share2 } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import { shortAddress } from "../../lib/address";
 import { FLYERS_READY } from "../../lib/flyer";
 import { Place } from "../../lib/geocode";
 import { reportShareText } from "../../lib/shareText";
@@ -271,7 +272,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
             {features ? <Text style={st.rFeat}>{features}</Text> : null}
           </View>
         </View>
-        <View style={[st.rRow, { marginBottom: 12 }]}><MapPin size={16} color={C.sos} /><Text style={st.rRowT}>{place?.label ?? ""}</Text></View>
+        <View style={[st.rRow, { marginBottom: 12 }]}><MapPin size={16} color={C.sos} /><Text style={st.rRowT}>{shortAddress(place?.label) ?? ""}</Text></View>
         <View style={[st.rRow, { marginBottom: 24 }]}><Phone size={16} color={C.sos} /><Text style={st.rRowT}>{contact}</Text></View>
         <View style={st.warnBox}><Text style={st.warnT}>This publishes immediately and notifies nearby users. You can edit or delete it later.</Text></View>
       </ScreenLayout>

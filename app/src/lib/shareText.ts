@@ -1,5 +1,6 @@
 import type { ReportStatus, Species } from "./database.types";
 import { reportUrl } from "./flyer";
+import { shortAddress } from "./address";
 import { whenLabel } from "./time";
 
 type Shareable = {
@@ -10,7 +11,7 @@ type Shareable = {
 // Texto para compartir un reporte por la hoja nativa. Incluye el enlace público cuando está configurado y NUNCA el contacto del dueño.
 export function reportShareText(r: Shareable): string {
   const title = r.name?.trim() || `Unknown ${r.species}`;
-  const seen = `${whenLabel(r.created_at)}${r.location_label ? ` · ${r.location_label}` : ""}`;
+  const seen = `${whenLabel(r.created_at)}${r.location_label ? ` · ${shortAddress(r.location_label)}` : ""}`;
   const link = reportUrl(r.id);
   const tail = `${link ? `\n${link}` : ""}\nReported via PetBeacon`;
   return r.status === "lost"

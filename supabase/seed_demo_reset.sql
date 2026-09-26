@@ -232,6 +232,22 @@ begin
     perform recompute_matches_for_lost(id) from reports where id::text like '20000000-0000-0000-0000-0000000000__' and status = 'lost';
   end if;
 
+  -- 7. Reportes PROPIOS para probar My Reports (fase 4): dos avistamientos tuyos (uno vigente y otro ya vencido), un Lost anterior de Max ya
+  --    reunido y, si la migración 0020 existe, un avistamiento resuelto y otro con "Still there".
+  insert into reports (id, user_id, status, species, name, breed, photo_url, features_description, condition, location, location_label, contact_phone_or_email, created_at, reunited_at, pet_id) values
+    ('20000000-0000-0000-0000-000000000012', me, 'sighted', 'dog', null, 'Siberian Husky', null, 'Blue eyes, no collar, trotting along the sidewalk.', 'calm',
+      st_setsrid(st_makepoint(-74.030, 40.7755), 4326)::geography, 'Bergenline Ave & 40th St, Union City, NJ 07087, United States', null, now() - interval '5 hours', null, null),
+    ('20000000-0000-0000-0000-000000000013', me, 'sighted', 'cat', null, 'Domestic Shorthair', null, 'Black cat near the trash bins.', 'scared',
+      st_setsrid(st_makepoint(-74.0285, 40.7810), 4326)::geography, 'Palisade Ave, Union City', null, now() - interval '60 hours', null, null),
+    ('20000000-0000-0000-0000-000000000016', me, 'reunited', 'dog', 'Max', 'Golden Retriever', 'https://images.unsplash.com/photo-1552053831-71594a27632d', 'Found two blocks away, safe and sound.', null,
+      st_setsrid(st_makepoint(-74.0335, 40.7803), 4326)::geography, 'Tonnelle Ave & 42nd St, North Bergen, NJ 07047, United States', '(201) 555-0100', now() - interval '6 days', now() - interval '3 days', max_pet);
+  if exists (select 1 from information_schema.columns where table_name = 'reports' and column_name = 'resolution') then
+    execute $q$insert into reports (id, user_id, status, species, breed, features_description, condition, location, location_label, created_at, resolution, resolved_at) values
+      ('20000000-0000-0000-0000-000000000014', $1, 'resolved', 'cat', 'Siamese', 'Was wearing a red collar.', 'calm',
+       st_setsrid(st_makepoint(-74.0210, 40.7790), 4326)::geography, 'Bergenline Ave & 47th St, Union City', now() - interval '4 days', 'returned_to_owner', now() - interval '2 days')$q$ using me;
+    execute $q$update reports set last_seen_at = now() - interval '25 minutes' where id = '20000000-0000-0000-0000-000000000012'$q$;
+  end if;
+
   -- Reactiva los triggers de push.
   if not v_send_push then
     if exists (select 1 from pg_trigger where tgname = 'reports_notify_nearby' and tgrelid = 'reports'::regclass) then

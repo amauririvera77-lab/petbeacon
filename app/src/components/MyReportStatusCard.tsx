@@ -11,8 +11,10 @@ import { MatchBanner } from "./MatchBanner";
 
 // Estado del propio reporte Lost (fase 2.1): foto y nombre, cuánto lleva perdida, vecinos alertados, avistamientos cercanos,
 // acceso al detalle y —integrada, sin banner aparte— la coincidencia pendiente.
-export function MyReportStatusCard({ report, matches, width, onOpen, onViewSighting, onDismiss, onViewAll, onShare }: {
-  report: MyReport; matches: MyMatch[]; width?: number;
+// `manage` (My Reports): la misma tarjeta con la jerarquía de acciones de 4.3 — acción principal = revisar coincidencias (si hay) o compartir la alerta;
+// "Edit report" y "Mark reunited" son secundarias, sin relleno. Sin `manage` es la tarjeta de estado de Home (con la coincidencia integrada).
+export function MyReportStatusCard({ report, matches, width, manage, onOpen, onViewSighting, onDismiss, onViewAll, onShare }: {
+  report: MyReport; matches: MyMatch[]; width?: number; manage?: { onEdit: () => void; onMarkReunited: () => void };
   onOpen: () => void; onViewSighting: (m: MyMatch) => void; onDismiss: (m: MyMatch) => void; onViewAll: () => void; onShare: () => void;
 }) {
   const title = report.name?.trim() || `Unknown ${report.species}`;
@@ -51,7 +53,7 @@ export function MyReportStatusCard({ report, matches, width, onOpen, onViewSight
           <Text style={styles.statT}>{openCount === 0 ? "No matches yet" : `${openCount} ${openCount === 1 ? "match" : "matches"}`}</Text>
         </View>
       </View>
-      {alerted === 0 ? (
+      {alerted === 0 && !manage ? (
         // Cero vecinos alertados (dato real): en vez de un vacío, una acción para ampliar el alcance con la hoja de compartir nativa.
         <Pressable accessibilityRole="button" onPress={onShare} style={styles.share}>
           <Share2 size={16} color={C.ink} />
@@ -59,12 +61,25 @@ export function MyReportStatusCard({ report, matches, width, onOpen, onViewSight
         </Pressable>
       ) : null}
 
-      {pending ? (
+      {manage ? (
+        <View style={styles.manage}>
+          <Pressable accessibilityRole="button" onPress={openCount > 0 ? onViewAll : onShare} style={({ pressed }) => [styles.primary, pressed && { opacity: 0.85 }]}>
+            {openCount > 0 ? <Sparkles size={16} color={C.white} /> : <Share2 size={16} color={C.white} />}
+            <Text style={styles.primaryT}>{openCount > 0 ? `Review matches (${openCount})` : "Share alert"}</Text>
+          </Pressable>
+          <View style={styles.secRow}>
+            <Pressable accessibilityRole="button" onPress={manage.onEdit} style={styles.sec}><Text style={styles.secT}>Edit report</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={manage.onMarkReunited} style={styles.sec}><Text style={styles.secT}>Mark reunited</Text></Pressable>
+          </View>
+        </View>
+      ) : null}
+
+      {pending && !manage ? (
         <View style={{ marginTop: 8 }}>
           <MatchBanner match={pending} onViewSighting={() => onViewSighting(pending)} onDismiss={() => onDismiss(pending)} />
         </View>
       ) : null}
-      {matches.length > 1 || (matches.length === 1 && !pending) ? (
+      {!manage && (matches.length > 1 || (matches.length === 1 && !pending)) ? (
         <Pressable accessibilityRole="button" onPress={onViewAll} style={styles.all}>
           <Text style={styles.allT}>View all matches ({matches.length})</Text>
         </Pressable>
@@ -85,6 +100,12 @@ const styles = StyleSheet.create({
   statT: { fontFamily: font.bodySemi, fontSize: 13, color: C.slate700 },
   share: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start", marginTop: 4, paddingHorizontal: 12, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2 },
   shareT: { fontFamily: font.bodyBold, fontSize: 13, color: C.ink },
+  manage: { gap: 8, marginTop: 12 },
+  primary: { minHeight: 48, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", borderRadius: radius.md, backgroundColor: C.ink },
+  primaryT: { fontFamily: font.bodyBold, fontSize: 15, color: C.white },
+  secRow: { flexDirection: "row", gap: 8 },
+  sec: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2, backgroundColor: C.white },
+  secT: { fontFamily: font.bodyBold, fontSize: 14, color: C.ink },
   all: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start", marginTop: 0 },
   allT: { fontFamily: font.bodyBold, fontSize: 13, color: C.slate700, textDecorationLine: "underline" },
 });

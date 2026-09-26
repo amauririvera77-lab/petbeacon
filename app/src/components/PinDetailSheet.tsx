@@ -7,6 +7,8 @@ import type { ReportNearby } from "../lib/database.types";
 import { C, font, radius } from "../theme/tokens";
 import { FLYERS_READY } from "../lib/flyer";
 import { reportShareText } from "../lib/shareText";
+import { activityAt } from "../lib/activity";
+import { shortAddress } from "../lib/address";
 import { cleanFeatures, reportTitle } from "../lib/reportText";
 import { whenLabel } from "../lib/time";
 import { colorLabel, sizeLabel } from "../lib/petOptions";
@@ -92,7 +94,7 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited }: {
                 <View style={styles.row}>
                   <View style={{ marginTop: 2 }}><MapPin size={18} color={color} /></View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.strong}>{whenLabel(r.created_at)}{r.location_label ? ` · ${r.location_label}` : ""}</Text>
+                    <Text style={styles.strong}>{whenLabel(activityAt(r))}{r.location_label ? ` · ${shortAddress(r.location_label)}` : ""}</Text>
                     <Text style={styles.muted}>{r.distance_mi.toFixed(1)} mi from you</Text>
                   </View>
                 </View>

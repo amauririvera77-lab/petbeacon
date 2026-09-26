@@ -1,3 +1,4 @@
+import { shortAddress } from "../../lib/address";
 import QRCode from "react-native-qrcode-svg";
 import { StyleSheet, Text, View } from "react-native";
 import type { FlyerReport } from "../../lib/flyer";
@@ -28,7 +29,7 @@ export function FlyerTemplate({ report: r, contact, url, onPhotoReady }: Props) 
   const lost = r.status === "lost";
   const accent = lost ? C.sos : C.warn;
   const title = r.name?.trim() || `Unknown ${r.species}`;
-  const seen = `${when(r.created_at)}${r.location_label ? ` · ${r.location_label}` : ""}`;
+  const seen = `${when(r.created_at)}${r.location_label ? ` · ${shortAddress(r.location_label)}` : ""}`;
 
   return (
     <View style={styles.page} collapsable={false}>
