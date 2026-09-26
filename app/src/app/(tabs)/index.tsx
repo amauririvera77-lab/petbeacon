@@ -96,7 +96,9 @@ export default function Home() {
     lastY.current = y;
     setCollapsed(y > 24 && dy > 0);
   }, [setCollapsed]);
-  useEffect(() => { if (view === "map") setCollapsed(false); else setPreviewId(null); }, [view, setCollapsed]);
+  useEffect(() => { if (view !== "map") setPreviewId(null); }, [view]);
+  // En Map el FAB va expandido, salvo con la tarjeta de vista previa abierta: se contrae al círculo para no taparla.
+  useEffect(() => { if (view === "map") setCollapsed(preview !== null); }, [view, preview, setCollapsed]);
   useFocusEffect(useCallback(() => () => setCollapsed(false), [setCollapsed]));
 
   // Búsqueda de zona o dirección (modo Map): geocodifica cerca de tu centro y la cámara vuela allí.
