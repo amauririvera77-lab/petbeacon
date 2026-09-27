@@ -16,7 +16,11 @@ const SPECIES_WORD: Record<string, string> = { dog: "dog", cat: "cat", other: "p
 export function MySightingCard({ report, onOpen, onEdit, onStillThere, onResolve }: {
   report: ReportNearby; onOpen: () => void; onEdit: () => void; onStillThere: () => void; onResolve: () => void;
 }) {
+  const hasPhoto = !!report.photo_url;
   const hasBreed = !!report.breed?.trim();
+  const word = SPECIES_WORD[report.species] ?? "pet";
+  // Prioriza lo que más ayuda a reconocer al animal: sin foto es lo primero que falta (una raza sin foto sigue siendo difícil de identificar).
+  const notice = !hasPhoto ? `Add a photo to help owners recognize this ${word}` : !hasBreed ? `Add breed or details to help owners recognize this ${word}` : null;
   const openMenu = () => Alert.alert("Sighting", undefined, [
     { text: "Edit", onPress: onEdit },
     { text: "Cancel", style: "cancel" },
@@ -26,10 +30,10 @@ export function MySightingCard({ report, onOpen, onEdit, onStillThere, onResolve
       <ReportRow photoUrl={report.photo_url} focusX={report.photo_focus_x} focusY={report.photo_focus_y} zoom={report.photo_zoom} species={report.species}
         title={report.breed?.trim() || (report.species === "cat" ? "Cat" : report.species === "dog" ? "Dog" : "Pet")} badge="sighted"
         timeText={`Spotted ${elapsedShort(activityAt(report))} ago`} locationText={shortAddress(report.location_label) ?? "Location not shared"} reserveMenuSpace />
-      {!hasBreed ? (
+      {notice ? (
         <Pressable accessibilityRole="button" onPress={(e) => { e.stopPropagation(); onEdit(); }} style={({ pressed }) => [styles.notice, pressed && { backgroundColor: C.selectBg }]}>
           <Info size={14} color={C.slate700} />
-          <Text style={styles.noticeT}>{`Add breed or details to help owners recognize this ${SPECIES_WORD[report.species] ?? "pet"}`}</Text>
+          <Text style={styles.noticeT}>{notice}</Text>
           <View style={styles.noticeLink}>
             <Text style={styles.noticeLinkT}>Add details</Text>
             <ChevronRight size={14} color={C.ink} />

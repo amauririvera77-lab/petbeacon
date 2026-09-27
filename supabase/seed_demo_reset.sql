@@ -42,6 +42,7 @@ declare
   lazy_pet      uuid;
   lazy_breed    text;
   lazy_photo    text;
+  buddy_pet     uuid;
   has_event     boolean;
 begin
   me := coalesce(v_me,
@@ -91,6 +92,13 @@ begin
     lazy_pet := '30000000-0000-0000-0000-000000000002'; lazy_breed := 'Pekingese';
     insert into pets (id, user_id, name, species, breed) values (lazy_pet, me, 'Lazy', 'dog', lazy_breed) on conflict (id) do nothing;
   end if;
+  -- Buddy: mascota TUYA distinta de Max, solo para el ejemplo de "reunited" del historial (para no reutilizar a Max en dos roles a la vez).
+  select id into buddy_pet from pets where user_id = me and lower(btrim(name)) = 'buddy' limit 1;
+  if buddy_pet is null then
+    buddy_pet := '30000000-0000-0000-0000-000000000007';
+    insert into pets (id, user_id, name, species, breed, photo_url)
+    values (buddy_pet, me, 'Buddy', 'dog', 'Beagle', 'https://images.unsplash.com/photo-1703721025121-26d64508482b') on conflict (id) do nothing;
+  end if;
   -- Mascotas de los usuarios demo (por id fijo; se recrean en cada corrida).
   delete from pets where id::text like '30000000-0000-0000-0000-0000000000__' and user_id in (demo_owner, demo_reporter);
   insert into pets (id, user_id, name, species, breed, photo_url) values
@@ -106,27 +114,27 @@ begin
       'https://images.unsplash.com/photo-1552053831-71594a27632d', 52, 37, 190,
       'Blue collar with a silver tag, limps slightly on his left leg.',
       null,
-      st_setsrid(st_makepoint(-74.03518, 40.782693), 4326)::geography, 'Tonnelle Ave & 42nd St', '(201) 555-0100', now() - interval '3 hours', null, max_pet),
+      st_setsrid(st_makepoint(-74.03518, 40.782693), 4326)::geography, 'Tonnelle Ave & 42nd St, North Bergen', '(201) 555-0100', now() - interval '3 hours', null, max_pet),
     ('20000000-0000-0000-0000-000000000002', demo_owner, 'lost', 'cat', 'Luna', 'Siamese cat',
       'https://images.unsplash.com/photo-1695708794933-57424f0bf14e', 50, 30, 190,
       'Very shy — may not approach strangers, please don''t chase.',
       null,
-      st_setsrid(st_makepoint(-74.01639, 40.795797), 4326)::geography, 'Kennedy Blvd & 67th St', 'luna.owner@example.com', now() - interval '30 hours', null, '30000000-0000-0000-0000-000000000003'),
+      st_setsrid(st_makepoint(-74.01639, 40.795797), 4326)::geography, 'Kennedy Blvd & 67th St, North Bergen', 'luna.owner@example.com', now() - interval '30 hours', null, '30000000-0000-0000-0000-000000000003'),
     ('20000000-0000-0000-0000-000000000003', demo_owner, 'lost', 'dog', 'Bartholomew Maximilian von Schnauzenberg', 'Miniature Schnauzer',
       null, null, null, null,
       'Grey and white beard, answers to Barty. Wearing a red harness.',
       null,
-      st_setsrid(st_makepoint(-74.024186, 40.791013), 4326)::geography, 'Meadowview Ave', '(201) 555-0142', now() - interval '48 hours', null, '30000000-0000-0000-0000-000000000004'),
+      st_setsrid(st_makepoint(-74.024186, 40.791013), 4326)::geography, 'Meadowview Ave, North Bergen', '(201) 555-0142', now() - interval '48 hours', null, '30000000-0000-0000-0000-000000000004'),
     ('20000000-0000-0000-0000-000000000004', demo_owner, 'lost', 'cat', 'Whiskers', 'Persian',
       null, null, null, null,
       'Flat-faced, long white fur. Indoor cat that slipped out through the back door.',
       null,
-      st_setsrid(st_makepoint(-74.044975, 40.76351), 4326)::geography, 'Paterson Plank Rd', 'whiskers.family@example.com', now() - interval '80 hours', null, '30000000-0000-0000-0000-000000000005'),
+      st_setsrid(st_makepoint(-74.044975, 40.76351), 4326)::geography, 'Paterson Plank Rd, North Bergen', 'whiskers.family@example.com', now() - interval '80 hours', null, '30000000-0000-0000-0000-000000000005'),
     ('20000000-0000-0000-0000-000000000008', demo_owner, 'reunited', 'dog', 'Biscuit', 'Labrador mix',
       'https://images.unsplash.com/photo-1585588640338-2c3dc723e638', 56, 25, 190,
       'Reunited with owner within 3 hours of the alert going live.',
       null,
-      st_setsrid(st_makepoint(-74.022272, 40.781078), 4326)::geography, 'Bergenline Ave & 47th St', '(201) 555-0100', now() - interval '18 hours', now() - interval '5 hours', '30000000-0000-0000-0000-000000000006');
+      st_setsrid(st_makepoint(-74.022272, 40.781078), 4326)::geography, 'Bergenline Ave & 47th St, Union City', '(201) 555-0100', now() - interval '18 hours', now() - interval '5 hours', '30000000-0000-0000-0000-000000000006');
 
   -- Lazy (tu mascota registrada): una mascota solo puede tener UN Lost activo (índice único, 0015). Si ya tienes un reporte Lost REAL de Lazy
   -- (creado desde la app), se respeta y NO se añade el de demo.
@@ -137,7 +145,7 @@ begin
       lazy_photo, null, null, null,                                                  -- datos de tu mascota Lazy; sin coincidencias (perro pequeño: incompatible por tamaño con los avistamientos)
       'Small and fluffy with a flat face. Wears a green collar.',
       null,
-      st_setsrid(st_makepoint(-74.018217, 40.786395), 4326)::geography, 'Bergenline Ave & 56th St', '(201) 555-0100', now() - interval '20 hours', null, lazy_pet);
+      st_setsrid(st_makepoint(-74.018217, 40.786395), 4326)::geography, 'Bergenline Ave & 56th St, West New York', '(201) 555-0100', now() - interval '20 hours', null, lazy_pet);
   end if;
 
   select location into max_loc from reports where id = '20000000-0000-0000-0000-000000000001';
@@ -149,27 +157,27 @@ begin
       null, null, null, null,                                                        -- SIN FOTO a propósito (muestra la silueta)
       'Golden coat, blue collar. Stayed near the park entrance and let people approach.',
       'calm',
-      st_project(max_loc, 320, radians(60))::geography, 'Near Tonnelle Ave & 42nd St', null, now() - interval '30 minutes', null),
+      st_project(max_loc, 320, radians(60))::geography, 'Near Tonnelle Ave & 42nd St, North Bergen', null, now() - interval '30 minutes', null),
     ('20000000-0000-0000-0000-000000000010', demo_reporter, 'sighted', 'dog', null, 'Golden Retriever',
       'https://images.unsplash.com/photo-1611250282006-4484dd3fba6b', 60, 30, 150,   -- CON foto: la única coincidencia 'strong' de Max
       'Golden puppy-like dog with a blue collar, very friendly.',
       'calm',
-      st_project(max_loc, 700, radians(200))::geography, 'Near Tonnelle Ave & 38th St', null, now() - interval '2 hours', null),
+      st_project(max_loc, 700, radians(200))::geography, 'Near Tonnelle Ave & 38th St, North Bergen', null, now() - interval '2 hours', null),
     ('20000000-0000-0000-0000-000000000006', demo_reporter, 'sighted', 'dog', null, 'Beagle mix',
       'https://images.unsplash.com/photo-1703721025121-26d64508482b', 28, 46, 150,
       'No collar visible. Friendly, approached the reporter calmly.',
       'calm',
-      st_setsrid(st_makepoint(-74.022914, 40.78319), 4326)::geography, 'Kennedy Blvd & 50th St', null, now() - interval '1 hour', null),
+      st_setsrid(st_makepoint(-74.022914, 40.78319), 4326)::geography, 'Kennedy Blvd & 50th St, West New York', null, now() - interval '1 hour', null),
     ('20000000-0000-0000-0000-000000000007', demo_reporter, 'sighted', 'cat', null, 'Domestic shorthair, gray tabby',
       'https://images.unsplash.com/photo-1557735802-ef14538b00a4', 43, 35, 240,
       'Skittish — seen hiding under a porch, did not approach.',
       'scared',
-      st_setsrid(st_makepoint(-74.014293, 40.799959), 4326)::geography, 'Kennedy Blvd & 73rd St', null, now() - interval '6 hours', null),
+      st_setsrid(st_makepoint(-74.014293, 40.799959), 4326)::geography, 'Kennedy Blvd & 73rd St, North Bergen', null, now() - interval '6 hours', null),
     ('20000000-0000-0000-0000-000000000009', demo_reporter, 'sighted', 'dog', null, 'Labrador mix',
       null, null, null, null,
       'Black lab mix, no collar, drinking from a puddle.',
       'unsure',
-      st_setsrid(st_makepoint(-74.011318, 40.795557), 4326)::geography, 'Bergenline Ave & 69th St', null, now() - interval '40 hours', null);
+      st_setsrid(st_makepoint(-74.011318, 40.795557), 4326)::geography, 'Bergenline Ave & 69th St, West New York', null, now() - interval '40 hours', null);
 
   -- 3. Evento con fecha concreta (0011) y conteo de demostración (0010), solo si esas columnas existen.
   select exists (select 1 from information_schema.columns where table_name = 'resources' and column_name = 'event_date') into has_event;
@@ -233,14 +241,14 @@ begin
   end if;
 
   -- 7. Reportes PROPIOS para probar My Reports (fase 4): dos avistamientos tuyos (uno vigente y otro ya vencido), un Lost anterior de Max ya
-  --    reunido y, si la migración 0020 existe, un avistamiento resuelto y otro con "Still there".
+  --    reunido (Buddy, para no repetir a Max) y, si la migración 0020 existe, un avistamiento resuelto y otro con "Still there".
   insert into reports (id, user_id, status, species, name, breed, photo_url, features_description, condition, location, location_label, contact_phone_or_email, created_at, reunited_at, pet_id) values
     ('20000000-0000-0000-0000-000000000012', me, 'sighted', 'dog', null, 'Siberian Husky', null, 'Blue eyes, no collar, trotting along the sidewalk.', 'calm',
       st_setsrid(st_makepoint(-74.030, 40.7755), 4326)::geography, 'Bergenline Ave & 40th St, Union City, NJ 07087, United States', null, now() - interval '5 hours', null, null),
     ('20000000-0000-0000-0000-000000000013', me, 'sighted', 'cat', null, 'Domestic Shorthair', null, 'Black cat near the trash bins.', 'scared',
       st_setsrid(st_makepoint(-74.0285, 40.7810), 4326)::geography, 'Palisade Ave, Union City', null, now() - interval '60 hours', null, null),
-    ('20000000-0000-0000-0000-000000000016', me, 'reunited', 'dog', 'Max', 'Golden Retriever', 'https://images.unsplash.com/photo-1552053831-71594a27632d', 'Found two blocks away, safe and sound.', null,
-      st_setsrid(st_makepoint(-74.0335, 40.7803), 4326)::geography, 'Tonnelle Ave & 42nd St, North Bergen, NJ 07047, United States', '(201) 555-0100', now() - interval '6 days', now() - interval '3 days', max_pet);
+    ('20000000-0000-0000-0000-000000000016', me, 'reunited', 'dog', 'Buddy', 'Beagle', 'https://images.unsplash.com/photo-1703721025121-26d64508482b', 'Found two blocks away, safe and sound.', null,
+      st_setsrid(st_makepoint(-74.0335, 40.7803), 4326)::geography, 'Tonnelle Ave & 42nd St, North Bergen, NJ 07047, United States', '(201) 555-0100', now() - interval '6 days', now() - interval '3 days', buddy_pet);
   if exists (select 1 from information_schema.columns where table_name = 'reports' and column_name = 'resolution') then
     execute $q$insert into reports (id, user_id, status, species, breed, features_description, condition, location, location_label, created_at, resolution, resolved_at) values
       ('20000000-0000-0000-0000-000000000014', $1, 'resolved', 'cat', 'Siamese', 'Was wearing a red collar.', 'calm',
