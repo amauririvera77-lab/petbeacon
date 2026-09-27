@@ -4,6 +4,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { SnackbarProvider } from "../components/Snackbar";
 import { HomePrefsProvider } from "../state/homePrefs";
+import { OnboardingPreviewProvider } from "../state/onboardingPreview";
 import { SessionProvider } from "../state/session";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { fontAssets } from "../theme/fonts";
@@ -19,6 +20,8 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
   return (
     <SafeAreaProvider>
+      {/* Herramienta de diseño ("Replay onboarding", Profile → Design tools): quitar junto con esa sección antes de publicar. */}
+      <OnboardingPreviewProvider>
       <SessionProvider>
         <HomePrefsProvider>
         <SnackbarProvider>
@@ -28,6 +31,7 @@ export default function RootLayout() {
         </SnackbarProvider>
         </HomePrefsProvider>
       </SessionProvider>
+      </OnboardingPreviewProvider>
     </SafeAreaProvider>
   );
 }

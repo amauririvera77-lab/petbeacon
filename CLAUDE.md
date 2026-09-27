@@ -163,3 +163,11 @@ Ninguna pendiente — las tres preguntas que estaban abiertas en este documento 
 ## Nota adicional — logotipo
 
 El logo real de la marca está en `assets/logo/petbeacon-logo.svg` — usar ese archivo tal cual, con sus colores propios fijos (no recolorear ni enlazar a ninguna variable del tema, como ya se estableció en la sección 3). El archivo `.pdf` en la misma carpeta es solo respaldo de la fuente original de diseño, no se usa directamente en el build.
+
+## Nota adicional — herramienta de diseño "Replay onboarding" (quitar antes de publicar)
+
+Se agregó una sección discreta **"Design tools"** al final de Profile, con una fila **"Replay onboarding"**, para poder revisar el flujo de Onboarding completo durante el proceso de diseño sin cerrar sesión ni escribir datos reales. Detalles:
+
+- Se controla con la variable de entorno `EXPO_PUBLIC_SHOW_DESIGN_TOOLS` (no `__DEV__`, a propósito, para poder activarla también en builds publicados con EAS Update mientras dure el proceso de diseño). En `false` o ausente, la sección no existe.
+- Al tocar "Replay onboarding" se abre el Onboarding completo en un sandbox aislado (`state/onboardingPreview.tsx`): ninguna pantalla lee ni escribe la cuenta, el radio de alertas, las mascotas o Supabase reales; al terminar o cerrar (badge "Preview" con ✕, visible en cualquier paso) vuelve a Profile con todo exactamente como estaba.
+- **Antes del lanzamiento: quitar esta sección de Profile (o dejar `EXPO_PUBLIC_SHOW_DESIGN_TOOLS` siempre en `false`/sin definir en el `.env` de producción).** No es una funcionalidad del producto — es una herramienta temporal de esta etapa de diseño.

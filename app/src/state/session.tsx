@@ -1,13 +1,14 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { snapRadius } from "../lib/radius";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useOnboardingPreview } from "./onboardingPreview";
 
 export type Intent = "lost" | "seen" | "register" | "";
 
 // alertRadiusMi: radio configurable en Profile (1-10 mi, CLAUDE.md §2), usado por reports_nearby (§5.4 y §6).
 // home: centro del feed y del mapa (GPS del onboarding o ciudad geocodificada); null = aún sin resolver.
-type Persisted = { onboarded: boolean; intent: Intent; name: string; city: string; alertRadiusMi: number; home: { lat: number; lng: number } | null; pushEnabled: boolean; nearbyEnabled: boolean; matchEnabled: boolean; emailEnabled: boolean; alertsCardDismissed: boolean; notifSeenAt: number; avatarUrl: string | null };
-type Session = Persisted & {
+export type Persisted = { onboarded: boolean; intent: Intent; name: string; city: string; alertRadiusMi: number; home: { lat: number; lng: number } | null; pushEnabled: boolean; nearbyEnabled: boolean; matchEnabled: boolean; emailEnabled: boolean; alertsCardDismissed: boolean; notifSeenAt: number; avatarUrl: string | null };
+export type Session = Persisted & {
   hydrated: boolean;
   update: (patch: Partial<Persisted>) => void;
   reset: () => void; // vuelve al estado inicial (Log out): el onboarding se muestra de nuevo
@@ -50,8 +51,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-export function useSession() {
+// Herramienta de diseño (Profile → Design tools → Replay onboarding, ver state/onboardingPreview.tsx): mientras la vista previa del
+// onboarding está activa, CUALQUIER pantalla que llame a useSession() (incluidas las del propio onboarding) recibe una sesión aislada
+// en memoria en vez de la real — así recorrer el onboarding no toca ni AsyncStorage ni la cuenta real. Transparente para el resto de la
+// app: cuando la vista previa no está activa (siempre, salvo que se abra esa herramienta), el comportamiento es exactamente el de antes.
+export function useSession(): Session {
+  const preview = useOnboardingPreview();
   const v = useContext(Ctx);
+  if (preview.active) return preview.session;
   if (!v) throw new Error("useSession must be used inside SessionProvider");
   return v;
 }

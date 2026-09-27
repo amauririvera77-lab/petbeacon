@@ -9,11 +9,13 @@ import { OnboardingScreen } from "../../components/Screen";
 import { registerPush } from "../../lib/push";
 import { snapRadius } from "../../lib/radius";
 import { supabase } from "../../lib/supabase";
+import { useOnboardingPreview } from "../../state/onboardingPreview";
 import { Intent, useSession } from "../../state/session";
 import { C, font, radius } from "../../theme/tokens";
 
 export default function Welcome() {
   const { update } = useSession();
+  const preview = useOnboardingPreview();
   const [loginOpen, setLoginOpen] = useState(false);
   // Tras entrar en una cuenta ya guardada se trae su perfil y se salta el onboarding.
   const onLoggedIn = async () => {
@@ -52,12 +54,17 @@ export default function Welcome() {
         <Pressable accessibilityRole="link" onPress={() => pick("register")} style={styles.link}>
           <Text style={styles.linkT}>Just setting up — I'll register my pet now</Text>
         </Pressable>
-        <Pressable accessibilityRole="link" onPress={() => router.push("/(tabs)/support")} style={[styles.link, { marginTop: 18 }]}>
-          <Text style={[styles.linkT, { lineHeight: 20.3 }]}>{"Struggling to care for your pet right now?\nSee local support"}</Text>
-        </Pressable>
-        <Pressable accessibilityRole="link" onPress={() => setLoginOpen(true)} style={[styles.link, { marginTop: 10 }]}>
-          <Text style={styles.linkT}>Already saved your account? Log in</Text>
-        </Pressable>
+        {/* En vista previa (Design tools) se ocultan: llevarían a una cuenta o pantalla REALES, fuera del sandbox del onboarding. */}
+        {!preview.active ? (
+          <>
+            <Pressable accessibilityRole="link" onPress={() => router.push("/(tabs)/support")} style={[styles.link, { marginTop: 18 }]}>
+              <Text style={[styles.linkT, { lineHeight: 20.3 }]}>{"Struggling to care for your pet right now?\nSee local support"}</Text>
+            </Pressable>
+            <Pressable accessibilityRole="link" onPress={() => setLoginOpen(true)} style={[styles.link, { marginTop: 10 }]}>
+              <Text style={styles.linkT}>Already saved your account? Log in</Text>
+            </Pressable>
+          </>
+        ) : null}
       </View>
       <SaveAccountSheet visible={loginOpen} mode="login" onClose={() => setLoginOpen(false)} onDone={onLoggedIn} />
     </OnboardingScreen>

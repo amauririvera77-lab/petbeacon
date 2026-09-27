@@ -20,14 +20,20 @@ import { useMyReports } from "../../hooks/useMyReports";
 import { usePets } from "../../hooks/usePets";
 import { logout } from "../../lib/account";
 import { petState } from "../../lib/petStatus";
+import { useOnboardingPreview } from "../../state/onboardingPreview";
 import { useSession } from "../../state/session";
 import { C, MIN_HIT, font, radius } from "../../theme/tokens";
+
+// ⚠️ HERRAMIENTA DE DISEÑO — quitar junto con la sección "Design tools" (más abajo) antes de publicar.
+// Solo visible con EXPO_PUBLIC_SHOW_DESIGN_TOOLS=true (no __DEV__), para poder revisarla también en builds de EAS Update.
+const SHOW_DESIGN_TOOLS = process.env.EXPO_PUBLIC_SHOW_DESIGN_TOOLS === "true";
 
 // Profile: identidad (foto o iniciales, nombre y zona de alertas), invitación a guardar la cuenta, radio de alertas, notificaciones por categoría,
 // mascotas registradas, cuenta (editar perfil, privacidad), ayuda y cierre de sesión.
 export default function Profile() {
   const insets = useSafeAreaInsets();
   const { name, city, alertRadiusMi, emailEnabled, avatarUrl, update, reset } = useSession();
+  const preview = useOnboardingPreview();
   const { perm, nearbyOn, matchOn, enable, disableKind } = useEnablePush();
   const { pets, refresh: refreshPets } = usePets();
   const { reports: myReports, refresh: refreshMine } = useMyReports();
@@ -174,6 +180,15 @@ export default function Profile() {
         <Pressable accessibilityRole="button" onPress={() => router.push("/delete-account")} style={styles.deleteLink}>
           <Text style={styles.deleteT}>Delete account</Text>
         </Pressable>
+
+        {/* ⚠️ HERRAMIENTA DE DISEÑO — quitar o desactivar antes de publicar. Controlada por EXPO_PUBLIC_SHOW_DESIGN_TOOLS (no __DEV__),
+            para poder revisarla también en builds de EAS Update. "Replay onboarding" nunca toca la cuenta real: ver state/onboardingPreview.tsx. */}
+        {SHOW_DESIGN_TOOLS ? (
+          <>
+            <Text style={[styles.sec, { marginTop: 32 }]}>Design tools</Text>
+            <NavRow title="Replay onboarding" subtitle="Preview only — doesn't affect your account or data" onPress={() => { preview.start(); router.push("/(onboarding)"); }} />
+          </>
+        ) : null}
       </ScrollView>
 
       <EditLocationSheet visible={cityOpen} onClose={() => setCityOpen(false)} />
