@@ -1,7 +1,7 @@
 import { router, useFocusEffect } from "expo-router";
 import { LocateFixed, X } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Animated, NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Animated, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EditLocationSheet } from "../../components/EditLocationSheet";
 import { EndOfFeed } from "../../components/EndOfFeed";
@@ -50,6 +50,7 @@ import { nextRadius } from "../../lib/radius";
 import { reportShareText } from "../../lib/shareText";
 import { sortReports } from "../../lib/sort";
 import { useFab } from "../../state/fab";
+import { useFabScroll } from "../../hooks/useFabScroll";
 import { useHomePrefs, type ViewRadius } from "../../state/homePrefs";
 import { useSession } from "../../state/session";
 import { C, FAB_CLEARANCE, font, radius } from "../../theme/tokens";
@@ -117,17 +118,11 @@ export default function Home() {
   const [matchesFor, setMatchesFor] = useState<{ id: string; name: string } | null>(null);
   const filterCount = activeFilterCount(prefs);
 
-  const lastY = useRef(0);
-  const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const y = e.nativeEvent.contentOffset.y, dy = y - lastY.current;
-    if (Math.abs(dy) < 6) return;
-    lastY.current = y;
-    setCollapsed(y > 24 && dy > 0);
-  }, [setCollapsed]);
-  useEffect(() => { if (view !== "map") { setPreviewId(null); setCollapsed(false); lastY.current = 0; } }, [view, setCollapsed]);
+  // Mismo comportamiento del FAB que el resto de la app (se contrae al bajar, se expande al subir y al entrar a la pantalla).
+  const { onScroll, reset: resetFab } = useFabScroll();
+  useEffect(() => { if (view !== "map") { setPreviewId(null); resetFab(); } }, [view, resetFab]);
   // En Map el FAB va expandido, salvo con la tarjeta de vista previa abierta: se contrae al círculo para no taparla.
   useEffect(() => { if (view === "map") setCollapsed(preview !== null); }, [view, preview, setCollapsed]);
-  useFocusEffect(useCallback(() => () => setCollapsed(false), [setCollapsed]));
 
   // D.6: al bajar la lista la búsqueda se contrae (misma señal de scroll que el FAB) y quedan fijos chips y List/Map; al subir reaparece.
   // Con texto en la búsqueda NO se contrae, y en Map siempre está visible.

@@ -1,17 +1,21 @@
 import { ReactNode } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OfflineBanner } from "./OfflineBanner";
 import { ScreenTitle } from "./ScreenTitle";
 import { C, font } from "../theme/tokens";
 
-export function TabScreen({ title, subtitle, children, scroll = true, footer }: { title: string; subtitle?: string; children?: ReactNode; scroll?: boolean; footer?: ReactNode }) {
+// `onScroll`: mismo comportamiento del FAB que el resto de la app (hooks/useFabScroll.ts) — se pasa tal cual a la ScrollView.
+export function TabScreen({ title, subtitle, children, scroll = true, footer, onScroll }: {
+  title: string; subtitle?: string; children?: ReactNode; scroll?: boolean; footer?: ReactNode;
+  onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
+}) {
   const insets = useSafeAreaInsets();
   return (
     <View style={styles.root}>
       <View style={{ paddingTop: insets.top }}><OfflineBanner /></View>
       {scroll ? (
-        <ScrollView contentContainerStyle={styles.c}>
+        <ScrollView contentContainerStyle={styles.c} onScroll={onScroll} scrollEventThrottle={onScroll ? 16 : undefined}>
           <ScreenTitle title={title} subtitle={subtitle} />
           {children}
         </ScrollView>

@@ -9,6 +9,7 @@ import { useSnackbar } from "../../components/Snackbar";
 import { EventResourceCard, ResourceCard } from "../../components/ResourceCard";
 import { ResourceModal, ResourceSheetMode } from "../../components/ResourceModal";
 import { SetupNotice } from "../../components/SetupNotice";
+import { useFabScroll } from "../../hooks/useFabScroll";
 import { useHome } from "../../hooks/useHome";
 import { useNow } from "../../hooks/useNow";
 import { useResourcesState } from "../../hooks/useResources";
@@ -27,6 +28,7 @@ export default function Support() {
   const snackbar = useSnackbar();
   const center = useHome();
   const now = useNow();
+  const { onScroll } = useFabScroll();
   const { resources, loading, error, refresh } = useResourcesState(SUPPORT_RADIUS_MI, center.lat, center.lng);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]["key"]>("all");
@@ -96,7 +98,7 @@ export default function Support() {
 
       <OfflineBanner />
 
-      <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled" onScroll={onScroll} scrollEventThrottle={16}>
         {error === "supabase-not-configured" ? <SetupNotice /> : error ? (
           <View style={{ gap: 8 }}>
             <Text style={styles.err}>Couldn't load resources: {error}</Text>

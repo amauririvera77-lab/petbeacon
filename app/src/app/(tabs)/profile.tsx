@@ -15,6 +15,7 @@ import { useSnackbar } from "../../components/Snackbar";
 import { ToggleRow } from "../../components/ToggleRow";
 import { useAccount } from "../../hooks/useAccount";
 import { saveProfilePref, useEnablePush } from "../../hooks/useEnablePush";
+import { useFabScroll } from "../../hooks/useFabScroll";
 import { useMyReports } from "../../hooks/useMyReports";
 import { usePets } from "../../hooks/usePets";
 import { logout } from "../../lib/account";
@@ -31,6 +32,7 @@ export default function Profile() {
   const { pets, refresh: refreshPets } = usePets();
   const { reports: myReports, refresh: refreshMine } = useMyReports();
   const account = useAccount();
+  const { onScroll } = useFabScroll();
   const snackbar = useSnackbar();
   const [cityOpen, setCityOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
@@ -86,7 +88,7 @@ export default function Profile() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: 200 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: 200 }} onScroll={onScroll} scrollEventThrottle={16}>
         {/* Con un Lost activo y la cuenta sin guardar, la invitación es prominente: perder la cuenta sería perder el reporte. */}
         {account.ready && account.isAnonymous && hasLost ? (
           <View style={styles.saveCard}>
