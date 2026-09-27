@@ -72,7 +72,8 @@ export function CommunityResourceCard({ resource: r, onPress }: { resource: Reso
   const when = eventLabel(r, useNow());
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={`Community resource: ${r.name}`} onPress={onPress} style={({ pressed }) => [styles.neutral, pressed && { opacity: 0.9 }]}>
-      <View style={styles.nIcon}><HeartHandshake size={22} color={C.slate700} /></View>
+      {/* Mismo contenedor (tamaño, radio, alineación) que la foto/silueta de ReportCard; tokens de "recurso comunitario" (info = blue 700, infoTint = blue 50). */}
+      <View style={styles.nIcon}><HeartHandshake size={32} color={C.info} /></View>
       <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
         <Text style={styles.nKind}>Community resource</Text>
         <Text style={styles.nName} numberOfLines={2}>{r.name}</Text>
@@ -107,8 +108,9 @@ const styles = StyleSheet.create({
   eBtn: { minHeight: MIN_HIT - 4, paddingHorizontal: 18, borderRadius: radius.md, backgroundColor: C.info, flexDirection: "row", gap: 6, alignItems: "center" },
   eBtnOff: { backgroundColor: C.border },
   eBtnT: { fontFamily: font.bodyBold, fontSize: 13, color: C.white },
-  neutral: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: C.border, backgroundColor: C.white },
-  nIcon: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: C.surface, alignItems: "center", justifyContent: "center" },
+  neutral: { flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: C.border, backgroundColor: C.white },
+  // Mismas dimensiones y radio que `photo` en ReportCard.tsx (64×64, radius.md), para que la columna de texto empiece a la misma distancia.
+  nIcon: { width: 64, height: 64, borderRadius: radius.md, backgroundColor: C.infoTint, alignItems: "center", justifyContent: "center" },
   nKind: { fontFamily: font.bodyBold, fontSize: 11, letterSpacing: 0.5, textTransform: "uppercase", color: C.slate500 },
   nName: { fontFamily: font.head, fontSize: 16, color: C.ink },
   nWhen: { fontFamily: font.bodySemi, fontSize: 13, color: C.slate700 },
