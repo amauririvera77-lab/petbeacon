@@ -7,7 +7,7 @@ import { MySightingCard } from "../../components/myreports/MySightingCard";
 import { PastReports } from "../../components/myreports/PastReports";
 import { ResolveSightingSheet } from "../../components/myreports/ResolveSightingSheet";
 import { PinDetailSheet } from "../../components/PinDetailSheet";
-import { ReportCard } from "../../components/ReportCard";
+import { ReportRow } from "../../components/myreports/ReportRow";
 import { useSnackbar } from "../../components/Snackbar";
 import { Placeholder, TabScreen } from "../../components/TabScreen";
 import { useHome } from "../../hooks/useHome";
@@ -16,10 +16,12 @@ import { useMyReports, type MyReport } from "../../hooks/useMyReports";
 import type { MyMatch, ReportNearby, SightingResolution } from "../../lib/database.types";
 import { sortByRelevance } from "../../lib/matchPick";
 import { bucketReports, toNearby } from "../../lib/myReports";
+import { shortAddress } from "../../lib/address";
+import { agoShort } from "../../lib/time";
 import { fetchReportNearby } from "../../lib/reportLookup";
 import { reportShareText } from "../../lib/shareText";
 import { supabase } from "../../lib/supabase";
-import { C, font } from "../../theme/tokens";
+import { C, font, radius } from "../../theme/tokens";
 
 export default function Reports() {
   const { reports, loading, error, refresh, markReunited } = useMyReports();
@@ -84,7 +86,7 @@ export default function Reports() {
         <Text style={styles.err}>Couldn't load your reports: {error}</Text>
       ) : (
         <>
-          <Text style={styles.h}>Active reports</Text>
+          <Text style={styles.h}>Your lost pets</Text>
           {!hasActive ? <Placeholder text="No active reports. When you publish an alert it shows up here." /> : (
             <View style={styles.list}>
               {lost.map((r) => (
@@ -93,12 +95,15 @@ export default function Reports() {
                   onOpen={() => openDetail(r)} onShare={() => share(r)} onViewAll={() => setSheetFor({ id: r.id, name: r.name ?? "your pet" })}
                   onViewSighting={(m) => viewSighting(m)} onDismiss={(m) => dismiss(m.id)} />
               ))}
-              {buckets.reunitedRecent.map((r) => { const n = nearby(r); return n ? (
-                <View key={r.id} style={{ gap: 6 }}>
-                  <ReportCard report={n} mine onPress={() => setDetail(n)} />
+              {buckets.reunitedRecent.map((r) => (
+                <View key={r.id} style={styles.reunitedCard}>
+                  <ReportRow photoUrl={r.photo_url} focusX={r.photo_focus_x} focusY={r.photo_focus_y} zoom={r.photo_zoom} species={r.species}
+                    title={r.name?.trim() || `Unknown ${r.species}`} badge="reunited"
+                    timeText={`Reunited ${agoShort(r.reunited_at ?? r.created_at)}`} locationText={shortAddress(r.location_label) ?? "Location not shared"}
+                    onOpen={() => openDetail(r)} />
                   <Text style={styles.closed}>Case closed — thanks for updating it.</Text>
                 </View>
-              ) : null; })}
+              ))}
             </View>
           )}
           <Text style={[styles.h, { marginTop: 20 }]}>Sightings you've logged</Text>
@@ -124,5 +129,6 @@ const styles = StyleSheet.create({
   h: { fontFamily: font.head, fontSize: 18, color: C.ink, marginTop: 12 },
   list: { gap: 10, marginTop: 4 },
   err: { fontFamily: font.body, fontSize: 14, color: C.sosDark, marginTop: 16 },
+  reunitedCard: { gap: 6, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: C.border, backgroundColor: C.white },
   closed: { fontFamily: font.bodySemi, fontSize: 13, color: C.ok },
 });

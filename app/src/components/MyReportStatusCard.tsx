@@ -1,6 +1,7 @@
 import { ChevronRight, Dog, Cat, Share2, Sparkles, Users } from "lucide-react-native";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import type { MyReport } from "../hooks/useMyReports";
+import { shortAddress } from "../lib/address";
 import type { MyMatch } from "../lib/database.types";
 import { pickPending } from "../lib/matchPick";
 import { elapsedShort } from "../lib/time";
@@ -8,11 +9,12 @@ import { C, font, radius } from "../theme/tokens";
 import { Badge } from "./Badge";
 import { FocusImage } from "./FocusImage";
 import { MatchBanner } from "./MatchBanner";
+import { ReportRow } from "./myreports/ReportRow";
 
 // Estado del propio reporte Lost (fase 2.1): foto y nombre, cuánto lleva perdida, vecinos alertados, avistamientos cercanos,
 // acceso al detalle y —integrada, sin banner aparte— la coincidencia pendiente.
-// `manage` (My Reports): la misma tarjeta con la jerarquía de acciones de 4.3 — acción principal = revisar coincidencias (si hay) o compartir la alerta;
-// "Edit report" y "Mark reunited" son secundarias, sin relleno. Sin `manage` es la tarjeta de estado de Home (con la coincidencia integrada).
+// `manage` (My Reports, evaluación UX): la misma tarjeta pero con la cabecera común (ReportRow: chevron + ubicación en vez de distancia,
+// sin "Your report") y más compacta — un solo botón secundario ("Mark reunited"); "Edit report" pasa al menú "⋯" de la cabecera.
 export function MyReportStatusCard({ report, matches, width, manage, onOpen, onViewSighting, onDismiss, onViewAll, onShare }: {
   report: MyReport; matches: MyMatch[]; width?: number; manage?: { onEdit: () => void; onMarkReunited: () => void };
   onOpen: () => void; onViewSighting: (m: MyMatch) => void; onDismiss: (m: MyMatch) => void; onViewAll: () => void; onShare: () => void;
@@ -22,24 +24,34 @@ export function MyReportStatusCard({ report, matches, width, manage, onOpen, onV
   const pending = pickPending(matches); // la más fuerte sin descartar (strong antes que possible; a igual fuerza, la más reciente)
   const openCount = matches.filter((m) => !m.dismissed).length; // solo las NO descartadas
   const alerted = report.alerted_count; // null/undefined → se OCULTA (no se muestra un número falso)
+  const openMenu = () => manage && Alert.alert(title, undefined, [
+    { text: "Edit report", onPress: manage.onEdit },
+    { text: "Cancel", style: "cancel" },
+  ]);
 
   return (
     <View style={[styles.card, width ? { width } : null]}>
-      <Pressable accessibilityRole="button" accessibilityLabel={`${title}, open report`} onPress={onOpen} style={styles.head}>
-        <View style={styles.photo}>
-          {report.photo_url ? (
-            <FocusImage uri={report.photo_url} focusX={report.photo_focus_x} focusY={report.photo_focus_y} zoom={(report.photo_zoom ?? 100) / 100} style={StyleSheet.absoluteFill} />
-          ) : <Fallback size={26} color={C.slate500} />}
-        </View>
-        <View style={{ flex: 1, gap: 2 }}>
-          <View style={styles.nameRow}>
-            <Text style={styles.name} numberOfLines={1}>{title}</Text>
-            <Badge status="lost" />
+      {manage ? (
+        <ReportRow photoUrl={report.photo_url} focusX={report.photo_focus_x} focusY={report.photo_focus_y} zoom={report.photo_zoom} species={report.species}
+          title={title} badge="lost" timeText={`Missing for ${elapsedShort(report.created_at)}`}
+          locationText={shortAddress(report.location_label) ?? "Location not shared"} onOpen={onOpen} onMenu={openMenu} />
+      ) : (
+        <Pressable accessibilityRole="button" accessibilityLabel={`${title}, open report`} onPress={onOpen} style={styles.head}>
+          <View style={styles.photo}>
+            {report.photo_url ? (
+              <FocusImage uri={report.photo_url} focusX={report.photo_focus_x} focusY={report.photo_focus_y} zoom={(report.photo_zoom ?? 100) / 100} style={StyleSheet.absoluteFill} />
+            ) : <Fallback size={26} color={C.slate500} />}
           </View>
-          <Text style={styles.missing}>Missing for {elapsedShort(report.created_at)}</Text>
-        </View>
-        <ChevronRight size={18} color={C.slate500} />
-      </Pressable>
+          <View style={{ flex: 1, gap: 2 }}>
+            <View style={styles.nameRow}>
+              <Text style={styles.name} numberOfLines={1}>{title}</Text>
+              <Badge status="lost" />
+            </View>
+            <Text style={styles.missing}>Missing for {elapsedShort(report.created_at)}</Text>
+          </View>
+          <ChevronRight size={18} color={C.slate500} />
+        </Pressable>
+      )}
 
       <View style={styles.stats}>
         {alerted != null && alerted > 0 ? (
@@ -65,12 +77,9 @@ export function MyReportStatusCard({ report, matches, width, manage, onOpen, onV
         <View style={styles.manage}>
           <Pressable accessibilityRole="button" onPress={openCount > 0 ? onViewAll : onShare} style={({ pressed }) => [styles.primary, pressed && { opacity: 0.85 }]}>
             {openCount > 0 ? <Sparkles size={16} color={C.white} /> : <Share2 size={16} color={C.white} />}
-            <Text style={styles.primaryT}>{openCount > 0 ? `Review matches (${openCount})` : "Share alert"}</Text>
+            <Text style={styles.primaryT}>{openCount > 0 ? "Review matches" : "Share alert"}</Text>
           </Pressable>
-          <View style={styles.secRow}>
-            <Pressable accessibilityRole="button" onPress={manage.onEdit} style={styles.sec}><Text style={styles.secT}>Edit report</Text></Pressable>
-            <Pressable accessibilityRole="button" onPress={manage.onMarkReunited} style={styles.sec}><Text style={styles.secT}>Mark reunited</Text></Pressable>
-          </View>
+          <Pressable accessibilityRole="button" onPress={manage.onMarkReunited} style={styles.sec}><Text style={styles.secT}>Mark reunited</Text></Pressable>
         </View>
       ) : null}
 
@@ -103,8 +112,7 @@ const styles = StyleSheet.create({
   manage: { gap: 8, marginTop: 12 },
   primary: { minHeight: 48, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", borderRadius: radius.md, backgroundColor: C.ink },
   primaryT: { fontFamily: font.bodyBold, fontSize: 15, color: C.white },
-  secRow: { flexDirection: "row", gap: 8 },
-  sec: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2, backgroundColor: C.white },
+  sec: { minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2, backgroundColor: C.white },
   secT: { fontFamily: font.bodyBold, fontSize: 14, color: C.ink },
   all: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start", marginTop: 0 },
   allT: { fontFamily: font.bodyBold, fontSize: 13, color: C.slate700, textDecorationLine: "underline" },
