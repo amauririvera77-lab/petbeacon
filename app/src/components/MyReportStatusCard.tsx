@@ -10,11 +10,12 @@ import { Badge } from "./Badge";
 import { FocusImage } from "./FocusImage";
 import { MatchBanner } from "./MatchBanner";
 import { ReportRow } from "./myreports/ReportRow";
+import { RowMenuButton } from "./myreports/RowMenuButton";
 
 // Estado del propio reporte Lost (fase 2.1): foto y nombre, cuánto lleva perdida, vecinos alertados, avistamientos cercanos,
 // acceso al detalle y —integrada, sin banner aparte— la coincidencia pendiente.
-// `manage` (My Reports, evaluación UX): la misma tarjeta pero con la cabecera común (ReportRow: chevron + ubicación en vez de distancia,
-// sin "Your report") y más compacta — un solo botón secundario ("Mark reunited"); "Edit report" pasa al menú "⋯" de la cabecera.
+// `manage` (My Reports, evaluación UX): la MISMA tarjeta pero TODA ella abre el detalle (sin chevron); "Edit report" vive en el botón
+// "⋯" de la esquina, y solo queda un botón secundario, "Mark reunited". Sin `manage` es la tarjeta de estado de Home (sin cambios).
 export function MyReportStatusCard({ report, matches, width, manage, onOpen, onViewSighting, onDismiss, onViewAll, onShare }: {
   report: MyReport; matches: MyMatch[]; width?: number; manage?: { onEdit: () => void; onMarkReunited: () => void };
   onOpen: () => void; onViewSighting: (m: MyMatch) => void; onDismiss: (m: MyMatch) => void; onViewAll: () => void; onShare: () => void;
@@ -30,11 +31,17 @@ export function MyReportStatusCard({ report, matches, width, manage, onOpen, onV
   ]);
 
   return (
-    <View style={[styles.card, width ? { width } : null]}>
+    <Pressable
+      disabled={!manage}
+      accessibilityRole={manage ? "button" : undefined}
+      accessibilityLabel={manage ? `${title}, open report` : undefined}
+      onPress={manage ? onOpen : undefined}
+      style={({ pressed }) => [styles.card, width ? { width } : null, manage && pressed && { opacity: 0.95 }]}
+    >
       {manage ? (
         <ReportRow photoUrl={report.photo_url} focusX={report.photo_focus_x} focusY={report.photo_focus_y} zoom={report.photo_zoom} species={report.species}
           title={title} badge="lost" timeText={`Missing for ${elapsedShort(report.created_at)}`}
-          locationText={shortAddress(report.location_label) ?? "Location not shared"} onOpen={onOpen} onMenu={openMenu} />
+          locationText={shortAddress(report.location_label) ?? "Location not shared"} reserveMenuSpace />
       ) : (
         <Pressable accessibilityRole="button" accessibilityLabel={`${title}, open report`} onPress={onOpen} style={styles.head}>
           <View style={styles.photo}>
@@ -75,11 +82,11 @@ export function MyReportStatusCard({ report, matches, width, manage, onOpen, onV
 
       {manage ? (
         <View style={styles.manage}>
-          <Pressable accessibilityRole="button" onPress={openCount > 0 ? onViewAll : onShare} style={({ pressed }) => [styles.primary, pressed && { opacity: 0.85 }]}>
+          <Pressable accessibilityRole="button" onPress={(e) => { e.stopPropagation(); openCount > 0 ? onViewAll() : onShare(); }} style={({ pressed }) => [styles.primary, pressed && { opacity: 0.85 }]}>
             {openCount > 0 ? <Sparkles size={16} color={C.white} /> : <Share2 size={16} color={C.white} />}
             <Text style={styles.primaryT}>{openCount > 0 ? "Review matches" : "Share alert"}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" onPress={manage.onMarkReunited} style={styles.sec}><Text style={styles.secT}>Mark reunited</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={(e) => { e.stopPropagation(); manage.onMarkReunited(); }} style={styles.sec}><Text style={styles.secT}>Mark reunited</Text></Pressable>
         </View>
       ) : null}
 
@@ -93,7 +100,9 @@ export function MyReportStatusCard({ report, matches, width, manage, onOpen, onV
           <Text style={styles.allT}>View all matches ({matches.length})</Text>
         </Pressable>
       ) : null}
-    </View>
+
+      {manage ? <RowMenuButton onPress={openMenu} /> : null}
+    </Pressable>
   );
 }
 

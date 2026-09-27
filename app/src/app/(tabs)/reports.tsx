@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { MatchesSheet } from "../../components/MatchesSheet";
 import { MyReportStatusCard } from "../../components/MyReportStatusCard";
 import { MySightingCard } from "../../components/myreports/MySightingCard";
@@ -96,13 +96,13 @@ export default function Reports() {
                   onViewSighting={(m) => viewSighting(m)} onDismiss={(m) => dismiss(m.id)} />
               ))}
               {buckets.reunitedRecent.map((r) => (
-                <View key={r.id} style={styles.reunitedCard}>
+                <Pressable key={r.id} accessibilityRole="button" accessibilityLabel={`${r.name?.trim() || "Unknown " + r.species}, open report`}
+                  onPress={() => openDetail(r)} style={({ pressed }) => [styles.reunitedCard, pressed && { opacity: 0.95 }]}>
                   <ReportRow photoUrl={r.photo_url} focusX={r.photo_focus_x} focusY={r.photo_focus_y} zoom={r.photo_zoom} species={r.species}
                     title={r.name?.trim() || `Unknown ${r.species}`} badge="reunited"
-                    timeText={`Reunited ${agoShort(r.reunited_at ?? r.created_at)}`} locationText={shortAddress(r.location_label) ?? "Location not shared"}
-                    onOpen={() => openDetail(r)} />
+                    timeText={`Reunited ${agoShort(r.reunited_at ?? r.created_at)}`} locationText={shortAddress(r.location_label) ?? "Location not shared"} />
                   <Text style={styles.closed}>Case closed — thanks for updating it.</Text>
-                </View>
+                </Pressable>
               ))}
             </View>
           )}

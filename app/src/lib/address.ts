@@ -5,6 +5,22 @@ const STATE_ZIP = /^([A-Z]{2}|alabama|alaska|arizona|arkansas|california|colorad
 const ZIP = /^\d{5}(-\d{4})?$/;
 const UNIT = /\s*(,|\b)?\s*(unit|apt\.?|apartment|suite|ste\.?|#)\s*[\w-]+\s*$/i;
 
+// Abreviaturas estándar de EE. UU. (USPS) para el tipo de vía, y "and" → "&" en intersecciones ("Tonnelle Avenue and 42nd Street" →
+// "Tonnelle Ave & 42nd St"). Un geocoder (Mapbox) devuelve el nombre completo; el texto guardado a mano en el seed ya usa la forma corta.
+// Aplicarlo aquí, SOLO al mostrar, da el mismo formato sin importar de dónde vino la dirección.
+const STREET_SUFFIX: [RegExp, string][] = [
+  [/\bavenue\b/gi, "Ave"], [/\bboulevard\b/gi, "Blvd"], [/\bstreet\b/gi, "St"], [/\broad\b/gi, "Rd"],
+  [/\bdrive\b/gi, "Dr"], [/\blane\b/gi, "Ln"], [/\bplace\b/gi, "Pl"], [/\bcourt\b/gi, "Ct"],
+  [/\bcircle\b/gi, "Cir"], [/\bhighway\b/gi, "Hwy"], [/\bparkway\b/gi, "Pkwy"], [/\bterrace\b/gi, "Ter"], [/\bsquare\b/gi, "Sq"],
+];
+function abbreviateStreet(s: string): string {
+  let out = s.replace(/\s+and\s+/gi, " & ");
+  for (const [re, ab] of STREET_SUFFIX) out = out.replace(re, ab);
+  return out;
+}
+
+// Calle o intersección + ciudad, SIEMPRE en ese formato y con las mismas abreviaturas, sea cual sea el origen de la dirección
+// (geocodificada o escrita a mano). Se guarda siempre la dirección completa; esto solo se aplica al mostrarla.
 export function shortAddress(label: string | null | undefined): string | null {
   if (!label) return null;
   const parts = label.split(",").map((p) => p.trim()).filter(Boolean);
@@ -15,6 +31,7 @@ export function shortAddress(label: string | null | undefined): string | null {
   if (parts.length > 1 && ZIP.test(parts[parts.length - 1])) parts.pop();
   if (parts.length > 1 && STATE_ZIP.test(parts[parts.length - 1])) parts.pop();
   const clean = parts.map((p) => p.replace(UNIT, "").trim()).filter((p) => p && !/^(unit|apt\.?|apartment|suite|ste\.?|#)\s*[\w-]+$/i.test(p));
-  if (clean.length === 0) return parts[0];
-  return clean.length === 1 ? clean[0] : `${clean[0]}, ${clean[clean.length - 1]}`;   // calle o intersección + ciudad
+  if (clean.length === 0) return abbreviateStreet(parts[0]);
+  // La abreviatura solo se aplica a la calle/intersección (primer tramo): un nombre de ciudad nunca lleva sufijo de vía.
+  return clean.length === 1 ? abbreviateStreet(clean[0]) : `${abbreviateStreet(clean[0])}, ${clean[clean.length - 1]}`;
 }
