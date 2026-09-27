@@ -4,8 +4,16 @@ import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { choosePhotoSource, pickPhoto } from "../../lib/pickPhoto";
 import { C, MIN_HIT, font, radius } from "../../theme/tokens";
 
-// Foto de la mascota (Pet profile 2.3): la acción principal es "Change photo" (cámara o galería); "Remove photo" es secundaria y pide confirmación.
-export function PetPhoto({ uri, petName, onChange }: { uri: string | null; petName: string; onChange: (uri: string | null) => void }) {
+// Foto de la mascota (Pet profile 2.3), en dos piezas: la imagen y sus acciones. Van separadas para que el bloque de estado (Lost/Reunited
+// + acción de reporte) pueda ir ENTRE ambas, justo debajo de la foto (evaluación UX): imagen → estado → Change/Remove photo → resto del form.
+export function PetPhotoImage({ uri }: { uri: string | null }) {
+  return uri ? <Image source={{ uri }} style={styles.preview} accessibilityLabel="Pet photo" /> : (
+    <View style={styles.empty}><Camera size={36} color={C.slate500} /><Text style={styles.emptyT}>No photo yet</Text></View>
+  );
+}
+
+// La acción principal es "Change photo" (cámara o galería); "Remove photo" es secundaria y pide confirmación.
+export function PetPhotoActions({ uri, petName, onChange }: { uri: string | null; petName: string; onChange: (uri: string | null) => void }) {
   const [busy, setBusy] = useState(false);
   const change = () => choosePhotoSource(async (source) => {
     setBusy(true);
@@ -17,9 +25,6 @@ export function PetPhoto({ uri, petName, onChange }: { uri: string | null; petNa
   );
   return (
     <View style={{ gap: 8 }}>
-      {uri ? <Image source={{ uri }} style={styles.preview} accessibilityLabel="Pet photo" /> : (
-        <View style={styles.empty}><Camera size={36} color={C.slate500} /><Text style={styles.emptyT}>No photo yet</Text></View>
-      )}
       <Pressable accessibilityRole="button" disabled={busy} onPress={change} style={({ pressed }) => [styles.change, pressed && { opacity: 0.85 }]}>
         <Camera size={18} color={C.ink} /><Text style={styles.changeT}>{uri ? "Change photo" : "Add photo"}</Text>
       </Pressable>

@@ -5,7 +5,7 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, Sc
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Badge } from "../components/Badge";
 import { Button } from "../components/Button";
-import { PetPhoto } from "../components/pet/PetPhoto";
+import { PetPhotoActions, PetPhotoImage } from "../components/pet/PetPhoto";
 import { RemovePetSheet } from "../components/pet/RemovePetSheet";
 import { PinDetailSheet } from "../components/PinDetailSheet";
 import { Primary } from "../components/Primary";
@@ -14,8 +14,9 @@ import { BreedPicker } from "../components/report/BreedPicker";
 import { Chips } from "../components/report/Chips";
 import { useHome } from "../hooks/useHome";
 import { useMyReports } from "../hooks/useMyReports";
-import { EMPTY_BREED, breedById, breedValueFrom, type BreedValue } from "../lib/breeds";
+import { EMPTY_BREED, breedById, breedValueFrom, sizeFromBreed, type BreedValue } from "../lib/breeds";
 import type { Pet, PetSize, ReportNearby, Species } from "../lib/database.types";
+import { validateMicrochip } from "../lib/microchip";
 import { COLOR_OPTIONS, SIZE_OPTIONS, choiceToColor, colorToChoice, type ColorChoice } from "../lib/petOptions";
 import { petState } from "../lib/petStatus";
 import { archivePet, savePet } from "../lib/pets";
@@ -52,6 +53,7 @@ export default function PetScreen() {
   const [detail, setDetail] = useState<ReportNearby | null>(null);
   const [f, setF] = useState<Form>(EMPTY);
   const [initial, setInitial] = useState<Form>(EMPTY);
+  const [microchipError, setMicrochipError] = useState<string | null>(null);
   const set = (patch: Partial<Form>) => setF((p) => ({ ...p, ...patch }));
 
   useFocusEffect(useCallback(() => { refreshMine(); }, [refreshMine]));
@@ -89,11 +91,13 @@ export default function PetScreen() {
 
   const save = async () => {
     if (!valid || !f.species) return;
+    const chip = validateMicrochip(f.microchip);
+    if (!chip.ok) { setMicrochipError(chip.error); return; }
     setSaving(true);
     try {
       await savePet(isNew ? null : id, {
         name: f.name, species: f.species, breed: f.breed.text || null, breedId: f.breed.id,
-        color: choiceToColor(f.colorChoice, f.colorOther), size: f.size, features: f.features, microchip: f.microchip,
+        color: choiceToColor(f.colorChoice, f.colorOther), size: f.size, features: f.features, microchip: chip.value,
         photoUri: f.photoUri, photoUrl: f.photoUrl,
       }, profile);
       allowExit.current = true;
@@ -131,14 +135,14 @@ export default function PetScreen() {
       </View>
       {loading ? <View style={styles.center}><ActivityIndicator color={C.teal} /></View> : (
         <ScrollView contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: insets.bottom + 32 }} keyboardShouldPersistTaps="handled">
-          <PetPhoto uri={f.photoUri ?? f.photoUrl} petName={f.name} onChange={(u) => set({ photoUri: u, photoUrl: u ? f.photoUrl : null })} />
-
-          {/* Estado y acción de reporte, arriba junto a la foto. "Report lost" solo existe con la mascota en casa (Home). */}
+          {/* Orden (evaluación UX): imagen → estado y acción de reporte → Change/Remove photo → resto del formulario. "Report lost" solo
+              existe con la mascota en casa (Home). El texto del estado ya no repite "Lost": el badge de al lado es quien lo dice. */}
+          <PetPhotoImage uri={f.photoUri ?? f.photoUrl} />
           {!isNew && status.state === "lost" ? (
             <View style={styles.stateBox}>
               <View style={styles.stateRow}>
                 <Badge status="lost" />
-                <Text style={styles.stateT}>Lost · Missing for {elapsedShort(status.report.created_at)}</Text>
+                <Text style={styles.stateT}>Missing for {elapsedShort(status.report.created_at)}</Text>
               </View>
               <Button label="View report" variant="secondary" onPress={viewReport} />
             </View>
@@ -147,17 +151,20 @@ export default function PetScreen() {
             <View style={styles.stateBox}>
               <View style={styles.stateRow}>
                 <Badge status="reunited" />
-                <Text style={styles.stateT}>Reunited · {agoShort(status.report.reunited_at ?? status.report.created_at)}</Text>
+                <Text style={styles.stateT}>{agoShort(status.report.reunited_at ?? status.report.created_at)}</Text>
               </View>
             </View>
           ) : null}
           {!isNew && status.state === "home" ? (
             <Button label="Report lost" variant="primaryLost" onPress={() => router.push({ pathname: "/report/lost", params: { petId: id } })} />
           ) : null}
+          <PetPhotoActions uri={f.photoUri ?? f.photoUrl} petName={f.name} onChange={(u) => set({ photoUri: u, photoUrl: u ? f.photoUrl : null })} />
 
           <TextField label="Pet's name" placeholder="Max" value={f.name} onChangeText={(name) => set({ name })} />
           <Chips label="Type" options={SPECIES} value={f.species} onChange={onSpecies} />
-          <BreedPicker species={f.species} value={f.breed} onChange={(breed) => set({ breed })} />
+          {/* Al elegir una raza real se preselecciona el tamaño típico (breed_sizes); el usuario lo puede cambiar. "Mixed / Not sure",
+              "Other" o una raza sin peso (gatos) no tocan el tamaño ya elegido. */}
+          <BreedPicker species={f.species} value={f.breed} onChange={(breed) => set({ breed, size: sizeFromBreed(breed.id) ?? f.size })} />
 
           <Chips label="Main color" options={COLOR_OPTIONS} value={f.colorChoice} onChange={(colorChoice) => set({ colorChoice })} />
           {f.colorChoice === "other" ? <TextField label="Describe the color" placeholder="Brindle" value={f.colorOther} onChangeText={(colorOther) => set({ colorOther })} maxLength={30} /> : null}
@@ -166,11 +173,13 @@ export default function PetScreen() {
             <TextField label="Distinctive features (optional)" placeholder="Blue collar, white paws, scar on left ear" value={f.features} onChangeText={(features) => set({ features })} multiline maxLength={100} />
             <Text style={styles.counter}>{f.features.length}/100</Text>
           </View>
-          <TextField label="Microchip number (optional)" placeholder="15-digit number" value={f.microchip} onChangeText={(microchip) => set({ microchip })}
-            autoCapitalize="characters" autoCorrect={false} maxLength={20} helper="Only you can see this. It's never shown publicly." />
+          <TextField label="Microchip number (optional)" placeholder="9, 10 or 15 characters" value={f.microchip}
+            onChangeText={(microchip) => { set({ microchip }); setMicrochipError(null); }}
+            autoCapitalize="characters" autoCorrect={false} maxLength={20}
+            helper={microchipError ?? "Only you can see this. It's never shown publicly."} />
 
           <Primary label={saving ? "Saving…" : isNew ? "Add pet" : "Save changes"} onPress={save} disabled={!valid || saving || (!isNew && !dirty)} />
-          {!isNew ? <Pressable accessibilityRole="button" onPress={() => setRemoveOpen(true)} style={styles.remove}><Text style={styles.removeT}>Remove pet</Text></Pressable> : null}
+          {!isNew ? <Pressable accessibilityRole="button" onPress={() => setRemoveOpen(true)} style={styles.remove}><Text style={styles.removeT}>Remove from my pets</Text></Pressable> : null}
         </ScrollView>
       )}
       <RemovePetSheet visible={removeOpen} petName={f.name} hasActiveReport={status.state === "lost"} busy={removing} onClose={() => setRemoveOpen(false)} onConfirm={remove} />

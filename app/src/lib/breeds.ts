@@ -1,5 +1,5 @@
 import { BREEDS, type Breed } from "./breedList";
-import type { Species } from "./database.types";
+import type { PetSize, Species } from "./database.types";
 
 // Razas canónicas (migración 0016). El id se guarda en pets.breed_id y reports.breed_id; el texto `breed` se conserva para mostrar.
 // Especiales: "mixed" = "Mixed / Not sure" y "other" = texto libre como último recurso.
@@ -20,6 +20,15 @@ const words = (n: string, needle: string) => needle !== "" && new RegExp(`(^|[^a
 const byId = new Map(BREEDS.map((b) => [b.id, b]));
 export const breedById = (id: string | null | undefined): Breed | undefined => (id ? byId.get(id) : undefined);
 export const breedsFor = (species: Species | null): Breed[] => (species === "dog" || species === "cat" ? BREEDS.filter((b) => b.species === species) : []);
+
+// Tamaño típico de una raza (evaluación UX, Pet profile 2.2): a partir de su peso de breed_sizes/breedList.ts. Sin peso (gatos, sin
+// datos de tamaño hoy) o para "Mixed / Not sure" / "Other" devuelve null — el llamador no debe preseleccionar nada en ese caso.
+export function sizeFromBreed(id: string | null): PetSize | null {
+  if (!id || id === MIXED_ID || id === OTHER_ID) return null;
+  const w = breedById(id)?.weightKg;
+  if (w == null) return null;
+  return w <= 11 ? "small" : w <= 27 ? "medium" : "large";
+}
 
 // Texto de raza antiguo → id (misma lógica que map_breed_or_mixed() en SQL). null = no se pudo mapear.
 export function matchBreedText(text: string | null | undefined, species: Species | null): string | null {

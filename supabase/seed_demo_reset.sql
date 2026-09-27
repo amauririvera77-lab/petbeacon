@@ -241,11 +241,25 @@ begin
     execute $q$update pets set breed_id = map_breed_or_mixed(breed, species) where breed_id is null and breed is not null and user_id in ($1, $2)$q$ using me, demo_owner;
   end if;
   if exists (select 1 from information_schema.columns where table_name = 'pets' and column_name = 'color') then
-    -- Max (Golden, grande) y Lazy (crema, pequeña); el Golden con foto también es dorado y grande, así que su coincidencia sigue siendo 'strong'.
+    -- Color y tamaño de CADA mascota del seed, verificados contra su foto real (evaluación UX): tamaño según su peso típico en
+    -- breed_sizes (≤11 kg small, ≤27 kg medium, >27 kg large; gatos sin peso → medium, criterio propio). Max (Golden, foto dorada,
+    -- grande) y el Golden con foto (avistamiento) también dorado y grande, así que su coincidencia con Max sigue siendo 'strong'.
     execute $q$update pets set color = 'golden', size = 'large' where id = $1$q$ using max_pet;
-    execute $q$update pets set color = 'cream', size = 'small' where id = $1$q$ using lazy_pet;
-    execute $q$update reports set color = 'golden', size = 'large' where id in ('20000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000010')$q$;
-    execute $q$update reports set color = 'cream', size = 'small' where id = '20000000-0000-0000-0000-000000000011'$q$;
+    -- Lazy es NEGRA en su foto real (Pekingese, pequeño) — antes decía 'cream' por error.
+    execute $q$update pets set color = 'black', size = 'small' where id = $1$q$ using lazy_pet;
+    execute $q$update pets set color = 'multicolor', size = 'small' where id = $1$q$ using buddy_pet;
+    execute $q$update pets set color = 'cream',  size = 'medium' where id = '30000000-0000-0000-0000-000000000003'$q$; -- Luna, Siamese (seal-point, cuerpo claro)
+    execute $q$update pets set color = 'gray',   size = 'small'  where id = '30000000-0000-0000-0000-000000000004'$q$; -- Bartholomew, Miniature Schnauzer (gris y blanco)
+    execute $q$update pets set color = 'white',  size = 'medium' where id = '30000000-0000-0000-0000-000000000005'$q$; -- Whiskers, Persian (pelaje blanco largo)
+    execute $q$update pets set color = 'cream',  size = 'large'  where id = '30000000-0000-0000-0000-000000000006'$q$; -- Biscuit, Labrador mix (amarillo claro en su foto)
+
+    execute $q$update reports set color = 'golden', size = 'large'  where id in ('20000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000010')$q$; -- Max + el Golden con foto
+    execute $q$update reports set color = 'cream',  size = 'medium' where id = '20000000-0000-0000-0000-000000000002'$q$; -- Luna
+    execute $q$update reports set color = 'gray',   size = 'small'  where id = '20000000-0000-0000-0000-000000000003'$q$; -- Bartholomew
+    execute $q$update reports set color = 'white',  size = 'medium' where id = '20000000-0000-0000-0000-000000000004'$q$; -- Whiskers
+    execute $q$update reports set color = 'cream',  size = 'large'  where id = '20000000-0000-0000-0000-000000000008'$q$; -- Biscuit
+    execute $q$update reports set color = 'black',  size = 'small'  where id = '20000000-0000-0000-0000-000000000011'$q$; -- Lazy
+    execute $q$update reports set color = 'multicolor', size = 'small' where id = '20000000-0000-0000-0000-000000000016'$q$; -- Buddy
   end if;
   if exists (select 1 from pg_proc where proname = 'recompute_matches_for_lost') then
     perform recompute_matches_for_lost(id) from reports where id::text like '20000000-0000-0000-0000-0000000000__' and status = 'lost';

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar } from "../components/account/Avatar";
 import { Primary } from "../components/Primary";
 import { TextField } from "../components/TextField";
+import { useAccount } from "../hooks/useAccount";
 import { ensureAccount } from "../lib/account";
 import { isEmail } from "../lib/authAccount";
 import { uploadPhoto } from "../lib/photos";
@@ -23,6 +24,7 @@ export default function EditProfile() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { name: sName, city, alertRadiusMi, home, avatarUrl, update } = useSession();
+  const account = useAccount();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [f, setF] = useState<Form>({ name: sName, email: "", phone: "", photoUri: null, photoUrl: avatarUrl });
@@ -101,6 +103,10 @@ export default function EditProfile() {
           <TextField label="Name" placeholder="Your name" value={f.name} onChangeText={(name) => set({ name })} autoCapitalize="words" />
           <View style={{ gap: 12 }}>
             <Text style={styles.note}>Contact details are private. They're only used to reach you about a pet, and they're never shown in the app to other people. Your login email is managed in "Save your account".</Text>
+            {/* Cuenta ya guardada: el correo de inicio de sesión se muestra como dato fijo (no editable aquí; eso vive en "Save your account"). */}
+            {!account.isAnonymous && account.email ? (
+              <TextField label="Account email" value={account.email} disabled helper="Used to sign in" />
+            ) : null}
             <TextField label="Contact email (optional)" placeholder="you@email.com" value={f.email} onChangeText={(email) => { set({ email }); setErrors((e) => ({ ...e, email: undefined })); }}
               keyboardType="email-address" autoCapitalize="none" autoCorrect={false} helper={errors.email} />
             <TextField label="Contact phone (optional)" placeholder="(201) 555-0100" value={f.phone} onChangeText={(phone) => { set({ phone }); setErrors((e) => ({ ...e, phone: undefined })); }}

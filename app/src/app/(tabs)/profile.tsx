@@ -75,6 +75,10 @@ export default function Profile() {
     <View style={styles.root}>
       <View style={{ paddingTop: insets.top, backgroundColor: C.white }}>
         <OfflineBanner />
+      </View>
+
+      {/* Cabecera (foto, nombre, zona de alertas) DENTRO del scroll (evaluación UX): se desplaza con el contenido, no queda fija. */}
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: 200 }} onScroll={onScroll} scrollEventThrottle={16}>
         <View style={styles.titleWrap}><ScreenTitle title="Profile" /></View>
         <View style={styles.head}>
           <Avatar uri={avatarUrl} name={name} size={64} />
@@ -86,16 +90,13 @@ export default function Profile() {
             </Pressable>
           </View>
         </View>
-      </View>
-
-      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: 200 }} onScroll={onScroll} scrollEventThrottle={16}>
         {/* Con un Lost activo y la cuenta sin guardar, la invitación es prominente: perder la cuenta sería perder el reporte. */}
         {account.ready && account.isAnonymous && hasLost ? (
           <View style={styles.saveCard}>
             <Text style={styles.saveT}>Save your account</Text>
             <Text style={styles.saveS}>{`You have an active alert for ${lostLabel}. Add your email so you never lose access to it, even if you switch phones.`}</Text>
             <Pressable accessibilityRole="button" onPress={() => setSaveOpen(true)} style={({ pressed }) => [styles.saveBtn, pressed && { opacity: 0.85 }]}>
-              <Text style={styles.saveBtnT}>Save your account</Text>
+              <Text style={styles.saveBtnT}>Add email</Text>
             </Pressable>
           </View>
         ) : null}
@@ -196,8 +197,9 @@ function NavRow({ title, subtitle, onPress }: { title: string; subtitle?: string
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.surface },
-  titleWrap: { paddingHorizontal: 16, paddingTop: 24 },
-  head: { flexDirection: "row", alignItems: "center", gap: 16, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 20, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
+  // El padding horizontal y superior ya los da el contenedor del ScrollView: esta cabecera vive DENTRO de él y se desplaza con el resto.
+  titleWrap: { marginBottom: 4 },
+  head: { flexDirection: "row", alignItems: "center", gap: 16, paddingBottom: 20, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: C.border },
   name: { fontFamily: font.head, fontSize: 20, color: C.ink },
   cityBtn: { flexDirection: "row", alignItems: "center", gap: 4, minHeight: 28, alignSelf: "flex-start" },
   city: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700, flexShrink: 1 },
