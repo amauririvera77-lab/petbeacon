@@ -53,10 +53,13 @@ export default function Support() {
     return { filtered: [...events, ...supportOrder(list.filter((r) => !ids.has(r.id)))], eventIds: ids };
   }, [resources, category, q, now]);
   const reset = () => { setQuery(""); setCategory("all"); };
+  // Con datos de muestra el botón se ve apagado; al tocarlo, un mensaje breve explica por qué no hace nada (en vez de una etiqueta por tarjeta).
+  const hasSample = filtered.some(isSample);
+  // "If you're considering rehoming": solo en la vista "All", justo antes del primer recurso de "Rehoming & shelters" (nunca antes de un evento).
+  const shelterStart = category === "all" ? filtered.findIndex((r) => r.category === "shelter" && !eventIds.has(r.id)) : -1;
   // Acción principal de cada tarjeta (5.3). Con datos de muestra no hace nada: la tarjeta ya la muestra deshabilitada.
   const act = (r: ResourceNearby, kind: "directions" | "learn" | "contact") => {
-    // Datos de muestra: el botón se ve apagado pero al tocarlo explica por qué no hace nada.
-    if (isSample(r)) { snackbar.show({ message: "This is sample data, so contact actions are turned off for now." }); return; }
+    if (isSample(r)) { snackbar.show({ message: "Contact details aren't available for sample resources." }); return; }
     if (kind === "contact") { setMode("contact"); setContact(r); return; }
     const url = kind === "directions" ? directionsUrl(r) : webUrl(r.website_url);
     if (url) Linking.openURL(url).catch(() => Alert.alert("Couldn't open that", "Your device couldn't handle this action."));
@@ -106,10 +109,27 @@ export default function Support() {
             <Text style={styles.emptyS}>{resources.length === 0 ? "We're still adding local resources in your area." : "Try a different category or search term."}</Text>
             {resources.length > 0 ? <Pressable accessibilityRole="button" onPress={reset} style={styles.emptyBtn}><Text style={styles.emptyBtnT}>Clear filters</Text></Pressable> : null}
           </View>
-        ) : filtered.map((r) => {
-          const onAction = (kind: "directions" | "learn" | "contact") => act(r, kind);
-          return eventIds.has(r.id) ? <EventResourceCard key={r.id} resource={r} onAction={onAction} /> : <ResourceCard key={r.id} resource={r} onAction={onAction} />;
-        })}
+        ) : (
+          <>
+            {hasSample ? (
+              <View style={styles.sampleBanner}><Text style={styles.sampleBannerT}>These resources are sample data for testing.</Text></View>
+            ) : null}
+            {filtered.map((r, i) => {
+              const onAction = (kind: "directions" | "learn" | "contact") => act(r, kind);
+              const card = eventIds.has(r.id) ? <EventResourceCard key={r.id} resource={r} onAction={onAction} /> : <ResourceCard key={r.id} resource={r} onAction={onAction} />;
+              if (i !== shelterStart) return card;
+              return (
+                <View key={`shelter-group-${r.id}`} style={{ gap: 12 }}>
+                  <View style={styles.rehomeHead}>
+                    <Text style={styles.rehomeT}>If you're considering rehoming</Text>
+                    <Text style={styles.rehomeS}>These organizations can help you find a safe next home.</Text>
+                  </View>
+                  {card}
+                </View>
+              );
+            })}
+          </>
+        )}
       </ScrollView>
 
       <ResourceModal resource={contact} mode={mode} onMode={setMode} onClose={() => setContact(null)} />
@@ -138,4 +158,11 @@ const styles = StyleSheet.create({
   emptyS: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 19, color: C.slate700, textAlign: "center", marginBottom: 20 },
   emptyBtn: { height: 44, paddingHorizontal: 20, borderRadius: radius.md, backgroundColor: C.ink, justifyContent: "center" },
   emptyBtnT: { fontFamily: font.bodyBold, fontSize: 14, color: C.white },
+  // Un único aviso de datos de muestra al principio de la lista, en vez de una etiqueta por tarjeta.
+  sampleBanner: { padding: 12, borderRadius: radius.md, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border2 },
+  sampleBannerT: { fontFamily: font.bodySemi, fontSize: 13, color: C.slate700, textAlign: "center" },
+  // "Support Before Surrender" (5.5): encabezado antes del primer recurso de "Rehoming & shelters", solo en la vista "All".
+  rehomeHead: { gap: 2 },
+  rehomeT: { fontFamily: font.head, fontSize: 16, color: C.ink },
+  rehomeS: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700 },
 });

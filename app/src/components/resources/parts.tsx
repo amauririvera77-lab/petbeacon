@@ -13,7 +13,8 @@ export function SampleTag() {
 export function OpenNow({ r, now }: { r: Pick<ResourceNearby, "opening_hours" | "timezone">; now: number }) {
   const s = openStatus(r.opening_hours, r.timezone ?? undefined, now);
   if (!s) return null;
-  return <Text style={[styles.open, s.open ? { color: C.ok } : { color: C.slate700 }]}>{s.label}</Text>;
+  // flexShrink + una sola línea: comparte fila con la distancia (evaluación UX) sin forzar el salto a una segunda línea.
+  return <Text numberOfLines={1} style={[styles.open, s.open ? { color: C.ok } : { color: C.slate700 }]}>{s.label}</Text>;
 }
 
 // Etiquetas de costo y acceso: "Free", "Low cost", "Income-based", "Walk-ins welcome".
@@ -26,7 +27,7 @@ export function TagChips({ r }: { r: Pick<ResourceNearby, "tags"> }) {
 const styles = StyleSheet.create({
   sample: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.pill, borderWidth: 1, borderColor: C.border2, backgroundColor: C.surface },
   sampleT: { fontFamily: font.bodyBold, fontSize: 11, color: C.slate700 },
-  open: { fontFamily: font.bodyBold, fontSize: 12 },
+  open: { flexShrink: 1, fontFamily: font.bodyBold, fontSize: 12 },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   tag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: C.selectBg },
   tagT: { fontFamily: font.bodySemi, fontSize: 11, color: C.ink },

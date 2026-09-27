@@ -224,6 +224,17 @@ begin
   ) as v(old_name, new_name, addr, lng, lat, phone, web)
   where r.name in (v.old_name, v.new_name);
 
+  -- 5b. Descripciones limpias (evaluación UX): sin repetir lo que ya dicen las etiquetas de costo/acceso (tags, migración 0022).
+  --     Solo los 4 casos donde la descripción original repetía "free"/"walk-ins"/etc. palabra por palabra; el resto ya aportaba algo distinto.
+  update resources set description = 'Pet food distribution, first Saturday of every month.'
+    where name = 'Hudson County Pet Pantry';
+  update resources set description = 'Spay and neuter surgery for dogs and cats, performed by licensed veterinarians.'
+    where name = 'Low-Cost Spay/Neuter Clinic';
+  update resources set description = 'Up to 30 days of boarding while you get back on your feet.'
+    where name = 'Crisis Boarding Program';
+  update resources set description = 'Consultations on housing and pet-related legal questions.'
+    where name = 'Animal Welfare Legal Aid';
+
   -- 6. Razas canónicas (0016) y color/tamaño (0017), solo si esas migraciones ya se aplicaron. Luego se recalculan las coincidencias de los Lost.
   if exists (select 1 from information_schema.columns where table_name = 'reports' and column_name = 'breed_id') then
     execute $q$update reports set breed_id = map_breed_or_mixed(breed, species) where id::text like '20000000-0000-0000-0000-0000000000__'$q$;

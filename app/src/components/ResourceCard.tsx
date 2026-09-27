@@ -20,13 +20,13 @@ export function ResourceCard({ resource: r, onAction }: { resource: ResourceNear
       <View style={[styles.icon, { backgroundColor: tint }]}><Icon size={22} color={color} /></View>
       <View style={{ flex: 1, gap: 6 }}>
         <Text style={styles.name}>{r.name}</Text>
-        {sample ? <SampleTag /> : null}
+        {/* "Sample data" ya no va por tarjeta: un único aviso al principio de la lista lo cubre (evaluación UX). */}
         <View style={styles.metaRow}>
           <Text style={styles.dist}>{r.distance_mi.toFixed(1)} mi away</Text>
           <OpenNow r={r} now={now} />
         </View>
         <TagChips r={r} />
-        <Text style={styles.desc}>{r.description}</Text>
+        <Text style={styles.desc} numberOfLines={2}>{r.description}</Text>
         <View style={styles.foot}>
           <Pressable accessibilityRole="button" accessibilityLabel={`${action.label}: ${r.name}`} accessibilityState={{ disabled: sample }}
             onPress={() => onAction(action.kind)} style={({ pressed }) => [styles.btn, sample && styles.btnOff, pressed && { backgroundColor: C.ink }]}>
@@ -91,9 +91,10 @@ const styles = StyleSheet.create({
   icon: { width: 48, height: 48, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
   name: { fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
   desc: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 19, color: C.slate700 },
-  metaRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 10 },
+  // Distancia y estado de apertura SIEMPRE en una sola línea (evaluación UX): sin flexWrap; el estado se encoge antes de saltar de línea.
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   foot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 6 },
-  dist: { fontFamily: font.bodyBold, fontSize: 12, color: C.teal },
+  dist: { flexShrink: 0, fontFamily: font.bodyBold, fontSize: 12, color: C.teal },
   btn: { minHeight: MIN_HIT - 4, paddingHorizontal: 16, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.ink, backgroundColor: C.white, flexDirection: "row", gap: 6, alignItems: "center" },
   btnT: { fontFamily: font.bodyBold, fontSize: 13, color: C.ink },
   btnOff: { borderColor: C.border2, backgroundColor: C.surface },
