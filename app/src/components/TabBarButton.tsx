@@ -34,7 +34,7 @@ export function TabBarButton({ Icon, label, onPress, onLongPress, testID, style,
   const color = focused ? Theme.brand.primary : Theme.text.muted;
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole="tab"
       accessibilityState={{ selected: focused }}
       accessibilityLabel={label}
       onPress={onPress}
