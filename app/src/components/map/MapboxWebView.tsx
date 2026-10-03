@@ -20,18 +20,19 @@ type Props = {
   matchNames?: Record<string, string>; // id de avistamiento → nombre de tu mascota (coincidencias no descartadas): pin con aro de éxito y sin cluster
   alertRadiusMi?: number; // radio de alertas del perfil: se dibuja centrado en `me`
   selectedId?: string | null; // pin seleccionado (más grande y por encima)
+  bottomInset?: number; // px que tapa la tab bar flotante abajo: atribución/logo de Mapbox y encuadre quedan por encima
   onSelect: (s: MapSelection) => void;
 };
 
 // Mapbox GL JS dentro de un WebView (funciona en Expo Go; el SDK nativo requeriría development build).
 export type MapHandle = { recenter: () => void };
 
-export const MapboxWebView = forwardRef<MapHandle, Props>(function MapboxWebView({ token, reports, resources, center, radiusMi, alertRadiusMi, selectedId, matchNames, me, mineIds, focus, onSelect }, handle) {
+export const MapboxWebView = forwardRef<MapHandle, Props>(function MapboxWebView({ token, reports, resources, center, radiusMi, alertRadiusMi, selectedId, matchNames, me, mineIds, focus, bottomInset = 0, onSelect }, handle) {
   const ref = useRef<WebView>(null);
   useImperativeHandle(handle, () => ({ recenter: () => ref.current?.injectJavaScript("window.__recenter && window.__recenter(); true;") }), []);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const html = useMemo(() => buildMapHtml(token), [token]);
+  const html = useMemo(() => buildMapHtml(token, bottomInset), [token, bottomInset]);
 
   const push = useCallback(() => {
     const payload = {

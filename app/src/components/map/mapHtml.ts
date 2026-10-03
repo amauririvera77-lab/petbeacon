@@ -6,7 +6,9 @@ const GL_VERSION = "3.10.0";
 // Documento que corre dentro del WebView. Protocolo:
 //   RN → WebView:  window.__update({ reports, resources, center:[lng,lat], radiusMi })
 //   WebView → RN:  postMessage JSON { type: "ready" | "select" | "error", ... }
-export function buildMapHtml(token: string): string {
+// bottomInset: px del borde inferior que tapa la tab bar flotante — la atribución y el logo de Mapbox (obligatorios por sus
+// términos) suben ese tanto para quedar visibles por encima de la barra, y el encuadre automático lo deja libre.
+export function buildMapHtml(token: string, bottomInset = 0): string {
   const colors = { lost: Theme.status.lost.bg, sighted: Theme.status.sighted.bg, reunited: Theme.status.reunited.bg, resource: Theme.info.bg };
   return `<!DOCTYPE html>
 <html><head>
@@ -14,7 +16,7 @@ export function buildMapHtml(token: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <link href="https://api.mapbox.com/mapbox-gl-js/v${GL_VERSION}/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v${GL_VERSION}/mapbox-gl.js"></script>
-<style>html,body,#map{margin:0;padding:0;width:100%;height:100%;background:${Theme.surface.page}}</style>
+<style>html,body,#map{margin:0;padding:0;width:100%;height:100%;background:${Theme.surface.page}}.mapboxgl-ctrl-bottom-left,.mapboxgl-ctrl-bottom-right{bottom:${bottomInset}px}</style>
 </head><body><div id="map"></div>
 <script>
 (function () {
@@ -112,10 +114,10 @@ export function buildMapHtml(token: string): string {
       var b = new mapboxgl.LngLatBounds();
       if (reportPts.length) {
         reportPts.forEach(function (c) { b.extend(c); });
-        map.fitBounds(b, { padding: 56, maxZoom: 14, duration: 500 });
+        map.fitBounds(b, { padding: { top: 56, left: 56, right: 56, bottom: 56 + ${bottomInset} }, maxZoom: 14, duration: 500 });
       } else {
         ring.forEach(function (c) { b.extend(c); });
-        map.fitBounds(b, { padding: 32, duration: 500 });
+        map.fitBounds(b, { padding: { top: 32, left: 32, right: 32, bottom: 32 + ${bottomInset} }, duration: 500 });
       }
     }
   }

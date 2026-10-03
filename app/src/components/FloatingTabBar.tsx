@@ -3,6 +3,7 @@ import { ClipboardList, HeartHandshake, House, Plus, User, type LucideIcon } fro
 import { useState, type ComponentProps } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { tabBarBottomDistance } from "../hooks/useTabBarClearance";
 import { REPORT_BUTTON, TAB_BAR_PADDING, TAB_BAR_SIDE_MARGIN, Theme, radius } from "../theme/tokens";
 import { elevation } from "../theme/elevation";
 import { ReportSheet } from "./ReportSheet";
@@ -18,7 +19,7 @@ const ICONS: Record<string, LucideIcon> = { index: House, reports: ClipboardList
 export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const [reportOpen, setReportOpen] = useState(false);
-  const bottom = Math.max(insets.bottom - 8, 12);
+  const bottom = tabBarBottomDistance(insets.bottom);
 
   const tabs = state.routes.map((route, i) => {
     const focused = state.index === i;

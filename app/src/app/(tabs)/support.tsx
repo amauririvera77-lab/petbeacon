@@ -14,7 +14,8 @@ import type { ResourceNearby } from "../../lib/database.types";
 import { mapEventResources } from "../../lib/homeFilters";
 import { CATEGORIES, directionsUrl, isSample, supportOrder, webUrl } from "../../lib/resources";
 import { useSession } from "../../state/session";
-import { FAB_CLEARANCE, Theme, radius } from "../../theme/tokens";
+import { useTabBarClearance } from "../../hooks/useTabBarClearance";
+import { Theme, radius } from "../../theme/tokens";
 import { typography } from "../../theme/typography";
 
 // Radio amplio: los recursos comunitarios no dependen del radio de alerta del usuario.
@@ -25,6 +26,7 @@ const HIDE_SAMPLE_NOTICE = process.env.EXPO_PUBLIC_HIDE_SAMPLE_NOTICE === "true"
 
 export default function Support() {
   const insets = useSafeAreaInsets();
+  const TAB_BAR_CLEARANCE = useTabBarClearance();
   const { city } = useSession();
   const center = useHome();
   const now = useNow();
@@ -89,7 +91,7 @@ export default function Support() {
 
       <OfflineBanner />
 
-      <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[styles.list, { paddingBottom: TAB_BAR_CLEARANCE }]} keyboardShouldPersistTaps="handled">
         {error === "supabase-not-configured" ? <SetupNotice /> : error ? (
           <View style={{ gap: 8 }}>
             <Text style={styles.err}>Couldn't load resources: {error}</Text>
@@ -144,7 +146,7 @@ const styles = StyleSheet.create({
   chip: { height: 40, paddingHorizontal: 16, borderRadius: radius.pill, borderWidth: 1.5, borderColor: Theme.border.default, backgroundColor: Theme.surface.card, justifyContent: "center" },
   chipOn: { backgroundColor: Theme.brand.primary, borderColor: Theme.brand.primary },
   chipT: { ...typography.button14, color: Theme.text.secondary },
-  list: { padding: 16, paddingBottom: FAB_CLEARANCE, gap: 12 },
+  list: { padding: 16, gap: 12 },
   err: { ...typography.body14, color: Theme.danger.text },
   retry: { alignSelf: "flex-start", paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: Theme.brand.primary },
   retryT: { ...typography.button14, color: Theme.text.onAccent },

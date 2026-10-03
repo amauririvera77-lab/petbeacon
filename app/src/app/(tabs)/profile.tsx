@@ -23,7 +23,8 @@ import { breedLabel } from "../../lib/breeds";
 import { petState } from "../../lib/petStatus";
 import { useOnboardingPreview } from "../../state/onboardingPreview";
 import { useSession } from "../../state/session";
-import { Theme, MIN_HIT, radius, spacing } from "../../theme/tokens";
+import { useTabBarClearance } from "../../hooks/useTabBarClearance";
+import { Theme, MIN_HIT, radius } from "../../theme/tokens";
 import { typography } from "../../theme/typography";
 
 // ⚠️ HERRAMIENTA DE DISEÑO — quitar junto con la sección "Design tools" (más abajo) antes de publicar.
@@ -34,6 +35,7 @@ const SHOW_DESIGN_TOOLS = process.env.EXPO_PUBLIC_SHOW_DESIGN_TOOLS === "true";
 // mascotas registradas, cuenta (editar perfil, privacidad), ayuda y cierre de sesión.
 export default function Profile() {
   const insets = useSafeAreaInsets();
+  const TAB_BAR_CLEARANCE = useTabBarClearance();
   const { name, city, alertRadiusMi, emailEnabled, avatarUrl, update, reset } = useSession();
   const preview = useOnboardingPreview();
   const { perm, nearbyOn, matchOn, enable, disableKind } = useEnablePush();
@@ -86,7 +88,7 @@ export default function Profile() {
       </View>
 
       {/* Cabecera (foto, nombre, zona de alertas) DENTRO del scroll (evaluación UX): se desplaza con el contenido, no queda fija. */}
-      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: spacing["2xl"] }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: TAB_BAR_CLEARANCE }}>
         <View style={styles.titleWrap}><ScreenTitle title="Profile" variant="display" /></View>
         <View style={styles.head}>
           <Avatar uri={avatarUrl} name={name} size={64} />

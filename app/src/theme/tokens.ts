@@ -77,6 +77,3 @@ export const TAB_BAR_PADDING = 8;
 export const TAB_BAR_HEIGHT = 65;
 export const TAB_BAR_SIDE_MARGIN = 16;
 export const REPORT_BUTTON = { width: 56, height: 44, slot: 64 } as const;
-export const FAB_SIZE = 73; // 56px base +30% (CLAUDE.md §3 y §7)
-// Espacio inferior que necesita una lista para que su última tarjeta quede completa sobre el FAB: FAB + su margen (16) + respiro (16).
-export const FAB_CLEARANCE = FAB_SIZE + 16 + 16;

@@ -51,7 +51,8 @@ import { reportShareText } from "../../lib/shareText";
 import { sortReports } from "../../lib/sort";
 import { useHomePrefs, type ViewRadius } from "../../state/homePrefs";
 import { useSession } from "../../state/session";
-import { Theme, FAB_CLEARANCE, radius } from "../../theme/tokens";
+import { useTabBarClearance } from "../../hooks/useTabBarClearance";
+import { Theme, radius } from "../../theme/tokens";
 import { elevation } from "../../theme/elevation";
 import { typography } from "../../theme/typography";
 
@@ -70,6 +71,7 @@ export default function Home() {
   const { city, alertRadiusMi, notifSeenAt, update } = useSession();
   const mapRef = useRef<MapHandle>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const TAB_BAR_CLEARANCE = useTabBarClearance();
   const { prefs, setPrefs, setSort, resetFilters, resetAll, listQuery, setListQuery, mapQuery, setMapQuery, view, setView } = useHomePrefs();
   const uid = useAuthUser();
   const center = useHome();
@@ -244,7 +246,7 @@ export default function Home() {
             <View style={styles.pad}><SetupNotice /></View>
           ) : (
             <>
-              <MapboxWebView ref={mapRef} alertRadiusMi={alertRadiusMi} selectedId={preview?.id ?? null} token={MAPBOX_TOKEN} reports={mapReports} resources={mapResources} center={center} radiusMi={prefs.viewRadiusMi} me={me} mineIds={mineIds} matchNames={matchNames} focus={focus} onSelect={(sel) => {
+              <MapboxWebView ref={mapRef} bottomInset={TAB_BAR_CLEARANCE} alertRadiusMi={alertRadiusMi} selectedId={preview?.id ?? null} token={MAPBOX_TOKEN} reports={mapReports} resources={mapResources} center={center} radiusMi={prefs.viewRadiusMi} me={me} mineIds={mineIds} matchNames={matchNames} focus={focus} onSelect={(sel) => {
                 if (!sel) { setPreviewId(null); return; }
                 if (sel.kind === "resource") { setPreviewId(null); const r = mapResources.find((x) => x.id === sel.id); if (r) openResource(r); }
                 else setPreviewId(sel.id);
@@ -256,18 +258,18 @@ export default function Home() {
                 </View>
               ) : null}
               {error ? (
-                <EmptyState style={styles.mapEmpty} title="We couldn't load reports" body="Check your connection and try again." actionLabel="Try again" onAction={refresh} />
+                <EmptyState style={[styles.mapEmpty, { bottom: TAB_BAR_CLEARANCE }]} title="We couldn't load reports" body="Check your connection and try again." actionLabel="Try again" onAction={refresh} />
               ) : noReportsInRadius && !preview ? (
-                <EmptyState style={styles.mapEmpty} {...emptyRadiusProps} />
+                <EmptyState style={[styles.mapEmpty, { bottom: TAB_BAR_CLEARANCE }]} {...emptyRadiusProps} />
               ) : !loading && reports.length > 0 && mapReports.length === 0 ? (
-                <EmptyState style={styles.mapEmpty} title="No reports match your filters" actionLabel="Reset filters" onAction={resetAll} />
+                <EmptyState style={[styles.mapEmpty, { bottom: TAB_BAR_CLEARANCE }]} title="No reports match your filters" actionLabel="Reset filters" onAction={resetAll} />
               ) : null}
               <MapRadiusChip value={prefs.viewRadiusMi} onChange={(mi) => setPrefs({ viewRadiusMi: mi as ViewRadius })} />
-              <Pressable accessibilityRole="button" accessibilityLabel="Center map on my location" onPress={() => mapRef.current?.recenter()} style={styles.recenter}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Center map on my location" onPress={() => mapRef.current?.recenter()} style={[styles.recenter, { bottom: TAB_BAR_CLEARANCE }]}>
                 <LocateFixed size={22} color={Theme.text.primary} />
               </Pressable>
               {preview ? (
-                <View style={styles.preview}>
+                <View style={[styles.preview, { bottom: TAB_BAR_CLEARANCE }]}>
                   <ReportCard report={preview} mine={mineIds.includes(preview.id)} matchFor={matchNames[preview.id]} onPress={() => setPinReport(preview)} />
                 </View>
               ) : null}
@@ -281,7 +283,7 @@ export default function Home() {
           )}
         </View>
       ) : (
-        <ScrollView ref={scrollRef} contentContainerStyle={styles.listC} onScroll={(e) => { onListScroll(e); setScrolled(e.nativeEvent.contentOffset.y > 0); }} scrollEventThrottle={16}
+        <ScrollView ref={scrollRef} contentContainerStyle={[styles.listC, { paddingBottom: TAB_BAR_CLEARANCE }]} onScroll={(e) => { onListScroll(e); setScrolled(e.nativeEvent.contentOffset.y > 0); }} scrollEventThrottle={16}
           refreshControl={<RefreshControl refreshing={pulling} onRefresh={onPull} tintColor={Theme.brand.primary} />}>
           <EnableAlertsCard />
           {celebrate ? <ReunitedCelebration name={celebrate.name} onDone={endCelebration} /> : null}
@@ -335,16 +337,18 @@ const styles = StyleSheet.create({
   controls: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: Theme.surface.card, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
   rightCluster: { flexDirection: "row", alignItems: "center", gap: 8 },
   chipRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 },
-  recenter: { position: "absolute", right: 16, bottom: 16 + 73 + 12, width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: Theme.surface.card, ...elevation[1] },
+  // Controles flotantes del mapa: su `bottom` es TAB_BAR_CLEARANCE (por encima de la tab bar), se aplica en línea.
+  recenter: { position: "absolute", right: 16, width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: Theme.surface.card, ...elevation[1] },
   // Deja libre la columna derecha del FAB (73 px + márgenes).
-  preview: { position: "absolute", left: 12, right: 16 + 73 + 8, bottom: 16, ...elevation[2] },
+  // right: deja sitio al botón de recentrar (48 + 16 de margen + 8 de separación), que comparte línea base con la tarjeta.
+  preview: { position: "absolute", left: 12, right: 16 + 48 + 8, ...elevation[2] },
   focusChip: { position: "absolute", top: 12, right: 12, maxWidth: "55%", minHeight: 44, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: Theme.surface.card, ...elevation[1] },
   focusT: { flexShrink: 1, ...typography.label13, color: Theme.text.primary },
   finding: { position: "absolute", top: 68, left: 12, minHeight: 40, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: Theme.surface.card, ...elevation[1] },
   findingT: { ...typography.label13, color: Theme.text.primary },
-  mapEmpty: { position: "absolute", left: 12, right: 16 + 73 + 8, bottom: 16 },
-  // Padding inferior = FAB + su margen: la última tarjeta se ve completa al llegar al final del scroll.
-  listC: { padding: 16, paddingBottom: FAB_CLEARANCE, gap: 10 },
+  mapEmpty: { position: "absolute", left: 12, right: 16 + 48 + 8 },
+  // El padding inferior (TAB_BAR_CLEARANCE) se aplica en línea: la última tarjeta se ve completa sobre la tab bar.
+  listC: { padding: 16, gap: 10 },
   mapWrap: { flex: 1 },
   pad: { padding: 16 },
 });
