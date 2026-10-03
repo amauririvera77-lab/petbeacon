@@ -1,14 +1,17 @@
 import { Camera } from "lucide-react-native";
 import { useState } from "react";
-import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { choosePhotoSource, pickPhoto } from "../../lib/pickPhoto";
-import { C, MIN_HIT, font, radius } from "../../theme/tokens";
+import { Theme, MIN_HIT, radius } from "../../theme/tokens";
+import { typography } from "../../theme/typography";
+import { Button } from "../Button";
+import { FocusImage } from "../FocusImage";
 
 // Foto de la mascota (Pet profile 2.3), en dos piezas: la imagen y sus acciones. Van separadas para que el bloque de estado (Lost/Reunited
 // + acción de reporte) pueda ir ENTRE ambas, justo debajo de la foto (evaluación UX): imagen → estado → Change/Remove photo → resto del form.
-export function PetPhotoImage({ uri }: { uri: string | null }) {
-  return uri ? <Image source={{ uri }} style={styles.preview} accessibilityLabel="Pet photo" /> : (
-    <View style={styles.empty}><Camera size={36} color={C.slate500} /><Text style={styles.emptyT}>No photo yet</Text></View>
+export function PetPhotoImage({ uri, focusX, focusY }: { uri: string | null; focusX?: number | null; focusY?: number | null }) {
+  return uri ? <FocusImage uri={uri} focusX={focusX} focusY={focusY} style={styles.preview} accessibilityLabel="Pet photo" /> : (
+    <View style={styles.empty}><Camera size={36} color={Theme.text.muted} /><Text style={styles.emptyT}>No photo yet</Text></View>
   );
 }
 
@@ -25,20 +28,16 @@ export function PetPhotoActions({ uri, petName, onChange }: { uri: string | null
   );
   return (
     <View style={{ gap: 8 }}>
-      <Pressable accessibilityRole="button" disabled={busy} onPress={change} style={({ pressed }) => [styles.change, pressed && { opacity: 0.85 }]}>
-        <Camera size={18} color={C.ink} /><Text style={styles.changeT}>{uri ? "Change photo" : "Add photo"}</Text>
-      </Pressable>
+      <Button variant="secondary" Icon={Camera} label={uri ? "Change photo" : "Add photo"} onPress={change} disabled={busy} />
       {uri ? <Pressable accessibilityRole="button" onPress={remove} style={styles.remove}><Text style={styles.removeT}>Remove photo</Text></Pressable> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  preview: { width: "100%", aspectRatio: 4 / 3, borderRadius: radius.lg, backgroundColor: C.surface },
-  empty: { aspectRatio: 4 / 3, borderRadius: radius.lg, borderWidth: 1.5, borderStyle: "dashed", borderColor: C.border2, backgroundColor: C.surface, alignItems: "center", justifyContent: "center", gap: 6 },
-  emptyT: { fontFamily: font.bodySemi, fontSize: 15, color: C.slate500 },
-  change: { minHeight: 48, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", borderRadius: radius.md, borderWidth: 1.5, borderColor: C.ink, backgroundColor: C.white },
-  changeT: { fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
+  preview: { width: "100%", aspectRatio: 4 / 3, borderRadius: radius.lg, backgroundColor: Theme.surface.page },
+  empty: { aspectRatio: 4 / 3, borderRadius: radius.lg, borderWidth: 1.5, borderStyle: "dashed", borderColor: Theme.border.strong, backgroundColor: Theme.surface.page, alignItems: "center", justifyContent: "center", gap: 6 },
+  emptyT: { ...typography.heading16, color: Theme.text.muted },
   remove: { minHeight: MIN_HIT, alignItems: "center", justifyContent: "center" },
-  removeT: { fontFamily: font.bodySemi, fontSize: 13, color: C.slate700, textDecorationLine: "underline" },
+  removeT: { ...typography.label14, color: Theme.text.secondary, textDecorationLine: "underline" },
 });

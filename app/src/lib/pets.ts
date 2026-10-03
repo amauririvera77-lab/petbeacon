@@ -18,6 +18,8 @@ export async function savePet(id: string | null, input: PetInput, profile: Profi
   const row = {
     name: input.name.trim(), species: input.species, breed: input.breed?.trim() || null, breed_id: input.breedId,
     color: input.color?.trim() || null, size: input.size, features: input.features?.trim() || null, microchip: input.microchip?.trim() || null, photo_url,
+    // Foto nueva: sin punto focal propio todavía (centro por defecto) — igual que al cambiar la foto de un reporte (edit-report.tsx).
+    ...(input.photoUri ? { photo_focus_x: null, photo_focus_y: null } : null),
   };
   const q = id
     ? supabase.from("pets").update(row).eq("id", id).select("*").single()

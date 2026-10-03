@@ -10,3 +10,8 @@ export function validateMicrochip(raw: string): MicrochipResult {
   const validLength = (v.length === 9 && isNumeric) || (v.length === 10 && isAlnum) || (v.length === 15 && isNumeric);
   return validLength ? { ok: true, value: v } : { ok: false, error: "Enter a valid microchip: 9, 10 or 15 characters." };
 }
+
+// Modo vista de Pet profile (Fase 12 de congelación): nunca el número completo, solo los últimos 4 ("•••• 4821").
+export function maskMicrochip(value: string): string {
+  return `•••• ${value.slice(-4)}`;
+}
