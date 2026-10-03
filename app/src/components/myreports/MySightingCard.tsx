@@ -1,10 +1,12 @@
 import { ChevronRight, Info } from "lucide-react-native";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import type { ReportNearby } from "../../lib/database.types";
+import { breedLabel } from "../../lib/breeds";
 import { shortAddress } from "../../lib/address";
 import { activityAt } from "../../lib/activity";
 import { elapsedShort } from "../../lib/time";
-import { C, MIN_HIT, font, radius } from "../../theme/tokens";
+import { Theme, MIN_HIT, radius } from "../../theme/tokens";
+import { typography } from "../../theme/typography";
 import { ReportRow } from "./ReportRow";
 import { RowMenuButton } from "./RowMenuButton";
 
@@ -17,7 +19,8 @@ export function MySightingCard({ report, onOpen, onEdit, onStillThere, onResolve
   report: ReportNearby; onOpen: () => void; onEdit: () => void; onStillThere: () => void; onResolve: () => void;
 }) {
   const hasPhoto = !!report.photo_url;
-  const hasBreed = !!report.breed?.trim();
+  const breed = breedLabel(report.breed, report.breed_id);
+  const hasBreed = !!breed;
   const word = SPECIES_WORD[report.species] ?? "pet";
   // Prioriza lo que más ayuda a reconocer al animal: sin foto es lo primero que falta (una raza sin foto sigue siendo difícil de identificar).
   const notice = !hasPhoto ? `Add a photo to help owners recognize this ${word}` : !hasBreed ? `Add breed or details to help owners recognize this ${word}` : null;
@@ -27,16 +30,16 @@ export function MySightingCard({ report, onOpen, onEdit, onStillThere, onResolve
   ]);
   return (
     <Pressable accessibilityRole="button" accessibilityLabel="Sighting, open report" onPress={onOpen} style={({ pressed }) => [styles.card, pressed && { opacity: 0.95 }]}>
-      <ReportRow photoUrl={report.photo_url} focusX={report.photo_focus_x} focusY={report.photo_focus_y} zoom={report.photo_zoom} species={report.species}
-        title={report.breed?.trim() || (report.species === "cat" ? "Cat" : report.species === "dog" ? "Dog" : "Pet")} badge="sighted"
+      <ReportRow photoUrl={report.photo_url} focusX={report.photo_focus_x} focusY={report.photo_focus_y} species={report.species}
+        title={breed || (report.species === "cat" ? "Cat" : report.species === "dog" ? "Dog" : "Pet")} badge="sighted"
         timeText={`Spotted ${elapsedShort(activityAt(report))} ago`} locationText={shortAddress(report.location_label) ?? "Location not shared"} reserveMenuSpace />
       {notice ? (
-        <Pressable accessibilityRole="button" onPress={(e) => { e.stopPropagation(); onEdit(); }} style={({ pressed }) => [styles.notice, pressed && { backgroundColor: C.selectBg }]}>
-          <Info size={14} color={C.slate700} />
+        <Pressable accessibilityRole="button" onPress={(e) => { e.stopPropagation(); onEdit(); }} style={({ pressed }) => [styles.notice, pressed && { backgroundColor: Theme.brand.tint }]}>
+          <Info size={14} color={Theme.text.secondary} />
           <Text style={styles.noticeT}>{notice}</Text>
           <View style={styles.noticeLink}>
             <Text style={styles.noticeLinkT}>Add details</Text>
-            <ChevronRight size={14} color={C.ink} />
+            <ChevronRight size={14} color={Theme.text.primary} />
           </View>
         </Pressable>
       ) : null}
@@ -51,14 +54,14 @@ export function MySightingCard({ report, onOpen, onEdit, onStillThere, onResolve
   );
 }
 const styles = StyleSheet.create({
-  card: { padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: C.border, backgroundColor: C.white },
-  notice: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, padding: 10, borderRadius: radius.md, backgroundColor: C.surface },
-  noticeT: { flex: 1, fontFamily: font.bodyRegular, fontSize: 12, lineHeight: 17, color: C.slate700 },
+  card: { padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: Theme.border.default, backgroundColor: Theme.surface.card },
+  notice: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, padding: 10, borderRadius: radius.md, backgroundColor: Theme.surface.page },
+  noticeT: { flex: 1, ...typography.caption12, color: Theme.text.secondary },
   noticeLink: { flexDirection: "row", alignItems: "center", gap: 2 },
-  noticeLinkT: { fontFamily: font.bodyBold, fontSize: 12, color: C.ink },
+  noticeLinkT: { ...typography.label14, color: Theme.text.primary },
   actions: { gap: 8, marginTop: 12 },
-  primary: { minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radius.md, backgroundColor: C.ink },
-  primaryT: { fontFamily: font.bodyBold, fontSize: 15, color: C.white },
-  sec: { minHeight: MIN_HIT, alignItems: "center", justifyContent: "center", borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2, backgroundColor: C.white },
-  secT: { fontFamily: font.bodyBold, fontSize: 14, color: C.ink },
+  primary: { minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radius.md, backgroundColor: Theme.brand.primary },
+  primaryT: { ...typography.button16, color: Theme.text.onAccent },
+  sec: { minHeight: MIN_HIT, alignItems: "center", justifyContent: "center", borderRadius: radius.md, borderWidth: 1.5, borderColor: Theme.border.strong, backgroundColor: Theme.surface.card },
+  secT: { ...typography.button14, color: Theme.text.primary },
 });

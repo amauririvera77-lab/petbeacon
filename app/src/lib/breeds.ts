@@ -53,6 +53,15 @@ export function breedDisplay(v: BreedValue): string {
   return breedById(v.id)?.label ?? v.text;
 }
 
+// Etiqueta canónica a mostrar para una fila ya guardada (reports/pets, forma breed + breed_id) — mismo criterio que breedDisplay(),
+// pero para esa forma en vez de la del formulario de edición (BreedValue). Sin id (dato anterior a 0016, o "Other"), el texto libre
+// tal cual se guardó. Así History y el feed muestran siempre la misma etiqueta para una misma raza (ajuste de My Reports).
+export function breedLabel(breed: string | null | undefined, breedId: string | null | undefined): string | null {
+  if (breedId === MIXED_ID) return MIXED_LABEL;
+  if (breedId && breedId !== OTHER_ID) return breedById(breedId)?.label ?? (breed?.trim() || null);
+  return breed?.trim() || null;
+}
+
 // Valor inicial a partir de lo guardado: si no hay id pero el texto se reconoce, se propone el id (sin cambiar el texto guardado).
 export function breedValueFrom(id: string | null | undefined, text: string | null | undefined, species: Species | null): BreedValue {
   if (id) return { id, text: text ?? "" };

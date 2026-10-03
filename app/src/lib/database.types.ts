@@ -43,6 +43,9 @@ export type Pet = {
   breed: string | null;
   breed_id: string | null; // raza canónica (0016)
   photo_url: string | null;
+  photo_focus_x: number | null; // % (0-100): dónde está la cabeza, para la miniatura cuadrada de Profile (0023)
+  photo_focus_y: number | null;
+  photo_zoom: number | null; // % (100 = sin zoom)
   color: string | null; // 0017: datos que ayudan a encontrarla
   size: PetSize | null;
   features: string | null;
@@ -117,6 +120,7 @@ export type ReportNearby = {
   species: Species;
   name: string | null;
   breed: string | null;
+  breed_id?: string | null; // ausente hasta aplicar 0024
   photo_url: string | null;
   photo_focus_x: number | null;
   photo_focus_y: number | null;
@@ -183,6 +187,7 @@ export type MyMatch = {
   sighted_photo_url: string | null;
   sighted_label: string | null;
   sighted_breed: string | null;
+  sighted_breed_id?: string | null; // ausente hasta aplicar 0024
   sighted_focus_x: number | null;
   sighted_focus_y: number | null;
   sighted_zoom: number | null;

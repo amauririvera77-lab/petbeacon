@@ -6,9 +6,9 @@ import { useAuthUser } from "./useAuthUser";
 // Sin `contact_phone_or_email`: esa columna solo la lee el dueño vía my_report_contact() (migración 0003).
 // Columnas opcionales por migración (se descartan si la base aún no las tiene): alerted_count (0010), condición/color/tamaño (0012/0017)
 // y last_seen_at/resolution/resolved_at (0020).
-export type MyReport = Pick<Report, "id" | "status" | "species" | "name" | "breed" | "photo_url" | "photo_focus_x" | "photo_focus_y" | "photo_zoom" | "features_description" | "location_label" | "location" | "created_at" | "reunited_at" | "pet_id">
+export type MyReport = Pick<Report, "id" | "status" | "species" | "name" | "breed" | "breed_id" | "photo_url" | "photo_focus_x" | "photo_focus_y" | "photo_zoom" | "features_description" | "location_label" | "location" | "created_at" | "reunited_at" | "pet_id">
   & { alerted_count?: number | null; condition?: Report["condition"]; color?: string | null; size?: Report["size"]; last_seen_at?: string | null; resolution?: Report["resolution"]; resolved_at?: string | null };
-const COLS_BASE = "id,status,species,name,breed,photo_url,photo_focus_x,photo_focus_y,photo_zoom,features_description,location_label,location,created_at,reunited_at,pet_id";
+const COLS_BASE = "id,status,species,name,breed,breed_id,photo_url,photo_focus_x,photo_focus_y,photo_zoom,features_description,location_label,location,created_at,reunited_at,pet_id";
 const OPTIONAL_GROUPS = ["alerted_count", "condition", "color,size", "last_seen_at,resolution,resolved_at"] as const;
 
 export function useMyReports() {

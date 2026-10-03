@@ -1,8 +1,9 @@
 import { shortAddress } from "../../lib/address";
+import { breedLabel } from "../../lib/breeds";
 import QRCode from "react-native-qrcode-svg";
 import { StyleSheet, Text, View } from "react-native";
 import type { FlyerReport } from "../../lib/flyer";
-import { C, font } from "../../theme/tokens";
+import { Theme, font } from "../../theme/tokens";
 import { FocusImage } from "../FocusImage";
 import { Logo } from "../Logo";
 
@@ -27,8 +28,9 @@ type Props = {
 
 export function FlyerTemplate({ report: r, contact, url, onPhotoReady }: Props) {
   const lost = r.status === "lost";
-  const accent = lost ? C.sos : C.warn;
+  const accent = lost ? Theme.status.lost.bg : Theme.status.sighted.bg;
   const title = r.name?.trim() || `Unknown ${r.species}`;
+  const breed = breedLabel(r.breed, r.breed_id);
   const seen = `${when(r.created_at)}${r.location_label ? ` · ${shortAddress(r.location_label)}` : ""}`;
 
   return (
@@ -47,7 +49,7 @@ export function FlyerTemplate({ report: r, contact, url, onPhotoReady }: Props) 
 
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1} adjustsFontSizeToFit>{title}</Text>
-        {r.breed ? <Text style={styles.breed} numberOfLines={1}>{r.breed}</Text> : null}
+        {breed ? <Text style={styles.breed} numberOfLines={1}>{breed}</Text> : null}
         <Text style={styles.label}>{lost ? "LAST SEEN" : "SPOTTED"}</Text>
         <Text style={styles.seen} numberOfLines={2}>{seen}</Text>
         {r.features_description ? <Text style={styles.features} numberOfLines={2}>{r.features_description}</Text> : null}
@@ -71,7 +73,7 @@ export function FlyerTemplate({ report: r, contact, url, onPhotoReady }: Props) 
         </View>
         {url ? (
           <View style={styles.qr}>
-            <QRCode value={url} size={lost && contact ? 72 : 84} color="#000" backgroundColor="#fff" quietZone={4} />
+            <QRCode value={url} size={lost && contact ? 72 : 84} color={Theme.text.primary} backgroundColor={Theme.surface.card} quietZone={4} />
             <Text style={styles.qrT}>{lost && contact ? "Or scan for live details" : "Scan for live details"}</Text>
           </View>
         ) : null}
@@ -86,23 +88,25 @@ export function FlyerTemplate({ report: r, contact, url, onPhotoReady }: Props) 
 }
 
 const styles = StyleSheet.create({
-  page: { width: FLYER_W, height: FLYER_H, backgroundColor: "#fff", overflow: "hidden" },
+  page: { width: FLYER_W, height: FLYER_H, backgroundColor: Theme.surface.card, overflow: "hidden" },
   head: { height: 48, alignItems: "center", justifyContent: "center", paddingHorizontal: 12 },
-  headT: { fontFamily: font.display, fontSize: 32, letterSpacing: 2, color: "#fff" },
-  photo: { height: 140, backgroundColor: "#F1F5F9" },
+  headT: { fontFamily: font.display, fontSize: 32, lineHeight: 38.4, letterSpacing: 2, color: Theme.text.onAccent },
+  photo: { height: 140, backgroundColor: Theme.surface.page },
   info: { flex: 1, paddingHorizontal: 14, paddingTop: 8, gap: 1 },
-  name: { fontFamily: font.headBold, fontSize: 26, color: "#000" },
-  breed: { fontFamily: font.body, fontSize: 13, color: "#1E293B", marginBottom: 4 },
-  label: { fontFamily: font.bodyBold, fontSize: 9, letterSpacing: 1, color: "#475569" },
-  seen: { fontFamily: font.bodyBold, fontSize: 12, color: "#000" },
-  features: { fontFamily: font.bodyRegular, fontSize: 11, lineHeight: 15, color: "#1E293B", marginTop: 3 },
-  contact: { height: 96, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, borderTopWidth: 2, borderTopColor: "#000" },
-  phoneBox: { borderWidth: 2.5, borderColor: "#000", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  phone: { fontFamily: font.display, fontSize: 27, color: "#000" },
-  ask: { fontFamily: font.headBold, fontSize: 17, color: "#000" },
-  askS: { fontFamily: font.bodyRegular, fontSize: 11, lineHeight: 15, color: "#1E293B" },
+  name: { fontFamily: font.headBold, fontSize: 26, lineHeight: 33.8, color: Theme.text.primary },
+  breed: { fontFamily: font.body, fontSize: 13, lineHeight: 18.2, color: Theme.text.primary, marginBottom: 4 },
+  label: { fontFamily: font.bodyBold, fontSize: 9, lineHeight: 12.6, letterSpacing: 1, color: Theme.text.secondary },
+  seen: { fontFamily: font.bodyBold, fontSize: 12, lineHeight: 16.8, color: Theme.text.primary },
+  features: { fontFamily: font.bodyRegular, fontSize: 11, lineHeight: 16.5, color: Theme.text.primary, marginTop: 3 },
+  // Alto contraste deliberado (CLAUDE.md §5.7): borde y texto del teléfono en text.primary, no text.secondary — debe
+  // leerse fotocopiado en blanco y negro.
+  contact: { height: 96, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, borderTopWidth: 2, borderTopColor: Theme.text.primary },
+  phoneBox: { borderWidth: 2.5, borderColor: Theme.text.primary, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  phone: { fontFamily: font.display, fontSize: 27, lineHeight: 32.4, color: Theme.text.primary },
+  ask: { fontFamily: font.headBold, fontSize: 17, lineHeight: 22.1, color: Theme.text.primary },
+  askS: { fontFamily: font.bodyRegular, fontSize: 11, lineHeight: 16.5, color: Theme.text.primary },
   qr: { alignItems: "center", gap: 2 },
-  qrT: { fontFamily: font.bodySemi, fontSize: 8, color: "#334155" },
-  foot: { height: 26, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, backgroundColor: "#F8FAFC" },
-  footT: { fontFamily: font.bodySemi, fontSize: 10, color: "#334155" },
+  qrT: { fontFamily: font.bodySemi, fontSize: 8, lineHeight: 11.2, color: Theme.text.secondary },
+  foot: { height: 26, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, backgroundColor: Theme.surface.page },
+  footT: { fontFamily: font.bodySemi, fontSize: 10, lineHeight: 14, color: Theme.text.secondary },
 });

@@ -12,7 +12,7 @@ export function toNearby(r: MyReport, center: LatLng): ReportNearby | null {
   if (r.status !== "lost" && r.status !== "sighted" && r.status !== "reunited") return null;
   const p = parsePointHex(r.location);
   return {
-    id: r.id, status: r.status, species: r.species, name: r.name, breed: r.breed, photo_url: r.photo_url,
+    id: r.id, status: r.status, species: r.species, name: r.name, breed: r.breed, breed_id: r.breed_id, photo_url: r.photo_url,
     photo_focus_x: r.photo_focus_x, photo_focus_y: r.photo_focus_y, photo_zoom: r.photo_zoom,
     features_description: r.features_description, condition: r.condition ?? null, color: r.color ?? null, size: r.size ?? null,
     location_label: r.location_label, created_at: r.created_at, last_seen_at: r.last_seen_at ?? null,

@@ -9,8 +9,8 @@ export const FLYERS_READY = false;
 
 export const reportUrl = (id: string): string | null => (WEB_BASE ? `${WEB_BASE}/r/${id}` : null);
 
-export type FlyerReport = Pick<Report, "id" | "status" | "species" | "name" | "breed" | "photo_url" | "photo_focus_x" | "photo_focus_y" | "features_description" | "location_label" | "created_at">;
-const COLS = "id,status,species,name,breed,photo_url,photo_focus_x,photo_focus_y,features_description,location_label,created_at";
+export type FlyerReport = Pick<Report, "id" | "status" | "species" | "name" | "breed" | "breed_id" | "photo_url" | "photo_focus_x" | "photo_focus_y" | "features_description" | "location_label" | "created_at">;
+const COLS = "id,status,species,name,breed,breed_id,photo_url,photo_focus_x,photo_focus_y,features_description,location_label,created_at";
 
 // El flyer se puebla con datos reales del reporte (CLAUDE.md §5.7). El teléfono/email sale de my_report_contact():
 // devuelve el contacto SOLO si quien llama es el dueño; para cualquier otra persona (o sin sesión) es null,
