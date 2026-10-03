@@ -450,6 +450,15 @@ reemplaza la decisión de §7 sobre el FAB de 73 px.
 - **FAB retirado:** se eliminaron `ExtendedFab`, `state/fab.tsx` (`FabProvider`), `useFabScroll`, `useFabHidden`,
   `FAB_SIZE` y `FAB_CLEARANCE`. La búsqueda de Home que se ocultaba al bajar usaba el estado del FAB; ahora usa un estado
   local de dirección de scroll solo en Home (`onListScroll`/`scrollingDown`), independiente de la barra.
+- **Búsqueda de Home (lista) sin saltos:** (1) en las zonas de rebote de iOS (offset <= 0, o se llegó al final) `onListScroll`
+  ignora los cambios de dirección — el rebote invierte el offset solo y antes hacía reaparecer la búsqueda al soltar al
+  final; (2) histéresis: hace falta recorrer `SCROLL_HYSTERESIS` (20 px) seguidos en una dirección para ocultarla/mostrarla;
+  (3) se oculta SOLO con transformaciones (`translateY` + opacidad), nunca cambiando la altura de nada: la cabecera
+  conserva su alto, y el bloque de controles, los avisos y el área de contenido suben `SEARCH_H` (54) juntos; el marco
+  de la lista ya viene `SEARCH_H` más alto por debajo (`marginBottom: -SEARCH_H`, queda detrás de la tab bar, con ese
+  padding extra al final) y es el propio contenedor del área el que se traslada, para que los toques caigan siempre
+  dentro de sus límites (también en Android); (4) con `useReducedMotion` el cambio es instantáneo. La lista nunca se
+  recoloca, así que el salto de layout no puede ocurrir.
 - **Comportamiento:** la barra es fija y siempre visible (no se oculta ni se minimiza al hacer scroll) y desaparece
   mientras el teclado está abierto (`useKeyboardVisible`: `keyboardWillShow/Hide` en iOS, `keyboardDidShow/Hide` en
   Android). Las pantallas del Stack raíz (`pet`, `report/*`, `help`, `edit-*`, `privacy`, `delete-account`, `flyer`) no la
