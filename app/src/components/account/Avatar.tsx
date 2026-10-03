@@ -1,5 +1,5 @@
 import { Image, StyleSheet, Text, View } from "react-native";
-import { C, font } from "../../theme/tokens";
+import { Theme, font } from "../../theme/tokens";
 
 // Foto del usuario o, si no hay, sus iniciales (círculo slate/200 del prototipo).
 export function Avatar({ uri, name, size = 64 }: { uri: string | null; name: string; size?: number }) {
@@ -11,6 +11,6 @@ export function Avatar({ uri, name, size = 64 }: { uri: string | null; name: str
   );
 }
 const styles = StyleSheet.create({
-  box: { backgroundColor: C.border, alignItems: "center", justifyContent: "center", overflow: "hidden" },
-  t: { fontFamily: font.head, color: C.slate700 },
+  box: { backgroundColor: Theme.border.default, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  t: { fontFamily: font.head, color: Theme.text.secondary },
 });

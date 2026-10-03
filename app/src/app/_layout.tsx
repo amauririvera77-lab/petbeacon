@@ -8,7 +8,7 @@ import { OnboardingPreviewProvider } from "../state/onboardingPreview";
 import { SessionProvider } from "../state/session";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { fontAssets } from "../theme/fonts";
-import { C } from "../theme/tokens";
+import { Theme } from "../theme/tokens";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,7 +25,7 @@ export default function RootLayout() {
       <SessionProvider>
         <HomePrefsProvider>
         <SnackbarProvider>
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.white } }}>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Theme.surface.card } }}>
           <Stack.Screen name="flyer" options={{ presentation: "modal" }} />
         </Stack>
         </SnackbarProvider>

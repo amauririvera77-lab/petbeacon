@@ -3,7 +3,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { activeFilterCount } from "../lib/homeFilters";
 import { RADIUS_OPTIONS } from "../lib/radius";
 import { AgeFilter, Prefs, SpeciesFilter, ViewRadius } from "../state/homePrefs";
-import { C, MIN_HIT, font, radius } from "../theme/tokens";
+import { Theme, MIN_HIT, radius } from "../theme/tokens";
+import { elevation } from "../theme/elevation";
+import { typography } from "../theme/typography";
 import { Toggle } from "./Toggle";
 
 function Pills<T extends string | number>({ label, options, value, onChange }: { label: string; options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
@@ -16,7 +18,7 @@ function Pills<T extends string | number>({ label, options, value, onChange }: {
           return (
             <Pressable key={String(o.value)} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(o.value)}
               style={[styles.pill, on && styles.pillOn]}>
-              <Text style={[styles.pillT, { color: on ? C.white : C.ink }]}>{o.label}</Text>
+              <Text style={[styles.pillT, { color: on ? Theme.text.onAccent : Theme.text.primary }]}>{o.label}</Text>
             </Pressable>
           );
         })}
@@ -71,23 +73,23 @@ export function FilterSheet({ visible, prefs, onChange, onReset, onClose }: {
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "flex-end" },
-  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(15,23,42,0.5)" },
-  sheet: { maxHeight: "80%", backgroundColor: C.white, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: Theme.scrim(0.5) },
+  sheet: { maxHeight: "80%", backgroundColor: Theme.surface.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, ...elevation[3] },
   handleWrap: { alignItems: "center", paddingTop: 12, paddingBottom: 4 },
-  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: C.border },
-  head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: C.border },
-  title: { fontFamily: font.head, fontSize: 18, color: C.ink },
+  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: Theme.border.default },
+  head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
+  title: { ...typography.heading18, color: Theme.text.primary },
   reset: { minHeight: MIN_HIT, justifyContent: "center", paddingHorizontal: 4 },
-  resetT: { fontFamily: font.bodyBold, fontSize: 14, color: C.slate700, textDecorationLine: "underline" },
-  label: { fontFamily: font.bodyBold, fontSize: 13, color: C.slate700 },
+  resetT: { ...typography.label14, color: Theme.text.secondary, textDecorationLine: "underline" },
+  label: { ...typography.label14, color: Theme.text.secondary },
   pills: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  pill: { minHeight: MIN_HIT, paddingHorizontal: 18, borderRadius: radius.pill, borderWidth: 1.5, borderColor: C.border2, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
-  pillOn: { backgroundColor: C.ink, borderColor: C.ink },
-  pillT: { fontFamily: font.bodySemi, fontSize: 14 },
+  pill: { minHeight: MIN_HIT, paddingHorizontal: 18, borderRadius: radius.pill, borderWidth: 1.5, borderColor: Theme.border.strong, backgroundColor: Theme.surface.card, alignItems: "center", justifyContent: "center" },
+  pillOn: { backgroundColor: Theme.brand.primary, borderColor: Theme.brand.primary },
+  pillT: typography.button14,
   toggleRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  toggleT: { fontFamily: font.bodySemi, fontSize: 15, color: C.ink },
-  toggleS: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate500 },
+  toggleT: { ...typography.label14, color: Theme.text.primary },
+  toggleS: { ...typography.bodySm13, color: Theme.text.muted },
   footer: { paddingHorizontal: 20, paddingTop: 8 },
-  done: { height: 56, borderRadius: radius.md, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" },
-  doneT: { fontFamily: font.bodyBold, fontSize: 16, color: C.white },
+  done: { height: 56, borderRadius: radius.md, backgroundColor: Theme.brand.primary, alignItems: "center", justifyContent: "center" },
+  doneT: { ...typography.button16, color: Theme.text.onAccent },
 });

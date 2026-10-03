@@ -22,7 +22,8 @@ import { agoShort } from "../../lib/time";
 import { fetchReportNearby } from "../../lib/reportLookup";
 import { reportShareText } from "../../lib/shareText";
 import { supabase } from "../../lib/supabase";
-import { C, font, radius } from "../../theme/tokens";
+import { Theme, radius } from "../../theme/tokens";
+import { typography } from "../../theme/typography";
 
 export default function Reports() {
   const { reports, loading, error, refresh, markReunited } = useMyReports();
@@ -84,7 +85,7 @@ export default function Reports() {
   const hasActive = lost.length + buckets.reunitedRecent.length > 0;
   return (
     <TabScreen title="My Reports" subtitle="Manage your active alerts and logged sightings" onScroll={onScroll}>
-      {loading ? <ActivityIndicator style={{ marginTop: 24 }} color={C.teal} /> : error ? (
+      {loading ? <ActivityIndicator style={{ marginTop: 24 }} color={Theme.brand.primary} /> : error ? (
         <Text style={styles.err}>Couldn't load your reports: {error}</Text>
       ) : (
         <>
@@ -100,7 +101,7 @@ export default function Reports() {
               {buckets.reunitedRecent.map((r) => (
                 <Pressable key={r.id} accessibilityRole="button" accessibilityLabel={`${r.name?.trim() || "Unknown " + r.species}, open report`}
                   onPress={() => openDetail(r)} style={({ pressed }) => [styles.reunitedCard, pressed && { opacity: 0.95 }]}>
-                  <ReportRow photoUrl={r.photo_url} focusX={r.photo_focus_x} focusY={r.photo_focus_y} zoom={r.photo_zoom} species={r.species}
+                  <ReportRow photoUrl={r.photo_url} focusX={r.photo_focus_x} focusY={r.photo_focus_y} species={r.species}
                     title={r.name?.trim() || `Unknown ${r.species}`} badge="reunited"
                     timeText={`Reunited ${agoShort(r.reunited_at ?? r.created_at)}`} locationText={shortAddress(r.location_label) ?? "Location not shared"} />
                   <Text style={styles.closed}>Case closed — thanks for updating it.</Text>
@@ -121,16 +122,18 @@ export default function Reports() {
       )}
       <MatchesSheet lostName={sheetFor?.name ?? ""} matches={sheetFor ? matches.filter((m) => m.lost_report_id === sheetFor.id) : null}
         onClose={() => setSheetFor(null)} onView={viewSighting} onDismiss={dismiss} onRestore={restore} />
-      <PinDetailSheet report={detail} mine onClose={() => setDetail(null)} onMarkReunited={(r) => confirmReunited(r.id)} />
+      <PinDetailSheet report={detail} mine onClose={() => setDetail(null)} onMarkReunited={(r) => confirmReunited(r.id)}
+        matchCount={detail ? matches.filter((m) => m.lost_report_id === detail.id && !m.dismissed).length : undefined}
+        onReviewMatches={(r) => { setDetail(null); setTimeout(() => setSheetFor({ id: r.id, name: r.name ?? "your pet" }), 400); }} />
       <ResolveSightingSheet visible={!!resolving} busy={busy} onClose={() => setResolving(null)} onPick={resolve} />
     </TabScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  h: { fontFamily: font.head, fontSize: 18, color: C.ink, marginTop: 12 },
+  h: { ...typography.heading18, color: Theme.text.primary, marginTop: 12 },
   list: { gap: 10, marginTop: 4 },
-  err: { fontFamily: font.body, fontSize: 14, color: C.sosDark, marginTop: 16 },
-  reunitedCard: { gap: 6, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: C.border, backgroundColor: C.white },
-  closed: { fontFamily: font.bodySemi, fontSize: 13, color: C.ok },
+  err: { ...typography.body14, color: Theme.danger.text, marginTop: 16 },
+  reunitedCard: { gap: 6, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: Theme.border.default, backgroundColor: Theme.surface.card },
+  closed: { ...typography.label13, color: Theme.status.reunited.bg },
 });

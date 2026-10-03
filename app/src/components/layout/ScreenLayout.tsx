@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleProp, View, ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { C } from "../../theme/tokens";
+import { Theme } from "../../theme/tokens";
 
 // Layout compartido por el onboarding y los flujos de Report lost / Report a sighting (prototipo):
 //   encabezado → contenido (mide lo que ocupa; hace scroll solo si no cabe) → CTA justo debajo.
@@ -11,7 +11,7 @@ export function ScreenLayout({ header, children, cta, contentStyle }: {
 }) {
   const insets = useSafeAreaInsets();
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.white, paddingTop: insets.top }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: Theme.surface.card, paddingTop: insets.top }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       {header}
       {/* flexGrow 0 (en RN el ScrollView crece por defecto): el contenido no se estira y el CTA queda pegado debajo. */}
       <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={contentStyle} keyboardShouldPersistTaps="handled" bounces={false}>

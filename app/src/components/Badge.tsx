@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
-import { C, font, radius } from "../theme/tokens";
+import { Theme, radius } from "../theme/tokens";
+import { typography } from "../theme/typography";
 
 export type BadgeStatus = "lost" | "sighted" | "reunited";
 
 // Píldoras rellenas con el color del estado y texto blanco (prototipo: meta(status).color).
 const VARIANTS: Record<BadgeStatus, { label: string; bg: string }> = {
-  lost: { label: "Lost", bg: C.sos },
-  sighted: { label: "Sighted", bg: C.warn },
-  reunited: { label: "Reunited", bg: C.ok },
+  lost: { label: "Lost", bg: Theme.status.lost.bg },
+  sighted: { label: "Sighted", bg: Theme.status.sighted.bg },
+  reunited: { label: "Reunited", bg: Theme.status.reunited.bg },
 };
 
 const PAD_V = 4;
@@ -30,5 +31,5 @@ export function Badge({ status, style, sitOnBaseline }: { status: BadgeStatus; s
 
 const styles = StyleSheet.create({
   badge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: PAD_V, borderRadius: radius.pill },
-  text: { fontFamily: font.bodyBold, fontSize: 12, color: C.white },
+  text: { ...typography.badge12, color: Theme.text.onAccent },
 });

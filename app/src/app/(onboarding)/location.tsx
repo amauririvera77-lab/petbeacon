@@ -7,7 +7,7 @@ import { Cta } from "../../components/Cta";
 import { OnboardingScreen, PrimingBlock } from "../../components/Screen";
 import { useOnboardingPreview } from "../../state/onboardingPreview";
 import { useSession } from "../../state/session";
-import { C } from "../../theme/tokens";
+import { Theme } from "../../theme/tokens";
 import { finishOnboarding } from "../../lib/onboarding";
 
 export default function LocationPriming() {
@@ -33,7 +33,7 @@ export default function LocationPriming() {
 
   return (
     <OnboardingScreen onSkip={() => finishOnboarding(s, preview)} cta={<Cta label="Enable location" disabled={busy} onPress={enable} />}>
-      <PrimingBlock icon={<MapPin size={36} color={C.teal} />} title="See what's happening nearby">
+      <PrimingBlock icon={<MapPin size={36} color={Theme.brand.primary} />} title="See what's happening nearby">
         We use your location to show alerts and the map for your area.
       </PrimingBlock>
     </OnboardingScreen>

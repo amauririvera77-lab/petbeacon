@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { C, font } from "../theme/tokens";
+import { Theme } from "../theme/tokens";
+import { typography } from "../theme/typography";
 import { OnboardingHeader } from "./layout/Headers";
 import { ScreenLayout } from "./layout/ScreenLayout";
 
@@ -22,13 +23,13 @@ export function PrimingBlock({ icon, title, children }: { icon: ReactNode; title
   );
 }
 
-// Tipografía del onboarding: h1 26/1.2 (Geist 600, -0.01em), texto de apoyo 15/1.5 en #475569.
+// Tipografía del onboarding: Title/24 para el título, Body-Lg/16 para el texto de apoyo, en text.secondary.
 export const ob = StyleSheet.create({
-  h1: { fontFamily: font.displayMedium, fontSize: 26, lineHeight: 31.2, letterSpacing: -0.26, color: C.ink },
-  p: { fontFamily: font.bodyRegular, fontSize: 15, lineHeight: 22.5, color: C.slate600 },
+  h1: { ...typography.title24, color: Theme.text.primary },
+  p: { ...typography.bodyLg16, color: Theme.text.secondary },
 });
 
 const styles = StyleSheet.create({
   priming: { alignItems: "center", paddingTop: 40, paddingHorizontal: 24, paddingBottom: 24 },
-  circle: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.border, alignItems: "center", justifyContent: "center", marginBottom: 32 },
+  circle: { width: 80, height: 80, borderRadius: 40, backgroundColor: Theme.border.default, alignItems: "center", justifyContent: "center", marginBottom: 32 },
 });

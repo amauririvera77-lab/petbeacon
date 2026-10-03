@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text } from "react-native";
-import { C, font, radius } from "../theme/tokens";
+import { Theme, radius } from "../theme/tokens";
+import { typography } from "../theme/typography";
 
-// CTA principal del onboarding y de pantallas neutras: negro (C.ink), 56px de alto.
+// CTA principal del onboarding y de pantallas neutras: brand.primary, 56px de alto.
 export function Primary({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
     <Pressable
@@ -9,9 +10,9 @@ export function Primary({ label, onPress, disabled }: { label: string; onPress: 
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.b, { backgroundColor: disabled ? C.border : C.ink }, pressed && { opacity: 0.85 }]}
+      style={({ pressed }) => [styles.b, { backgroundColor: disabled ? Theme.border.default : Theme.brand.primary }, pressed && { opacity: 0.85 }]}
     >
-      <Text style={[styles.t, { color: disabled ? C.slate500 : C.white }]}>{label}</Text>
+      <Text style={[styles.t, { color: disabled ? Theme.text.muted : Theme.text.onAccent }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -24,7 +25,7 @@ export function LinkButton({ label, onPress }: { label: string; onPress: () => v
 }
 const styles = StyleSheet.create({
   b: { height: 56, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
-  t: { fontFamily: font.bodyBold, fontSize: 16 },
+  t: typography.button16,
   link: { minHeight: 44, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },
-  linkT: { fontFamily: font.bodySemi, fontSize: 14, color: C.slate700, textAlign: "center", lineHeight: 20 },
+  linkT: { ...typography.label14, color: Theme.text.secondary, textAlign: "center" },
 });

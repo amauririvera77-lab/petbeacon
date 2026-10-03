@@ -2,12 +2,14 @@ import { Eye, Dog, Siren, X } from "lucide-react-native";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NotifItem } from "../hooks/useNotificationsFeed";
-import { C, font, radius } from "../theme/tokens";
+import { Theme, radius } from "../theme/tokens";
+import { elevation } from "../theme/elevation";
+import { typography } from "../theme/typography";
 
 const STYLE = {
-  sighting: { Icon: Eye, tint: C.warnTint, color: C.warn },
-  match: { Icon: Dog, tint: C.sosTint, color: C.sosDark },
-  lost: { Icon: Siren, tint: C.sosTint, color: C.sosDark },
+  sighting: { Icon: Eye, tint: Theme.status.sighted.tint, color: Theme.status.sighted.bg },
+  match: { Icon: Dog, tint: Theme.status.lost.tint, color: Theme.status.lost.bgStrong },
+  lost: { Icon: Siren, tint: Theme.status.lost.tint, color: Theme.status.lost.bgStrong },
 } as const;
 
 function ago(at: number) {
@@ -30,7 +32,7 @@ export function NotificationsSheet({ visible, items, onClose, onPick }: {
           <View style={styles.handleWrap}><View style={styles.handle} /></View>
           <View style={styles.head}>
             <Text style={styles.title} accessibilityRole="header">Notifications</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={C.slate700} /></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={Theme.text.secondary} /></Pressable>
           </View>
           <ScrollView contentContainerStyle={{ padding: 8 }}>
             {items.length === 0 ? (
@@ -38,7 +40,7 @@ export function NotificationsSheet({ visible, items, onClose, onPick }: {
             ) : items.map((n) => {
               const { Icon, tint, color } = STYLE[n.kind];
               return (
-                <Pressable key={n.id} accessibilityRole="button" onPress={() => onPick(n)} style={({ pressed }) => [styles.item, pressed && { backgroundColor: C.surface }]}>
+                <Pressable key={n.id} accessibilityRole="button" onPress={() => onPick(n)} style={({ pressed }) => [styles.item, pressed && { backgroundColor: Theme.surface.page }]}>
                   <View style={[styles.icon, { backgroundColor: tint }]}><Icon size={20} color={color} /></View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.itemT}>{n.title}</Text>
@@ -56,16 +58,16 @@ export function NotificationsSheet({ visible, items, onClose, onPick }: {
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "flex-end" },
-  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(15,23,42,0.5)" },
-  sheet: { maxHeight: "72%", backgroundColor: C.white, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: Theme.scrim(0.5) },
+  sheet: { maxHeight: "72%", backgroundColor: Theme.surface.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, ...elevation[3] },
   handleWrap: { alignItems: "center", paddingTop: 12, paddingBottom: 4 },
-  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: C.border },
-  head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: C.border },
-  title: { fontFamily: font.head, fontSize: 18, color: C.ink },
-  close: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center" },
+  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: Theme.border.default },
+  head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
+  title: { ...typography.heading18, color: Theme.text.primary },
+  close: { width: 36, height: 36, borderRadius: 18, backgroundColor: Theme.surface.page, alignItems: "center", justifyContent: "center" },
   item: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: radius.md },
   icon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
-  itemT: { fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
-  itemS: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate500, marginTop: 2 },
-  empty: { fontFamily: font.bodyRegular, fontSize: 14, color: C.slate500, padding: 16, textAlign: "center" },
+  itemT: { ...typography.label14, color: Theme.text.primary },
+  itemS: { ...typography.caption12, color: Theme.text.muted, marginTop: 2 },
+  empty: { ...typography.body14, color: Theme.text.muted, padding: 16, textAlign: "center" },
 });

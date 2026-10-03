@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { C, MIN_HIT, font, radius } from "../../theme/tokens";
+import { Theme, MIN_HIT, radius } from "../../theme/tokens";
+import { typography } from "../../theme/typography";
 
 export function Chips<T extends string>({ label, options, value, onChange }: {
   label: string; options: readonly { value: T; label: string }[]; value: T | null; onChange: (v: T) => void;
@@ -13,7 +14,7 @@ export function Chips<T extends string>({ label, options, value, onChange }: {
           return (
             <Pressable key={o.value} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(o.value)}
               style={[styles.chip, on && styles.on]}>
-              <Text style={[styles.t, on && { color: C.white }]}>{o.label}</Text>
+              <Text style={[styles.t, on && { color: Theme.text.onAccent }]}>{o.label}</Text>
             </Pressable>
           );
         })}
@@ -22,9 +23,9 @@ export function Chips<T extends string>({ label, options, value, onChange }: {
   );
 }
 const styles = StyleSheet.create({
-  label: { fontFamily: font.bodySemi, fontSize: 14, color: C.slate700 },
+  label: { ...typography.label14, color: Theme.text.secondary },
   row: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: { minHeight: MIN_HIT, paddingHorizontal: 18, borderRadius: radius.pill, borderWidth: 1.5, borderColor: C.border2, alignItems: "center", justifyContent: "center", backgroundColor: C.white },
-  on: { backgroundColor: C.ink, borderColor: C.ink },
-  t: { fontFamily: font.bodySemi, fontSize: 14, color: C.ink },
+  chip: { minHeight: MIN_HIT, paddingHorizontal: 18, borderRadius: radius.pill, borderWidth: 1.5, borderColor: Theme.border.strong, alignItems: "center", justifyContent: "center", backgroundColor: Theme.surface.card },
+  on: { backgroundColor: Theme.brand.primary, borderColor: Theme.brand.primary },
+  t: { ...typography.button14, color: Theme.text.primary },
 });

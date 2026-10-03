@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { C, MIN_HIT, font } from "../theme/tokens";
+import { Theme, MIN_HIT } from "../theme/tokens";
+import { typography } from "../theme/typography";
 
 // Fin del feed (D.5): dice hasta dónde llega la lista y, si el radio aún puede crecer, ofrece ampliarlo (abre la hoja de filtros, donde
 // vive el selector de radio). En el radio máximo (10 mi) no hay enlace.
@@ -16,7 +17,7 @@ export function EndOfFeed({ radiusMi, maxRadiusMi = 10, onExpand }: { radiusMi: 
 
 const styles = StyleSheet.create({
   box: { alignItems: "center", paddingTop: 8 },
-  t: { fontFamily: font.bodySemi, fontSize: 13, color: C.slate500, textAlign: "center" },
+  t: { ...typography.label13, color: Theme.text.muted, textAlign: "center" },
   link: { minHeight: MIN_HIT, justifyContent: "center", paddingHorizontal: 12 },
-  linkT: { fontFamily: font.bodyBold, fontSize: 14, color: C.ink, textDecorationLine: "underline" },
+  linkT: { ...typography.label14, color: Theme.text.primary, textDecorationLine: "underline" },
 });

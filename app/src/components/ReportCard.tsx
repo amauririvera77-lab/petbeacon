@@ -3,7 +3,8 @@ import type { ReportNearby } from "../lib/database.types";
 import { activityAt } from "../lib/activity";
 import { reportSubtitle, reportTitle } from "../lib/reportText";
 import { agoShort } from "../lib/time";
-import { C, font, radius } from "../theme/tokens";
+import { Theme, radius } from "../theme/tokens";
+import { typography } from "../theme/typography";
 import { Badge, BadgeStatus } from "./Badge";
 import { FocusImage } from "./FocusImage";
 import { SpeciesPlaceholder } from "./SpeciesPlaceholder";
@@ -32,7 +33,7 @@ export function ReportCard({ report, onPress, mine, matchFor }: { report: Report
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}>
       {report.photo_url ? (
-        <FocusImage uri={report.photo_url} focusX={report.photo_focus_x} focusY={report.photo_focus_y} zoom={(report.photo_zoom ?? 100) / 100} style={styles.photo} />
+        <FocusImage uri={report.photo_url} focusX={report.photo_focus_x} focusY={report.photo_focus_y} style={styles.photo} />
       ) : (
         <SpeciesPlaceholder species={report.species} size={64} />
       )}
@@ -63,22 +64,23 @@ export function ReportCard({ report, onPress, mine, matchFor }: { report: Report
 }
 
 const styles = StyleSheet.create({
-  card: { flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: C.border, backgroundColor: C.white },
-  photo: { width: 64, height: 64, borderRadius: radius.md, backgroundColor: C.surface },
+  card: { flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: Theme.border.default, backgroundColor: Theme.surface.card },
+  photo: { width: 64, height: 64, borderRadius: radius.md, backgroundColor: Theme.surface.page },
   center: { flex: 1, minWidth: 0, gap: 4 },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   // 16 px (antes 17): con el badge al lado, "Golden Retriever" cabe en una línea en un iPhone de 393 pt (medido en réplica: 133 de 133 px).
-  name: { flexShrink: 1, fontFamily: font.head, fontSize: 16, color: C.ink },
+  // Heading/16 mantiene los 16px — sin riesgo de truncar por la consolidación tipográfica.
+  name: { flexShrink: 1, ...typography.heading16, color: Theme.text.primary },
   // Segunda línea de altura fija (20): la etiqueta "Your report" / "Match for …" no cambia la altura de la tarjeta.
   subRow: { minHeight: 20, flexDirection: "row", alignItems: "center", gap: 6 },
-  mineT: { fontFamily: font.bodyBold, fontSize: 12, color: C.ink },
+  mineT: { ...typography.badge12, color: Theme.text.primary },
   // Etiqueta de coincidencia: tokens de éxito de la tarjeta de coincidencia (fondo okTint, borde ok); 20 px de alto para caber en la línea.
-  match: { flexShrink: 0, maxWidth: "70%", height: 20, justifyContent: "center", paddingHorizontal: 8, borderRadius: radius.pill, borderWidth: 1, borderColor: C.ok, backgroundColor: C.okTint },
-  matchT: { fontFamily: font.bodyBold, fontSize: 11, color: C.ink },
-  dotSep: { fontFamily: font.bodyBold, fontSize: 13, color: C.slate500 },
-  sub: { flexShrink: 1, fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700 },
-  meta: { fontFamily: font.bodyBold, fontSize: 13, color: C.ink },
+  match: { flexShrink: 0, maxWidth: "70%", height: 20, justifyContent: "center", paddingHorizontal: 8, borderRadius: radius.pill, borderWidth: 1, borderColor: Theme.status.reunited.bg, backgroundColor: Theme.status.reunited.tint },
+  matchT: { ...typography.badge12, color: Theme.text.primary },
+  dotSep: { ...typography.label13, color: Theme.text.muted },
+  sub: { flexShrink: 1, ...typography.bodySm13, color: Theme.text.secondary },
+  meta: { ...typography.label13, color: Theme.text.primary },
   right: { flexShrink: 0, alignItems: "flex-end", gap: 2, paddingTop: 2 },
-  distance: { fontFamily: font.bodyBold, fontSize: 13, color: C.ink },
-  time: { fontFamily: font.bodySemi, fontSize: 12, color: C.slate500 },
+  distance: { ...typography.label13, color: Theme.text.primary },
+  time: { ...typography.label13, color: Theme.text.muted },
 });

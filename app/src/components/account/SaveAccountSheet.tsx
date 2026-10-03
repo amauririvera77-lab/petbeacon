@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { confirmLogin, confirmSaveAccount, isEmail, startLogin, startSaveAccount } from "../../lib/authAccount";
-import { C, MIN_HIT, font, radius } from "../../theme/tokens";
+import { Theme, MIN_HIT, radius } from "../../theme/tokens";
+import { elevation } from "../../theme/elevation";
+import { typography } from "../../theme/typography";
 
 // Correo + código de verificación de 6 dígitos, sin contraseña.
 //   mode "save":  convierte la cuenta anónima en permanente con ese correo ("Save your account").
@@ -39,7 +41,7 @@ export function SaveAccountSheet({ visible, mode, onClose, onDone }: { visible: 
           <View style={styles.handleWrap}><View style={styles.handle} /></View>
           <View style={styles.head}>
             <Text style={styles.title} accessibilityRole="header">{save ? "Save Your Account" : "Log In"}</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={C.slate700} /></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={Theme.text.secondary} /></Pressable>
           </View>
           <View style={styles.body}>
             {step === "email" ? (
@@ -47,13 +49,13 @@ export function SaveAccountSheet({ visible, mode, onClose, onDone }: { visible: 
                 <Text style={styles.msg}>{save
                   ? "Add your email to keep your reports and pets, and to get back to them from any device. We'll send you a 6-digit code — no password needed."
                   : "Enter the email you saved your account with and we'll send you a 6-digit code."}</Text>
-                <TextInput value={email} onChangeText={(t) => { setEmail(t); setError(null); }} placeholder="you@email.com" placeholderTextColor={C.slate500}
+                <TextInput value={email} onChangeText={(t) => { setEmail(t); setError(null); }} placeholder="you@email.com" placeholderTextColor={Theme.text.muted}
                   keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" autoFocus accessibilityLabel="Email" style={styles.input} />
               </>
             ) : (
               <>
                 <Text style={styles.msg}>Enter the 6-digit code we sent to {email.trim().toLowerCase()}.</Text>
-                <TextInput value={code} onChangeText={(t) => { setCode(t.replace(/\D/g, "").slice(0, 8)); setError(null); }} placeholder="123456" placeholderTextColor={C.slate500}
+                <TextInput value={code} onChangeText={(t) => { setCode(t.replace(/\D/g, "").slice(0, 8)); setError(null); }} placeholder="123456" placeholderTextColor={Theme.text.muted}
                   keyboardType="number-pad" autoFocus textContentType="oneTimeCode" accessibilityLabel="Verification code" style={[styles.input, styles.code]} />
               </>
             )}
@@ -76,21 +78,22 @@ export function SaveAccountSheet({ visible, mode, onClose, onDone }: { visible: 
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "flex-end" },
-  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(15,23,42,0.5)" },
-  sheet: { backgroundColor: C.white, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: Theme.scrim(0.5) },
+  sheet: { backgroundColor: Theme.surface.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, ...elevation[3] },
   handleWrap: { alignItems: "center", paddingTop: 12, paddingBottom: 4 },
-  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: C.border },
+  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: Theme.border.default },
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingBottom: 8 },
-  title: { flex: 1, fontFamily: font.head, fontSize: 18, color: C.ink },
+  title: { flex: 1, ...typography.heading18, color: Theme.text.primary },
   close: { width: MIN_HIT, height: MIN_HIT, alignItems: "center", justifyContent: "center" },
   body: { paddingHorizontal: 20, gap: 12, paddingBottom: 8 },
-  msg: { fontFamily: font.bodyRegular, fontSize: 15, lineHeight: 22, color: C.slate700 },
-  input: { minHeight: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2, paddingHorizontal: 14, fontFamily: font.body, fontSize: 16, color: C.ink },
-  code: { fontFamily: font.bodyBold, fontSize: 22, letterSpacing: 6, textAlign: "center" },
-  err: { fontFamily: font.bodySemi, fontSize: 13, color: C.sosDark },
-  primary: { height: 52, borderRadius: radius.md, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" },
-  primaryT: { fontFamily: font.bodyBold, fontSize: 16, color: C.white },
+  msg: { ...typography.bodyLg16, color: Theme.text.secondary },
+  input: { minHeight: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: Theme.border.strong, paddingHorizontal: 14, ...typography.bodyLg16, color: Theme.text.primary },
+  // Código de verificación: único caso que "sube" a Geist (Title/24) en vez de Manrope — CLAUDE.md, correspondencia Manrope→Title/24.
+  code: { ...typography.title24, letterSpacing: 6, textAlign: "center" },
+  err: { ...typography.label13, color: Theme.danger.text },
+  primary: { height: 52, borderRadius: radius.md, backgroundColor: Theme.brand.primary, alignItems: "center", justifyContent: "center" },
+  primaryT: { ...typography.button16, color: Theme.text.onAccent },
   links: { flexDirection: "row", justifyContent: "space-between" },
   link: { minHeight: MIN_HIT, justifyContent: "center" },
-  linkT: { fontFamily: font.bodyBold, fontSize: 14, color: C.slate700, textDecorationLine: "underline" },
+  linkT: { ...typography.label14, color: Theme.text.secondary, textDecorationLine: "underline" },
 });

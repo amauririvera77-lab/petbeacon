@@ -5,7 +5,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Toggle } from "../components/Toggle";
 import { supabase } from "../lib/supabase";
-import { C, MIN_HIT, font, radius } from "../theme/tokens";
+import { Theme, MIN_HIT, radius } from "../theme/tokens";
+import { typography } from "../theme/typography";
 
 // Privacy: describe el comportamiento REAL de la app (no promete lo que no existe) y ofrece el único control que hoy tiene efecto:
 // incluir o no tu teléfono/correo en los flyers que generes.
@@ -42,7 +43,7 @@ export default function Privacy() {
   return (
     <View style={styles.root}>
       <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={C.ink} /></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={Theme.text.primary} /></Pressable>
         <Text style={styles.h} accessibilityRole="header">Privacy</Text>
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: insets.bottom + 32 }}>
@@ -67,13 +68,13 @@ export default function Privacy() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.surface },
-  top: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingBottom: 8, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
+  root: { flex: 1, backgroundColor: Theme.surface.page },
+  top: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingBottom: 8, backgroundColor: Theme.surface.card, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
   back: { width: MIN_HIT, height: MIN_HIT, alignItems: "center", justifyContent: "center" },
-  h: { fontFamily: font.displayMedium, fontSize: 22, color: C.ink },
-  card: { padding: 16, borderRadius: radius.lg, backgroundColor: C.white, borderWidth: 1, borderColor: C.border },
+  h: { ...typography.title24, color: Theme.text.primary },
+  card: { padding: 16, borderRadius: radius.lg, backgroundColor: Theme.surface.card, borderWidth: 1, borderColor: Theme.border.default },
   toggleRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  t: { fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
-  s: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 19, color: C.slate700, marginTop: 2 },
-  body: { fontFamily: font.bodyRegular, fontSize: 14, lineHeight: 21, color: C.slate700 },
+  t: { ...typography.label14, color: Theme.text.primary },
+  s: { ...typography.bodySm13, color: Theme.text.secondary, marginTop: 2 },
+  body: { ...typography.body14, color: Theme.text.secondary },
 });

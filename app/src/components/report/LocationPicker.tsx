@@ -4,7 +4,8 @@ import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { LatLng } from "../../lib/geo";
 import { geocode, Place, reverseGeocode } from "../../lib/geocode";
-import { C, MIN_HIT, font, radius } from "../../theme/tokens";
+import { Theme, MIN_HIT, radius } from "../../theme/tokens";
+import { typography } from "../../theme/typography";
 import { Button } from "../Button";
 import { TextField } from "../TextField";
 
@@ -49,7 +50,7 @@ export function LocationPicker({ value, onChange, city, center, variant = "defau
       <View>
         {value ? (
           <View accessibilityLabel={`Selected location: ${value.label}`}>
-            <View style={fl.addrRow}><Navigation size={16} color={C.teal} /><Text style={fl.addr}>{value.label}</Text></View>
+            <View style={fl.addrRow}><Navigation size={16} color={Theme.brand.primary} /><Text style={fl.addr}>{value.label}</Text></View>
             <Text style={fl.caption}>{value.source === "manual" ? "Entered manually" : "Auto-detected from your current location"}</Text>
             <Pressable accessibilityRole="button" onPress={() => { onChange(null); setResults(null); setManual(value.source !== "manual"); }} style={fl.link}>
               <Text style={fl.linkT}>{value.source === "manual" ? "Use my current location instead" : "Can't find the right spot? Enter it manually"}</Text>
@@ -59,7 +60,7 @@ export function LocationPicker({ value, onChange, city, center, variant = "defau
           <View>
             <Button label={busy ? "Locating…" : "Use my current location"} variant="secondary" onPress={useGps} disabled={busy} />
             <Pressable accessibilityRole="button" onPress={() => setManual(true)} style={fl.link}><Text style={fl.linkT}>Can't find the right spot? Enter it manually</Text></Pressable>
-            {busy ? <ActivityIndicator color={C.teal} /> : null}
+            {busy ? <ActivityIndicator color={Theme.brand.primary} /> : null}
             {error ? <Text style={styles.err} accessibilityRole="alert">{error}</Text> : null}
           </View>
         ) : (
@@ -71,11 +72,11 @@ export function LocationPicker({ value, onChange, city, center, variant = "defau
             <View style={{ gap: 8, marginTop: results?.length ? 12 : 0 }}>
               {results?.map((p, i) => (
                 <Pressable key={i} accessibilityRole="button" onPress={() => onChange({ ...p, source: "manual" })} style={styles.result}>
-                  <LocateFixed size={18} color={C.slate700} /><Text style={styles.resultT}>{p.label}</Text>
+                  <LocateFixed size={18} color={Theme.text.secondary} /><Text style={styles.resultT}>{p.label}</Text>
                 </Pressable>
               ))}
             </View>
-            {busy ? <ActivityIndicator color={C.teal} /> : null}
+            {busy ? <ActivityIndicator color={Theme.brand.primary} /> : null}
             {error ? <Text style={styles.err} accessibilityRole="alert">{error}</Text> : null}
             <Pressable accessibilityRole="button" onPress={() => setManual(false)} style={fl.link}><Text style={fl.linkT}>Use my current location instead</Text></Pressable>
           </View>
@@ -88,7 +89,7 @@ export function LocationPicker({ value, onChange, city, center, variant = "defau
     <View style={{ gap: 14 }}>
       {value ? (
         <View style={styles.picked} accessibilityLabel={`Selected location: ${value.label}`}>
-          <MapPin size={20} color={C.ok} />
+          <MapPin size={20} color={Theme.status.reunited.bg} />
           <View style={{ flex: 1 }}>
             <Text style={styles.pickedT}>{value.label}</Text>
             <Text style={styles.pickedS}>Saved with this report</Text>
@@ -109,12 +110,12 @@ export function LocationPicker({ value, onChange, city, center, variant = "defau
               <Button label={busy ? "Searching…" : "Find this spot"} variant="secondary" onPress={search} disabled={busy || !query.trim()} />
               {results?.map((p, i) => (
                 <Pressable key={i} accessibilityRole="button" onPress={() => onChange(p)} style={styles.result}>
-                  <LocateFixed size={18} color={C.slate700} /><Text style={styles.resultT}>{p.label}</Text>
+                  <LocateFixed size={18} color={Theme.text.secondary} /><Text style={styles.resultT}>{p.label}</Text>
                 </Pressable>
               ))}
             </View>
           )}
-          {busy ? <ActivityIndicator color={C.teal} /> : null}
+          {busy ? <ActivityIndicator color={Theme.brand.primary} /> : null}
           {error ? <Text style={styles.err} accessibilityRole="alert">{error}</Text> : null}
         </>
       )}
@@ -124,21 +125,21 @@ export function LocationPicker({ value, onChange, city, center, variant = "defau
 
 const fl = StyleSheet.create({
   addrRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  addr: { flex: 1, fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
-  caption: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate500, marginTop: 4 },
+  addr: { flex: 1, ...typography.label14, color: Theme.text.primary },
+  caption: { ...typography.caption12, color: Theme.text.muted, marginTop: 4 },
   link: { alignSelf: "flex-start", marginTop: 16, paddingVertical: 8, minHeight: MIN_HIT, justifyContent: "center" },
-  linkT: { fontFamily: font.bodyBold, fontSize: 13, color: C.sosDark },
+  linkT: { ...typography.label14, color: Theme.status.lost.bgStrong },
 });
 
 const styles = StyleSheet.create({
-  picked: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: radius.lg, backgroundColor: C.okTint },
-  pickedT: { fontFamily: font.bodySemi, fontSize: 14, color: C.ink },
-  pickedS: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate700 },
+  picked: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: radius.lg, backgroundColor: Theme.status.reunited.tint },
+  pickedT: { ...typography.label14, color: Theme.text.primary },
+  pickedS: { ...typography.caption12, color: Theme.text.secondary },
   change: { minHeight: MIN_HIT, justifyContent: "center", paddingHorizontal: 4 },
-  changeT: { fontFamily: font.bodyBold, fontSize: 13, color: C.ink },
+  changeT: { ...typography.label14, color: Theme.text.primary },
   link: { minHeight: MIN_HIT, justifyContent: "center" },
-  linkT: { fontFamily: font.bodySemi, fontSize: 14, color: C.slate700, textDecorationLine: "underline" },
-  result: { minHeight: MIN_HIT, flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: radius.md, borderWidth: 1, borderColor: C.border },
-  resultT: { flex: 1, fontFamily: font.body, fontSize: 14, color: C.ink },
-  err: { fontFamily: font.body, fontSize: 13, color: C.sosDark },
+  linkT: { ...typography.label14, color: Theme.text.secondary, textDecorationLine: "underline" },
+  result: { minHeight: MIN_HIT, flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: radius.md, borderWidth: 1, borderColor: Theme.border.default },
+  resultT: { flex: 1, ...typography.label14, color: Theme.text.primary },
+  err: { ...typography.bodySm13, color: Theme.danger.text },
 });

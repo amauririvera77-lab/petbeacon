@@ -3,7 +3,8 @@ import { X } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOnboardingPreview } from "../../state/onboardingPreview";
-import { C, font, radius } from "../../theme/tokens";
+import { Theme, radius } from "../../theme/tokens";
+import { typography } from "../../theme/typography";
 
 // ⚠️ HERRAMIENTA DE DISEÑO — la franja "Preview" (y "Design tools" en Profile) deben quitarse o desactivarse antes de publicar.
 // Aparece SOLO mientras la vista previa del onboarding está activa (Profile → Design tools → Replay onboarding) y deja cerrarla desde
@@ -19,7 +20,7 @@ export default function OnboardingLayout() {
       {preview.active ? (
         <Pressable accessibilityRole="button" accessibilityLabel="Exit onboarding preview" onPress={exit} style={[styles.badge, { top: insets.top + 8 }]}>
           <Text style={styles.badgeT}>Preview</Text>
-          <X size={14} color={C.white} />
+          <X size={14} color={Theme.text.onAccent} />
         </Pressable>
       ) : null}
     </View>
@@ -27,6 +28,6 @@ export default function OnboardingLayout() {
 }
 
 const styles = StyleSheet.create({
-  badge: { position: "absolute", left: 12, zIndex: 50, minHeight: 32, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: "rgba(15,23,42,0.85)" },
-  badgeT: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 0.4, textTransform: "uppercase", color: C.white },
+  badge: { position: "absolute", left: 12, zIndex: 50, minHeight: 32, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: Theme.scrim(0.85) },
+  badgeT: { ...typography.badge12, letterSpacing: 0.4, textTransform: "uppercase", color: Theme.text.onAccent },
 });

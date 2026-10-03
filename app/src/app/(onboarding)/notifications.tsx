@@ -6,7 +6,7 @@ import { Cta } from "../../components/Cta";
 import { OnboardingScreen, PrimingBlock } from "../../components/Screen";
 import { useOnboardingPreview } from "../../state/onboardingPreview";
 import { useSession } from "../../state/session";
-import { C } from "../../theme/tokens";
+import { Theme } from "../../theme/tokens";
 import { finishOnboarding } from "../../lib/onboarding";
 
 export default function NotificationsPriming() {
@@ -18,7 +18,7 @@ export default function NotificationsPriming() {
   };
   return (
     <OnboardingScreen onSkip={() => finishOnboarding(s, preview)} cta={<Cta label="Enable notifications" onPress={enable} />}>
-      <PrimingBlock icon={<BellRing size={36} color={C.teal} />} title="Never miss a match">
+      <PrimingBlock icon={<BellRing size={36} color={Theme.brand.primary} />} title="Never miss a match">
         We'll alert you if there's a sighting near you or a match for your pet.
       </PrimingBlock>
     </OnboardingScreen>

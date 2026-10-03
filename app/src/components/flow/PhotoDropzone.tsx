@@ -1,7 +1,8 @@
 import { Camera } from "lucide-react-native";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { choosePhotoSource, pickPhoto } from "../../lib/pickPhoto";
-import { C, font } from "../../theme/tokens";
+import { Theme } from "../../theme/tokens";
+import { typography } from "../../theme/typography";
 
 // Zona de foto del prototipo: UN solo objetivo táctil grande (232 px, borde punteado de 2 px). Al tocarlo se elige el
 // origen (cámara o galería) en un menú; con foto puesta, tocar la zona permite cambiarla y "Remove photo" queda a la vista
@@ -13,7 +14,7 @@ export function PhotoDropzone({ uri, onChange }: { uri: string | null; onChange:
       <Pressable accessibilityRole="button" accessibilityLabel={uri ? "Change photo" : "Add a photo"} onPress={open} style={styles.zone}>
         {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : (
           <View style={styles.empty}>
-            <Camera size={32} color={C.slate500} />
+            <Camera size={32} color={Theme.text.muted} />
             <Text style={styles.tap}>Tap to add photo</Text>
             <Text style={styles.opt}>Optional</Text>
           </View>
@@ -27,10 +28,10 @@ export function PhotoDropzone({ uri, onChange }: { uri: string | null; onChange:
 }
 
 const styles = StyleSheet.create({
-  zone: { height: 232, borderRadius: 16, borderWidth: 2, borderStyle: "dashed", borderColor: C.border2, backgroundColor: C.surface, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  zone: { height: 232, borderRadius: 16, borderWidth: 2, borderStyle: "dashed", borderColor: Theme.border.strong, backgroundColor: Theme.surface.page, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   empty: { alignItems: "center", gap: 8 },
-  tap: { fontFamily: font.bodyBold, fontSize: 15, color: C.slate700 },
-  opt: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate500 },
+  tap: { ...typography.label14, color: Theme.text.secondary },
+  opt: { ...typography.caption12, color: Theme.text.muted },
   remove: { alignSelf: "flex-start", marginTop: 16, paddingVertical: 8, minHeight: 44, justifyContent: "center" },
-  removeT: { fontFamily: font.bodyBold, fontSize: 13, color: C.sosDark },
+  removeT: { ...typography.label14, color: Theme.danger.text },
 });

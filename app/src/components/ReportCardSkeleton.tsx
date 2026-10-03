@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
-import { C, radius } from "../theme/tokens";
+import { Theme, radius } from "../theme/tokens";
 
 // Marcador de carga con la forma de ReportCard (fase 6.4): foto + dos líneas + columna derecha. Pulsa suavemente.
 export function ReportCardSkeleton() {
@@ -30,9 +30,9 @@ export function ReportCardSkeleton() {
 }
 
 const styles = StyleSheet.create({
-  card: { flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: C.border, backgroundColor: C.white },
-  photo: { width: 64, height: 64, borderRadius: radius.md, backgroundColor: C.border },
+  card: { flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: Theme.border.default, backgroundColor: Theme.surface.card },
+  photo: { width: 64, height: 64, borderRadius: radius.md, backgroundColor: Theme.border.default },
   center: { flex: 1, gap: 8 },
   right: { alignItems: "flex-end", gap: 8 },
-  line: { height: 12, borderRadius: 6, backgroundColor: C.border },
+  line: { height: 12, borderRadius: 6, backgroundColor: Theme.border.default },
 });

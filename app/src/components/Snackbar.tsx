@@ -1,7 +1,9 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { C, FAB_SIZE, MIN_HIT, font, radius } from "../theme/tokens";
+import { Theme, FAB_SIZE, MIN_HIT, radius } from "../theme/tokens";
+import { elevation } from "../theme/elevation";
+import { typography } from "../theme/typography";
 
 type Opts = { message: string; actionLabel?: string; onAction?: () => void; duration?: number };
 const Ctx = createContext<{ show: (o: Opts) => void } | null>(null);
@@ -54,8 +56,8 @@ export function useSnackbar() {
 
 const styles = StyleSheet.create({
   wrap: { position: "absolute", left: 16, right: 16, zIndex: 200 },
-  bar: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, paddingLeft: 16, paddingRight: 4, borderRadius: radius.md, backgroundColor: C.ink },
-  msg: { flex: 1, fontFamily: font.bodySemi, fontSize: 14, color: C.white },
+  bar: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, paddingLeft: 16, paddingRight: 4, borderRadius: radius.md, backgroundColor: Theme.surface.inverse, ...elevation[2] },
+  msg: { flex: 1, ...typography.label14, color: Theme.text.onAccent },
   action: { minHeight: MIN_HIT, paddingHorizontal: 14, justifyContent: "center" },
-  actionT: { fontFamily: font.bodyBold, fontSize: 14, color: C.white, textDecorationLine: "underline" },
+  actionT: { ...typography.label14, color: Theme.text.onAccent, textDecorationLine: "underline" },
 });

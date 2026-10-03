@@ -1,5 +1,6 @@
 import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
-import { C, MIN_HIT, font, radius } from "../theme/tokens";
+import { Theme, MIN_HIT, radius } from "../theme/tokens";
+import { typography } from "../theme/typography";
 
 // Estado vacío o de error con una acción concreta (fase 6): "Expand to 10 mi", "Reset filters", "Try again".
 export function EmptyState({ title, body, actionLabel, onAction, style }: { title: string; body?: string; actionLabel?: string; onAction?: () => void; style?: StyleProp<ViewStyle> }) {
@@ -17,9 +18,9 @@ export function EmptyState({ title, body, actionLabel, onAction, style }: { titl
 }
 
 const styles = StyleSheet.create({
-  box: { alignItems: "center", gap: 8, padding: 24, borderRadius: radius.lg, borderWidth: 1, borderStyle: "dashed", borderColor: C.border2, backgroundColor: C.white },
-  t: { fontFamily: font.head, fontSize: 16, color: C.ink, textAlign: "center" },
-  b: { fontFamily: font.bodyRegular, fontSize: 14, lineHeight: 20, color: C.slate700, textAlign: "center" },
-  btn: { minHeight: MIN_HIT, justifyContent: "center", paddingHorizontal: 20, marginTop: 4, borderRadius: radius.pill, backgroundColor: C.ink },
-  btnT: { fontFamily: font.bodyBold, fontSize: 14, color: C.white },
+  box: { alignItems: "center", gap: 8, padding: 24, borderRadius: radius.lg, borderWidth: 1, borderStyle: "dashed", borderColor: Theme.border.strong, backgroundColor: Theme.surface.card },
+  t: { ...typography.heading16, color: Theme.text.primary, textAlign: "center" },
+  b: { ...typography.body14, color: Theme.text.secondary, textAlign: "center" },
+  btn: { minHeight: MIN_HIT, justifyContent: "center", paddingHorizontal: 20, marginTop: 4, borderRadius: radius.pill, backgroundColor: Theme.brand.primary },
+  btnT: { ...typography.button14, color: Theme.text.onAccent },
 });

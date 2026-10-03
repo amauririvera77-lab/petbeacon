@@ -17,7 +17,8 @@ import type { Place } from "../lib/geocode";
 import { uploadPhoto } from "../lib/photos";
 import { supabase } from "../lib/supabase";
 import { useSession } from "../state/session";
-import { C, MIN_HIT, font } from "../theme/tokens";
+import { Theme, MIN_HIT } from "../theme/tokens";
+import { typography } from "../theme/typography";
 
 const SPECIES = [{ value: "dog", label: "Dog" }, { value: "cat", label: "Cat" }, { value: "other", label: "Other" }] as const;
 type Loaded = Pick<Report, "id" | "status" | "name" | "species" | "breed" | "breed_id" | "pet_id" | "photo_url" | "features_description" | "location_label"> & { condition?: Condition | null };
@@ -93,10 +94,10 @@ export default function EditReport() {
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={C.ink} /></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={Theme.text.primary} /></Pressable>
         <Text style={styles.h} accessibilityRole="header">{isSighting ? "Edit Sighting" : "Edit Report"}</Text>
       </View>
-      {loading ? <View style={styles.center}><ActivityIndicator color={C.teal} /></View> : (
+      {loading ? <View style={styles.center}><ActivityIndicator color={Theme.brand.primary} /></View> : (
         <>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
             <View style={{ gap: 8 }}>
@@ -107,7 +108,7 @@ export default function EditReport() {
             <Chips label="Type" options={SPECIES} value={species} onChange={(s) => { const b = breedById(breed.id); if (b?.species && b.species !== s) setBreed(EMPTY_BREED); setSpecies(s); }} />
             <BreedPicker optional species={species} value={breed} onChange={setBreed} />
             {isSighting ? <View style={{ gap: 8 }}><Text style={styles.label}>Condition</Text><ConditionGrid value={condition} onChange={setCondition} /></View> : null}
-            <TextField label={isSighting ? "Description (optional)" : "Distinctive features (optional)"} placeholder={isSighting ? "No collar, white paws, very friendly" : "Blue collar, limps on left leg"} value={features} onChangeText={setFeatures} multiline />
+            <TextField label={isSighting ? "Description" : "Distinctive features"} labelSuffix="(optional)" placeholder={isSighting ? "No collar, white paws, very friendly" : "Blue collar, limps on left leg"} value={features} onChangeText={setFeatures} multiline />
             <View style={{ gap: 8 }}>
               <Text style={styles.label}>{isSighting ? "Where you saw them" : "Last seen"}</Text>
               <LocationPicker
@@ -126,11 +127,11 @@ export default function EditReport() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.white },
-  top: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: C.border },
+  root: { flex: 1, backgroundColor: Theme.surface.card },
+  top: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
   back: { width: MIN_HIT, height: MIN_HIT, alignItems: "center", justifyContent: "center" },
-  h: { fontFamily: font.displayMedium, fontSize: 22, color: C.ink },
+  h: { ...typography.title24, color: Theme.text.primary },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  label: { fontFamily: font.bodySemi, fontSize: 14, color: C.slate700 },
-  footer: { paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.white },
+  label: { ...typography.label14, color: Theme.text.secondary },
+  footer: { paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: Theme.border.default, backgroundColor: Theme.surface.card },
 });

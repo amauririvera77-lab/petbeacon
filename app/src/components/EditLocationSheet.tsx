@@ -4,7 +4,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { updateProfileLocation } from "../lib/account";
 import { geocodeCity } from "../lib/geocode";
 import { useSession } from "../state/session";
-import { C, font } from "../theme/tokens";
+import { Theme } from "../theme/tokens";
+import { elevation } from "../theme/elevation";
+import { typography } from "../theme/typography";
 import { Primary } from "./Primary";
 import { TextField } from "./TextField";
 
@@ -47,9 +49,9 @@ export function EditLocationSheet({ visible, onClose }: { visible: boolean; onCl
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "flex-end" },
-  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(15,23,42,0.5)" },
-  sheet: { backgroundColor: C.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20 },
+  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: Theme.scrim(0.5) },
+  sheet: { backgroundColor: Theme.surface.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, ...elevation[3] },
   handleWrap: { alignItems: "center", paddingTop: 12, paddingBottom: 4 },
-  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: C.border },
-  title: { fontFamily: font.head, fontSize: 18, color: C.ink, paddingVertical: 12 },
+  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: Theme.border.default },
+  title: { ...typography.heading18, color: Theme.text.primary, paddingVertical: 12 },
 });

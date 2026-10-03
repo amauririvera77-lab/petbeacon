@@ -3,7 +3,9 @@ import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { SightingResolution } from "../../lib/database.types";
 import { RESOLUTION_LABEL } from "../../lib/myReports";
-import { C, MIN_HIT, font, radius } from "../../theme/tokens";
+import { Theme, MIN_HIT, radius } from "../../theme/tokens";
+import { elevation } from "../../theme/elevation";
+import { typography } from "../../theme/typography";
 
 // "Mark as resolved" (My Reports 4.1): tres razones. Un avistamiento resuelto deja de mostrarse en el feed y el mapa y no genera coincidencias.
 export function ResolveSightingSheet({ visible, busy, onClose, onPick }: { visible: boolean; busy?: boolean; onClose: () => void; onPick: (r: SightingResolution) => void }) {
@@ -16,12 +18,12 @@ export function ResolveSightingSheet({ visible, busy, onClose, onPick }: { visib
           <View style={styles.handleWrap}><View style={styles.handle} /></View>
           <View style={styles.head}>
             <Text style={styles.title} accessibilityRole="header">What happened?</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={C.slate700} /></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={Theme.text.secondary} /></Pressable>
           </View>
           <Text style={styles.sub}>The sighting will stop showing on the map and in the feed.</Text>
           <View style={{ paddingHorizontal: 20, gap: 8 }}>
             {(Object.keys(RESOLUTION_LABEL) as SightingResolution[]).map((k) => (
-              <Pressable key={k} accessibilityRole="button" disabled={busy} onPress={() => onPick(k)} style={({ pressed }) => [styles.option, busy && { opacity: 0.6 }, pressed && { backgroundColor: C.surface }]}>
+              <Pressable key={k} accessibilityRole="button" disabled={busy} onPress={() => onPick(k)} style={({ pressed }) => [styles.option, busy && { opacity: 0.6 }, pressed && { backgroundColor: Theme.surface.page }]}>
                 <Text style={styles.optT}>{RESOLUTION_LABEL[k]}</Text>
               </Pressable>
             ))}
@@ -33,14 +35,14 @@ export function ResolveSightingSheet({ visible, busy, onClose, onPick }: { visib
 }
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "flex-end" },
-  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(15,23,42,0.5)" },
-  sheet: { backgroundColor: C.white, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: Theme.scrim(0.5) },
+  sheet: { backgroundColor: Theme.surface.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, ...elevation[3] },
   handleWrap: { alignItems: "center", paddingTop: 12, paddingBottom: 4 },
-  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: C.border },
+  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: Theme.border.default },
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20 },
-  title: { flex: 1, fontFamily: font.head, fontSize: 18, color: C.ink },
+  title: { flex: 1, ...typography.heading18, color: Theme.text.primary },
   close: { width: MIN_HIT, height: MIN_HIT, alignItems: "center", justifyContent: "center" },
-  sub: { fontFamily: font.bodyRegular, fontSize: 14, color: C.slate700, paddingHorizontal: 20, paddingBottom: 12 },
-  option: { minHeight: 52, justifyContent: "center", paddingHorizontal: 16, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2 },
-  optT: { fontFamily: font.bodySemi, fontSize: 15, color: C.ink },
+  sub: { ...typography.body14, color: Theme.text.secondary, paddingHorizontal: 20, paddingBottom: 12 },
+  option: { minHeight: 52, justifyContent: "center", paddingHorizontal: 16, borderRadius: radius.md, borderWidth: 1.5, borderColor: Theme.border.strong },
+  optT: { ...typography.label14, color: Theme.text.primary },
 });

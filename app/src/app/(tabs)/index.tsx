@@ -1,4 +1,4 @@
-import { router, useFocusEffect } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import { LocateFixed, X } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Animated, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from "react-native";
@@ -53,7 +53,9 @@ import { useFab } from "../../state/fab";
 import { useFabScroll } from "../../hooks/useFabScroll";
 import { useHomePrefs, type ViewRadius } from "../../state/homePrefs";
 import { useSession } from "../../state/session";
-import { C, FAB_CLEARANCE, font, radius } from "../../theme/tokens";
+import { Theme, FAB_CLEARANCE, radius } from "../../theme/tokens";
+import { elevation } from "../../theme/elevation";
+import { typography } from "../../theme/typography";
 
 const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN;
 
@@ -80,6 +82,7 @@ export default function Home() {
   const [zoneOpen, setZoneOpen] = useState(false);
   const [focused, setFocused] = useState(false);
   const [pulling, setPulling] = useState(false);
+  const [scrolled, setScrolled] = useState(false); // header con elevation/1 solo cuando el feed pasa por debajo (Fase 3)
   const scrollRef = useRef<ScrollView>(null);
   // El polling y las coincidencias se refrescan juntos; `onPoll` se completa más abajo (los callbacks vienen de hooks posteriores).
   const pollRef = useRef<() => void>(() => {});
@@ -120,7 +123,7 @@ export default function Home() {
 
   // Mismo comportamiento del FAB que el resto de la app (se contrae al bajar, se expande al subir y al entrar a la pantalla).
   const { onScroll, reset: resetFab } = useFabScroll();
-  useEffect(() => { if (view !== "map") { setPreviewId(null); resetFab(); } }, [view, resetFab]);
+  useEffect(() => { if (view !== "map") { setPreviewId(null); resetFab(); } else setScrolled(false); }, [view, resetFab]);
   // En Map el FAB va expandido, salvo con la tarjeta de vista previa abierta: se contrae al círculo para no taparla.
   useEffect(() => { if (view === "map") setCollapsed(preview !== null); }, [view, preview, setCollapsed]);
 
@@ -206,7 +209,7 @@ export default function Home() {
 
   return (
     <View style={styles.root}>
-      <View style={{ paddingTop: insets.top, backgroundColor: C.white }}>
+      <View style={[{ paddingTop: insets.top, backgroundColor: Theme.surface.card }, view === "list" && scrolled && elevation[1]]}>
         <HomeHeader unread={unread} onBell={openNotifs} />
         <View style={styles.controls}>
           <Animated.View style={{ height: searchAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 54] }), opacity: searchAnim, overflow: "hidden" }} pointerEvents={hideSearch ? "none" : "auto"}>
@@ -243,7 +246,7 @@ export default function Home() {
               }} />
               {posStatus === "finding" ? (
                 <View style={styles.finding} accessibilityLiveRegion="polite">
-                  <ActivityIndicator size="small" color={C.ink} />
+                  <ActivityIndicator size="small" color={Theme.text.primary} />
                   <Text style={styles.findingT}>Finding your location…</Text>
                 </View>
               ) : null}
@@ -256,7 +259,7 @@ export default function Home() {
               ) : null}
               <MapRadiusChip value={prefs.viewRadiusMi} onChange={(mi) => setPrefs({ viewRadiusMi: mi as ViewRadius })} />
               <Pressable accessibilityRole="button" accessibilityLabel="Center map on my location" onPress={() => mapRef.current?.recenter()} style={styles.recenter}>
-                <LocateFixed size={22} color={C.ink} />
+                <LocateFixed size={22} color={Theme.text.primary} />
               </Pressable>
               {preview ? (
                 <View style={styles.preview}>
@@ -266,15 +269,15 @@ export default function Home() {
               {focus ? (
                 <Pressable accessibilityRole="button" accessibilityLabel="Clear searched area" onPress={() => { setFocus(null); setMapQuery(""); }} style={styles.focusChip}>
                   <Text style={styles.focusT} numberOfLines={1}>{focus.label}</Text>
-                  <X size={14} color={C.ink} />
+                  <X size={14} color={Theme.text.primary} />
                 </Pressable>
               ) : null}
             </>
           )}
         </View>
       ) : (
-        <ScrollView ref={scrollRef} contentContainerStyle={styles.listC} onScroll={onScroll} scrollEventThrottle={16}
-          refreshControl={<RefreshControl refreshing={pulling} onRefresh={onPull} tintColor={C.ink} />}>
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.listC} onScroll={(e) => { onScroll(e); setScrolled(e.nativeEvent.contentOffset.y > 0); }} scrollEventThrottle={16}
+          refreshControl={<RefreshControl refreshing={pulling} onRefresh={onPull} tintColor={Theme.brand.primary} />}>
           <EnableAlertsCard />
           {celebrate ? <ReunitedCelebration name={celebrate.name} onDone={endCelebration} /> : null}
           <MyReportCarousel reports={activeLost} matches={matches}
@@ -299,7 +302,7 @@ export default function Home() {
             <>
               <SortControl value={prefs.sort} onChange={setSort} count={sorted.length} radiusMi={prefs.viewRadiusMi} />
               {sorted.slice(0, resourceAt).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} matchFor={matchNames[r.id]} onPress={() => setPinReport(r)} />)}
-              {featured ? <CommunityResourceCard resource={featured} onPress={() => router.navigate({ pathname: "/(tabs)/support", params: { resourceId: featured.id } })} /> : null}
+              {featured ? <CommunityResourceCard resource={featured} onPress={() => openResource(featured)} /> : null}
               {sorted.slice(resourceAt).map((r) => <ReportCard key={r.id} report={r} mine={mineIds.includes(r.id)} matchFor={matchNames[r.id]} onPress={() => setPinReport(r)} />)}
               <EndOfFeed radiusMi={prefs.viewRadiusMi} onExpand={() => setFiltersOpen(true)} />
             </>
@@ -311,7 +314,9 @@ export default function Home() {
 
       <EditLocationSheet visible={zoneOpen} onClose={() => { setZoneOpen(false); recheckLoc(); }} />
       <FilterSheet visible={filtersOpen} prefs={prefs} onChange={setPrefs} onReset={resetFilters} onClose={() => setFiltersOpen(false)} />
-      <PinDetailSheet report={pinReport} mine={!!pinReport && mineIds.includes(pinReport.id)} onMarkReunited={onMarkReunited} onClose={() => setPinReport(null)} />
+      <PinDetailSheet report={pinReport} mine={!!pinReport && mineIds.includes(pinReport.id)} onMarkReunited={onMarkReunited} onClose={() => setPinReport(null)}
+        matchCount={pinReport ? matches.filter((m) => m.lost_report_id === pinReport.id && !m.dismissed).length : undefined}
+        onReviewMatches={(r) => { setPinReport(null); setTimeout(() => setMatchesFor({ id: r.id, name: r.name ?? "your pet" }), 400); }} />
       <MatchesSheet lostName={matchesFor?.name ?? ""} matches={matchesFor ? matches.filter((m) => m.lost_report_id === matchesFor.id) : null}
         onClose={() => setMatchesFor(null)} onView={(m) => { setMatchesFor(null); setTimeout(() => viewSighting(m.sighted_report_id), 400); }} onDismiss={dismiss} onRestore={restore} />
       <ResourceModal resource={sheetResource} mode={sheetMode} onMode={setSheetMode} onClose={() => setSheetResource(null)} />
@@ -321,26 +326,20 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.surface },
-  controls: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
+  root: { flex: 1, backgroundColor: Theme.surface.page },
+  controls: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: Theme.surface.card, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
   rightCluster: { flexDirection: "row", alignItems: "center", gap: 8 },
   chipRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 },
-  recenter: { position: "absolute", right: 16, bottom: 16 + 73 + 12, width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: C.white, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
+  recenter: { position: "absolute", right: 16, bottom: 16 + 73 + 12, width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: Theme.surface.card, ...elevation[1] },
   // Deja libre la columna derecha del FAB (73 px + márgenes).
-  preview: { position: "absolute", left: 12, right: 16 + 73 + 8, bottom: 16, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 4 },
-  focusChip: { position: "absolute", top: 12, right: 12, maxWidth: "55%", minHeight: 44, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: C.white, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
-  focusT: { flexShrink: 1, fontFamily: font.bodyBold, fontSize: 13, color: C.ink },
-  finding: { position: "absolute", top: 68, left: 12, minHeight: 40, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: C.white, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
-  findingT: { fontFamily: font.bodySemi, fontSize: 13, color: C.ink },
+  preview: { position: "absolute", left: 12, right: 16 + 73 + 8, bottom: 16, ...elevation[2] },
+  focusChip: { position: "absolute", top: 12, right: 12, maxWidth: "55%", minHeight: 44, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: Theme.surface.card, ...elevation[1] },
+  focusT: { flexShrink: 1, ...typography.label13, color: Theme.text.primary },
+  finding: { position: "absolute", top: 68, left: 12, minHeight: 40, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: Theme.surface.card, ...elevation[1] },
+  findingT: { ...typography.label13, color: Theme.text.primary },
   mapEmpty: { position: "absolute", left: 12, right: 16 + 73 + 8, bottom: 16 },
-  noMatch: { alignItems: "center", gap: 12, padding: 24, borderRadius: radius.lg, borderWidth: 1, borderStyle: "dashed", borderColor: C.border2, backgroundColor: C.white },
-  noMatchT: { fontFamily: font.head, fontSize: 16, color: C.ink },
   // Padding inferior = FAB + su margen: la última tarjeta se ve completa al llegar al final del scroll.
   listC: { padding: 16, paddingBottom: FAB_CLEARANCE, gap: 10 },
   mapWrap: { flex: 1 },
   pad: { padding: 16 },
-  errBox: { gap: 8 },
-  errT: { fontFamily: font.body, fontSize: 14, color: C.sosDark },
-  retry: { alignSelf: "flex-start", paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: C.ink },
-  retryT: { fontFamily: font.bodyBold, fontSize: 13, color: C.white },
 });

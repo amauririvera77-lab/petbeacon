@@ -14,7 +14,8 @@ import { choosePhotoSource, pickPhoto } from "../lib/pickPhoto";
 import { supabase } from "../lib/supabase";
 import { validateContact } from "../lib/validation";
 import { useSession } from "../state/session";
-import { C, MIN_HIT, font } from "../theme/tokens";
+import { Theme, MIN_HIT } from "../theme/tokens";
+import { typography } from "../theme/typography";
 
 type Form = { name: string; email: string; phone: string; photoUri: string | null; photoUrl: string | null };
 
@@ -90,15 +91,15 @@ export default function EditProfile() {
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={C.ink} /></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={Theme.text.primary} /></Pressable>
         <Text style={styles.h} accessibilityRole="header">Edit Profile</Text>
       </View>
-      {loading ? <View style={styles.center}><ActivityIndicator color={C.teal} /></View> : (
+      {loading ? <View style={styles.center}><ActivityIndicator color={Theme.brand.primary} /></View> : (
         <ScrollView contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: insets.bottom + 32 }} keyboardShouldPersistTaps="handled">
           <View style={{ alignItems: "center", gap: 6 }}>
             <Avatar uri={shown} name={f.name} size={96} />
             <Pressable accessibilityRole="button" onPress={changePhoto} style={styles.link}><Text style={styles.linkT}>{shown ? "Change photo" : "Add photo"}</Text></Pressable>
-            {shown ? <Pressable accessibilityRole="button" onPress={() => set({ photoUri: null, photoUrl: null })} style={styles.link}><Text style={[styles.linkT, { color: C.slate500 }]}>Remove photo</Text></Pressable> : null}
+            {shown ? <Pressable accessibilityRole="button" onPress={() => set({ photoUri: null, photoUrl: null })} style={styles.link}><Text style={[styles.linkT, { color: Theme.text.muted }]}>Remove photo</Text></Pressable> : null}
           </View>
           <TextField label="Name" placeholder="Your name" value={f.name} onChangeText={(name) => set({ name })} autoCapitalize="words" />
           <View style={{ gap: 12 }}>
@@ -107,9 +108,9 @@ export default function EditProfile() {
             {!account.isAnonymous && account.email ? (
               <TextField label="Account email" value={account.email} disabled helper="Used to sign in" />
             ) : null}
-            <TextField label="Contact email (optional)" placeholder="you@email.com" value={f.email} onChangeText={(email) => { set({ email }); setErrors((e) => ({ ...e, email: undefined })); }}
+            <TextField label="Contact email" labelSuffix="(optional)" placeholder="you@email.com" value={f.email} onChangeText={(email) => { set({ email }); setErrors((e) => ({ ...e, email: undefined })); }}
               keyboardType="email-address" autoCapitalize="none" autoCorrect={false} helper={errors.email} />
-            <TextField label="Contact phone (optional)" placeholder="(201) 555-0100" value={f.phone} onChangeText={(phone) => { set({ phone }); setErrors((e) => ({ ...e, phone: undefined })); }}
+            <TextField label="Contact phone" labelSuffix="(optional)" placeholder="(201) 555-0100" value={f.phone} onChangeText={(phone) => { set({ phone }); setErrors((e) => ({ ...e, phone: undefined })); }}
               keyboardType="phone-pad" helper={errors.phone} />
           </View>
           <Primary label={saving ? "Saving…" : "Save changes"} onPress={save} disabled={saving || !dirty || !f.name.trim()} />
@@ -120,12 +121,12 @@ export default function EditProfile() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.white },
-  top: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: C.border },
+  root: { flex: 1, backgroundColor: Theme.surface.card },
+  top: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
   back: { width: MIN_HIT, height: MIN_HIT, alignItems: "center", justifyContent: "center" },
-  h: { fontFamily: font.displayMedium, fontSize: 22, color: C.ink },
+  h: { ...typography.title24, color: Theme.text.primary },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   link: { minHeight: MIN_HIT, justifyContent: "center", paddingHorizontal: 12 },
-  linkT: { fontFamily: font.bodyBold, fontSize: 14, color: C.ink, textDecorationLine: "underline" },
-  note: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 19, color: C.slate700 },
+  linkT: { ...typography.label14, color: Theme.text.primary, textDecorationLine: "underline" },
+  note: { ...typography.bodySm13, color: Theme.text.secondary },
 });

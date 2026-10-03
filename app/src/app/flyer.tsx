@@ -10,7 +10,9 @@ import { Button } from "../components/Button";
 import { FlyerTemplate } from "../components/flyer/FlyerTemplate";
 import { Primary } from "../components/Primary";
 import { loadFlyerData, reportUrl, type FlyerReport } from "../lib/flyer";
-import { C, MIN_HIT, font } from "../theme/tokens";
+import { Theme, MIN_HIT } from "../theme/tokens";
+import { elevation } from "../theme/elevation";
+import { typography } from "../theme/typography";
 
 // Genera el flyer como IMAGEN real (PNG 1080×1440), no solo texto (CLAUDE.md §5.7): se puede compartir y guardar.
 export default function FlyerScreen() {
@@ -62,13 +64,13 @@ export default function FlyerScreen() {
     <View style={[styles.root, { paddingTop: Math.max(insets.top, 12) }]}>
       <View style={styles.top}>
         <Text style={styles.h} accessibilityRole="header">{data ? title : "Flyer"}</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={styles.close}><X size={22} color={C.ink} /></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={styles.close}><X size={22} color={Theme.text.primary} /></Pressable>
       </View>
 
       {error ? (
         <View style={styles.center}><Text style={styles.err}>{error}</Text></View>
       ) : !data ? (
-        <View style={styles.center}><ActivityIndicator color={C.teal} /></View>
+        <View style={styles.center}><ActivityIndicator color={Theme.brand.primary} /></View>
       ) : data.report.status === "reunited" ? (
         <View style={styles.center}><Text style={styles.err}>This case is closed — there's no flyer to share.</Text></View>
       ) : (
@@ -91,14 +93,14 @@ export default function FlyerScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.surface },
+  root: { flex: 1, backgroundColor: Theme.surface.page },
   top: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 4 },
-  h: { fontFamily: font.displayMedium, fontSize: 22, color: C.ink },
+  h: { ...typography.title24, color: Theme.text.primary },
   close: { width: MIN_HIT, height: MIN_HIT, alignItems: "center", justifyContent: "center" },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  err: { fontFamily: font.body, fontSize: 14, color: C.slate700, textAlign: "center" },
-  shadow: { shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 4, backgroundColor: "#fff" },
-  warn: { fontFamily: font.bodySemi, fontSize: 12, color: C.sosDark, textAlign: "center", paddingHorizontal: 24 },
-  note: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate500, textAlign: "center", paddingHorizontal: 24 },
-  actions: { paddingHorizontal: 16, paddingTop: 12, gap: 10, backgroundColor: C.white, borderTopWidth: 1, borderTopColor: C.border },
+  err: { ...typography.body14, color: Theme.text.secondary, textAlign: "center" },
+  shadow: { backgroundColor: Theme.surface.card, ...elevation[2] },
+  warn: { ...typography.label13, color: Theme.danger.text, textAlign: "center", paddingHorizontal: 24 },
+  note: { ...typography.caption12, color: Theme.text.muted, textAlign: "center", paddingHorizontal: 24 },
+  actions: { paddingHorizontal: 16, paddingTop: 12, gap: 10, backgroundColor: Theme.surface.card, borderTopWidth: 1, borderTopColor: Theme.border.default },
 });

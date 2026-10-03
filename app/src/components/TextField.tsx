@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, TextInputProps, View } from "react-native";
-import { C, font, radius } from "../theme/tokens";
+import { Theme, radius } from "../theme/tokens";
+import { typography } from "../theme/typography";
 
 // variant:
 //  - "default": el estilo actual (pantallas fuera del rediseño).
@@ -19,7 +20,7 @@ export function TextField({ label, helper, disabled, style, variant = "default",
           {...rest}
           editable={!disabled}
           accessibilityLabel={label}
-          placeholderTextColor={C.slate500}
+          placeholderTextColor={Theme.text.muted}
           onFocus={(e) => { setFocused(true); rest.onFocus?.(e); }}
           onBlur={(e) => { setFocused(false); rest.onBlur?.(e); }}
           style={[ds ? v.dsInput : v.formInput, rest.multiline && (ds ? v.dsMulti : v.formMulti), focused && v.focus, !!error && v.errBorder, disabled && v.disabled, style]}
@@ -30,12 +31,12 @@ export function TextField({ label, helper, disabled, style, variant = "default",
   }
   return (
     <View style={styles.wrap}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.label}>{label}{labelSuffix ? <Text style={styles.suffix}> {labelSuffix}</Text> : null}</Text>
       <TextInput
         {...rest}
         editable={!disabled}
         accessibilityLabel={label}
-        placeholderTextColor={C.slate500}
+        placeholderTextColor={Theme.text.muted}
         onFocus={(e) => { setFocused(true); rest.onFocus?.(e); }}
         onBlur={(e) => { setFocused(false); rest.onBlur?.(e); }}
         style={[styles.input, focused && styles.focus, disabled && styles.disabled, style]}
@@ -47,27 +48,28 @@ export function TextField({ label, helper, disabled, style, variant = "default",
 
 const styles = StyleSheet.create({
   wrap: { gap: 6 },
-  label: { fontFamily: font.bodySemi, fontSize: 14, color: C.slate700 },
+  label: { ...typography.label14, color: Theme.text.secondary },
+  suffix: { color: Theme.text.muted }, // mismo estilo que la etiqueta (Label/14), solo cambia el color
   input: {
-    minHeight: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2,
-    backgroundColor: C.white, paddingHorizontal: 14, fontFamily: font.body, fontSize: 16, color: C.ink,
+    minHeight: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: Theme.border.strong,
+    backgroundColor: Theme.surface.card, paddingHorizontal: 14, ...typography.bodyLg16, color: Theme.text.primary,
   },
-  focus: { borderColor: C.teal },
-  disabled: { backgroundColor: C.surface, color: C.slate500 },
-  helper: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate500 },
+  focus: { borderColor: Theme.brand.primary },
+  disabled: { backgroundColor: Theme.surface.page, color: Theme.text.muted },
+  helper: { ...typography.bodySm13, color: Theme.text.muted },
 });
 
 const v = StyleSheet.create({
-  dsLabel: { fontFamily: font.bodySemi, fontSize: 13, lineHeight: 18, color: C.ink },
-  dsInput: { minHeight: 46, borderRadius: radius.md, borderWidth: 1, borderColor: C.border, backgroundColor: C.white, paddingHorizontal: 14, fontFamily: font.body, fontSize: 14, color: C.ink },
+  dsLabel: { ...typography.label13, color: Theme.text.primary },
+  dsInput: { minHeight: 46, borderRadius: radius.md, borderWidth: 1, borderColor: Theme.border.default, backgroundColor: Theme.surface.card, paddingHorizontal: 14, ...typography.bodyLg16, color: Theme.text.primary },
   dsMulti: { minHeight: 90, paddingVertical: 12, textAlignVertical: "top" },
-  formLabel: { fontFamily: font.bodyBold, fontSize: 13, color: C.slate700, marginBottom: 8 },
-  formInput: { height: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2, backgroundColor: C.white, paddingHorizontal: 16, fontFamily: font.body, fontSize: 16, color: C.ink },
+  formLabel: { ...typography.label14, color: Theme.text.secondary, marginBottom: 8 },
+  formInput: { height: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: Theme.border.strong, backgroundColor: Theme.surface.card, paddingHorizontal: 16, ...typography.bodyLg16, color: Theme.text.primary },
   formMulti: { height: 88, paddingVertical: 12, lineHeight: 24, textAlignVertical: "top" },
-  suffix: { fontFamily: font.body, color: C.slate500 },
-  hint: { fontFamily: font.bodyRegular, fontSize: 12, lineHeight: 17, color: C.slate500, marginTop: 6 },
-  focus: { borderColor: C.ink },
-  errBorder: { borderColor: C.sosDark },
-  errT: { color: C.sosDark },
-  disabled: { backgroundColor: C.surface, color: C.slate500 },
+  suffix: { color: Theme.text.muted }, // mismo estilo que la etiqueta (Label/14), solo cambia el color
+  hint: { ...typography.caption12, color: Theme.text.muted, marginTop: 6 },
+  focus: { borderColor: Theme.brand.primary },
+  errBorder: { borderColor: Theme.danger.border },
+  errT: { color: Theme.danger.text },
+  disabled: { backgroundColor: Theme.surface.page, color: Theme.text.muted },
 });

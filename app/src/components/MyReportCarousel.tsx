@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Animated, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { MyReport } from "../hooks/useMyReports";
 import type { MyMatch } from "../lib/database.types";
-import { C } from "../theme/tokens";
+import { Theme } from "../theme/tokens";
 import { MyReportStatusCard } from "./MyReportStatusCard";
 
 type Handlers = {
@@ -63,6 +63,6 @@ export function MyReportCarousel({ reports, matches, ...h }: { reports: MyReport
 
 const styles = StyleSheet.create({
   dots: { flexDirection: "row", justifyContent: "center", gap: 6, paddingTop: 8 },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.border2 },
-  dotOn: { width: 18, backgroundColor: C.ink }, // forma distinta además del color: el punto activo es alargado
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Theme.border.strong },
+  dotOn: { width: 18, backgroundColor: Theme.brand.primary }, // forma distinta además del color: el punto activo es alargado
 });

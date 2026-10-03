@@ -9,7 +9,7 @@ import { reportShareText } from "../../lib/shareText";
 import { publishReport } from "../../lib/publish";
 import { supabase } from "../../lib/supabase";
 import { validateContact } from "../../lib/validation";
-import { EMPTY_BREED, breedById, breedValueFrom, type BreedValue } from "../../lib/breeds";
+import { EMPTY_BREED, breedById, breedLabel, breedValueFrom, type BreedValue } from "../../lib/breeds";
 import type { PetSize, Species } from "../../lib/database.types";
 import { useHome } from "../../hooks/useHome";
 import { useMyReports } from "../../hooks/useMyReports";
@@ -17,7 +17,8 @@ import { usePets } from "../../hooks/usePets";
 import { petsAtHome } from "../../lib/petStatus";
 import { useHomePrefs } from "../../state/homePrefs";
 import { useSession } from "../../state/session";
-import { C, font, radius } from "../../theme/tokens";
+import { Theme, radius } from "../../theme/tokens";
+import { typography } from "../../theme/typography";
 import { Cta } from "../Cta";
 import { FocusImage } from "../FocusImage";
 import { SpeciesPlaceholder } from "../SpeciesPlaceholder";
@@ -149,13 +150,13 @@ export function ReportFlow({ kind }: { kind: Kind }) {
 
   const chooserActive = kind === "lost" && !petIdParam && !petId && !chooserDone;
   if (petLoading || (chooserActive && (petsLoading || mineLoading))) {
-    return <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: C.white }}><ActivityIndicator color={C.teal} /></View>;
+    return <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: Theme.surface.card }}><ActivityIndicator color={Theme.brand.primary} /></View>;
   }
 
   // ── Encabezado (prototipo) ──────────────────────────────────────────────────────────────────────────────────────
   // Lost: fila Back · título · "n/3" siempre visible; las 3 barras solo en los pasos 1–3. Sighted: todo el encabezado solo en 1–3.
   const n = i + 1;
-  const accent = isLost ? C.sos : C.warn;
+  const accent = isLost ? Theme.status.lost.bg : Theme.status.sighted.bg;
   const inSteps = n <= 3;
   const header = (
     <FlowHeader title={isLost ? "Report Lost Pet" : "Report a Sighting"} step={n} accent={accent} onBack={back}
@@ -171,18 +172,18 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         <Text style={[st.sub, { marginBottom: 24 }]}>Pick one of your pets and we'll fill in the details for you.</Text>
         <View style={{ gap: 10 }}>
           {homePets.map((p) => (
-            <Pressable key={p.id} accessibilityRole="button" onPress={() => setPetId(p.id)} style={({ pressed }) => [st.petPick, pressed && { backgroundColor: C.surface }]}>
-              {p.photo_url ? <FocusImage uri={p.photo_url} style={st.petThumb} /> : <SpeciesPlaceholder species={p.species} size={48} />}
+            <Pressable key={p.id} accessibilityRole="button" onPress={() => setPetId(p.id)} style={({ pressed }) => [st.petPick, pressed && { backgroundColor: Theme.surface.page }]}>
+              {p.photo_url ? <FocusImage uri={p.photo_url} focusX={p.photo_focus_x} focusY={p.photo_focus_y} style={st.petThumb} /> : <SpeciesPlaceholder species={p.species} size={48} />}
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={st.petPickName} numberOfLines={1}>{p.name}</Text>
-                {p.breed ? <Text style={st.petPickBreed} numberOfLines={1}>{p.breed}</Text> : null}
+                {breedLabel(p.breed, p.breed_id) ? <Text style={st.petPickBreed} numberOfLines={1}>{breedLabel(p.breed, p.breed_id)}</Text> : null}
               </View>
-              <ChevronRight size={18} color={C.slate500} />
+              <ChevronRight size={18} color={Theme.text.muted} />
             </Pressable>
           ))}
-          <Pressable accessibilityRole="button" onPress={() => setChooserDone(true)} style={({ pressed }) => [st.petPick, st.petPickDashed, pressed && { backgroundColor: C.surface }]}>
-            <View style={[st.petThumb, { alignItems: "center", justifyContent: "center" }]}><Plus size={22} color={C.slate700} /></View>
-            <Text style={[st.petPickName, { flex: 1, color: C.slate700 }]}>Another pet</Text>
+          <Pressable accessibilityRole="button" onPress={() => setChooserDone(true)} style={({ pressed }) => [st.petPick, st.petPickDashed, pressed && { backgroundColor: Theme.surface.page }]}>
+            <View style={[st.petThumb, { alignItems: "center", justifyContent: "center" }]}><Plus size={22} color={Theme.text.secondary} /></View>
+            <Text style={[st.petPickName, { flex: 1, color: Theme.text.secondary }]}>Another pet</Text>
           </Pressable>
         </View>
       </ScreenLayout>
@@ -248,12 +249,12 @@ export function ReportFlow({ kind }: { kind: Kind }) {
           <TextField variant="form" label="Description" labelSuffix="(optional)" placeholder="No collar, white paws, very friendly" value={features} onChangeText={setFeatures} multiline />
         </View>
         <Text style={st.label}>Want updates on this pet? <Text style={st.optional}>(optional)</Text></Text>
-        <View style={[st.iconField, !!contactError && { borderColor: C.sosDark }]}>
-          <Mail size={18} color={C.slate500} />
-          <TextInput value={contact} onChangeText={(t) => { setContact(t); setContactError(null); }} placeholder="Phone or email" placeholderTextColor={C.slate500}
+        <View style={[st.iconField, !!contactError && { borderColor: Theme.danger.border }]}>
+          <Mail size={18} color={Theme.text.muted} />
+          <TextInput value={contact} onChangeText={(t) => { setContact(t); setContactError(null); }} placeholder="Phone or email" placeholderTextColor={Theme.text.muted}
             accessibilityLabel="Phone or email" keyboardType="email-address" autoCapitalize="none" autoComplete="off" style={st.iconInput} />
         </View>
-        <Text style={[st.help, !!contactError && { color: C.sosDark }]}>{contactError ?? "No account needed — this just lets us notify you if there's a match."}</Text>
+        <Text style={[st.help, !!contactError && { color: Theme.danger.text }]}>{contactError ?? "No account needed — this just lets us notify you if there's a match."}</Text>
       </ScreenLayout>
     );
   }
@@ -265,15 +266,15 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         cta={<Cta label={publishing ? "Publishing…" : "Publish alert"} tone="lost" loading={publishing} onPress={publishGuard} />}>
         <Text style={[st.h2, { marginBottom: 24 }]}>Review alert</Text>
         <View style={st.reviewTop}>
-          <View style={st.thumb}>{photo ? <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : <Dog size={30} color={C.slate500} />}</View>
+          <View style={st.thumb}>{photo ? <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : <Dog size={30} color={Theme.text.muted} />}</View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={st.rName}>{petName || "Unnamed pet"}</Text>
             <Text style={st.rType}>{species ? SPECIES_LABEL[species] : "Type not set"}</Text>
             {features ? <Text style={st.rFeat}>{features}</Text> : null}
           </View>
         </View>
-        <View style={[st.rRow, { marginBottom: 12 }]}><MapPin size={16} color={C.sos} /><Text style={st.rRowT}>{shortAddress(place?.label) ?? ""}</Text></View>
-        <View style={[st.rRow, { marginBottom: 24 }]}><Phone size={16} color={C.sos} /><Text style={st.rRowT}>{contact}</Text></View>
+        <View style={[st.rRow, { marginBottom: 12 }]}><MapPin size={16} color={Theme.status.lost.bg} /><Text style={st.rRowT}>{shortAddress(place?.label) ?? ""}</Text></View>
+        <View style={[st.rRow, { marginBottom: 24 }]}><Phone size={16} color={Theme.status.lost.bg} /><Text style={st.rRowT}>{contact}</Text></View>
         <View style={st.warnBox}><Text style={st.warnT}>This publishes immediately and notifies nearby users. You can edit or delete it later.</Text></View>
       </ScreenLayout>
     );
@@ -286,14 +287,14 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   const shareAlert = () => {
     if (!publishedId || !species) return;
     Share.share({ message: reportShareText({
-      id: publishedId, status: kind, species, name: isLost ? petName.trim() || null : null, breed: breed.text.trim() || null,
+      id: publishedId, status: kind, species, name: isLost ? petName.trim() || null : null, breed: breed.text.trim() || null, breed_id: breed.id,
       features_description: features.trim() || null, location_label: place?.label ?? null, created_at: new Date().toISOString(),
     }) }).catch(() => Alert.alert("Couldn't open sharing"));
   };
   const supportLink = (
     <Pressable accessibilityRole="button" onPress={() => router.dismissTo("/(tabs)/support")} style={st.supportLink}>
       <Text style={st.supportT}>Pet care can get expensive. Free local resources</Text>
-      <ChevronRight size={14} color={C.slate500} />
+      <ChevronRight size={14} color={Theme.text.muted} />
     </Pressable>
   );
   return (
@@ -303,7 +304,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
           <Text style={[successText.p, { marginBottom: 8 }]}>{"Nearby users have been notified.\nWe'll alert you the moment there's a match."}</Text>
           <Text style={[successText.strong, { marginBottom: 24 }]}>{"Share this with your neighborhood\nto reach more people"}</Text>
           <View style={st.fullW}>
-            <Cta label={FLYERS_READY ? "Share flyer" : "Share alert"} tone="lost" icon={<Share2 size={18} color={C.white} />} disabled={!publishedId} onPress={FLYERS_READY ? goFlyer : shareAlert} />
+            <Cta label={FLYERS_READY ? "Share flyer" : "Share alert"} tone="lost" icon={<Share2 size={18} color={Theme.text.onAccent} />} disabled={!publishedId} onPress={FLYERS_READY ? goFlyer : shareAlert} />
             <Pressable accessibilityRole="button" onPress={() => viewOnList()} style={st.textBtn}><Text style={st.textBtnT}>View on List</Text></Pressable>
             {supportLink}
           </View>
@@ -313,7 +314,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
           <Text style={[successText.p, { marginBottom: 24 }]}>Your sighting has been posted to the map.</Text>
           <View style={st.fullW}>
             <Pressable accessibilityRole="button" onPress={FLYERS_READY ? goFlyer : shareAlert} disabled={!publishedId} style={[st.outlineBtn, !publishedId && { opacity: 0.5 }]}>
-              <Share2 size={16} color={C.ink} /><Text style={st.outlineT}>{FLYERS_READY ? "Share sighting" : "Share alert"}</Text>
+              <Share2 size={16} color={Theme.text.primary} /><Text style={st.outlineT}>{FLYERS_READY ? "Share sighting" : "Share alert"}</Text>
             </Pressable>
             <Cta label="View on List" tone="sighted" onPress={() => viewOnList()} />
             {supportLink}
@@ -326,34 +327,34 @@ export function ReportFlow({ kind }: { kind: Kind }) {
 
 // Estilos del prototipo: h2 24/1.2 (Geist 600), subtítulo 14/1.5, etiquetas 13/700, contador 12.
 const st = StyleSheet.create({
-  petPick: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: C.border, backgroundColor: C.white },
-  petPickDashed: { borderStyle: "dashed", borderColor: C.border2 },
-  petThumb: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: C.surface, overflow: "hidden" },
-  petPickName: { fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
-  petPickBreed: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate500 },
-  h2: { fontFamily: font.displayMedium, fontSize: 24, lineHeight: 28.8, letterSpacing: -0.24, color: C.ink },
-  sub: { fontFamily: font.bodyRegular, fontSize: 14, lineHeight: 21, color: C.slate600, marginBottom: 24 },
-  label: { fontFamily: font.bodyBold, fontSize: 13, color: C.slate700, marginBottom: 8 },
-  optional: { fontFamily: font.body, color: C.slate500 },
+  petPick: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: Theme.border.default, backgroundColor: Theme.surface.card },
+  petPickDashed: { borderStyle: "dashed", borderColor: Theme.border.strong },
+  petThumb: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: Theme.surface.page, overflow: "hidden" },
+  petPickName: { ...typography.heading16, color: Theme.text.primary },
+  petPickBreed: { ...typography.caption12, color: Theme.text.muted },
+  h2: { ...typography.title24, color: Theme.text.primary },
+  sub: { ...typography.body14, color: Theme.text.secondary, marginBottom: 24 },
+  label: { ...typography.label14, color: Theme.text.secondary, marginBottom: 8 },
+  optional: { color: Theme.text.muted }, // mismo estilo que la etiqueta (Label/14), solo cambia el color
   field: { marginBottom: 24 },
-  counter: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate500, textAlign: "right", marginTop: 8 },
-  iconField: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, height: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2, marginBottom: 8 },
-  iconInput: { flex: 1, fontFamily: font.body, fontSize: 16, color: C.ink },
-  help: { fontFamily: font.bodyRegular, fontSize: 12, lineHeight: 18, color: C.slate500 },
+  counter: { ...typography.caption12, color: Theme.text.muted, textAlign: "right", marginTop: 8 },
+  iconField: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, height: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: Theme.border.strong, marginBottom: 8 },
+  iconInput: { flex: 1, ...typography.bodyLg16, color: Theme.text.primary },
+  help: { ...typography.caption12, color: Theme.text.muted },
   reviewTop: { flexDirection: "row", gap: 16, marginBottom: 24 },
-  thumb: { width: 80, height: 80, borderRadius: radius.md, backgroundColor: "#F1F5F9", overflow: "hidden", alignItems: "center", justifyContent: "center" },
-  rName: { fontFamily: font.head, fontSize: 20, color: C.ink, marginBottom: 4 },
-  rType: { fontFamily: font.bodyRegular, fontSize: 14, color: C.slate600 },
-  rFeat: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 18, color: C.slate500, marginTop: 4 },
+  thumb: { width: 80, height: 80, borderRadius: radius.md, backgroundColor: Theme.surface.page, overflow: "hidden", alignItems: "center", justifyContent: "center" },
+  rName: { ...typography.heading20, color: Theme.text.primary, marginBottom: 4 },
+  rType: { ...typography.body14, color: Theme.text.secondary },
+  rFeat: { ...typography.bodySm13, color: Theme.text.muted, marginTop: 4 },
   rRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  rRowT: { flex: 1, fontFamily: font.bodySemi, fontSize: 14, color: C.ink },
-  warnBox: { backgroundColor: C.sosTint, borderWidth: 1, borderColor: C.sosBorder, borderRadius: radius.md, padding: 16 },
-  warnT: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 19.5, color: C.sosInk },
+  rRowT: { flex: 1, ...typography.label14, color: Theme.text.primary },
+  warnBox: { backgroundColor: Theme.status.lost.tint, borderWidth: 1, borderColor: Theme.status.lost.border, borderRadius: radius.md, padding: 16 },
+  warnT: { ...typography.bodySm13, color: Theme.status.lost.text },
   fullW: { width: "100%", alignItems: "center" },
   textBtn: { height: 48, paddingHorizontal: 16, justifyContent: "center" },
-  textBtnT: { fontFamily: font.bodyBold, fontSize: 15, color: C.slate600 },
-  outlineBtn: { width: "100%", height: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2, backgroundColor: C.white, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", marginBottom: 8 },
-  outlineT: { fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
+  textBtnT: { ...typography.button14, color: Theme.text.secondary },
+  outlineBtn: { width: "100%", height: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: Theme.border.strong, backgroundColor: Theme.surface.card, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", marginBottom: 8 },
+  outlineT: { ...typography.button14, color: Theme.text.primary },
   supportLink: { height: 40, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", paddingHorizontal: 12, marginTop: 8 },
-  supportT: { fontFamily: font.body, fontSize: 13, color: C.slate500 },
+  supportT: { ...typography.label13, color: Theme.text.muted },
 });
