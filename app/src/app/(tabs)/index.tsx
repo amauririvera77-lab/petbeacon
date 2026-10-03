@@ -236,10 +236,15 @@ export default function Home() {
 
   return (
     <View style={styles.root}>
-      <View style={[{ paddingTop: insets.top, backgroundColor: Theme.surface.card }, view === "list" && scrolled && elevation[1]]}>
-        <HomeHeader unread={unread} onBell={openNotifs} />
+      <View>
+        {/* Barra del logo: su propio fondo y por ENCIMA (zIndex) del bloque de controles, que al ocultar la búsqueda sube por detrás de ella. */}
+        <View style={[styles.logoBar, { paddingTop: insets.top }]}>
+          <HomeHeader unread={unread} onBell={openNotifs} />
+        </View>
+        {/* `controls` solo reserva el hueco (transparente). El fondo blanco, el borde inferior y la sombra viven en `controlsInner`,
+            que es lo que se traslada: así el encabezado termina justo debajo de los chips y no queda ninguna franja blanca. */}
         <View style={styles.controls}>
-          <Animated.View pointerEvents="box-none" style={[styles.controlsInner, { transform: [{ translateY: slide }] }]}>
+          <Animated.View pointerEvents="box-none" style={[styles.controlsInner, view === "list" && scrolled && elevation[1], { transform: [{ translateY: slide }] }]}>
           <Animated.View style={{ height: SEARCH_H, opacity: searchAnim, overflow: "hidden" }} pointerEvents={hideSearch ? "none" : "auto"}>
           <SearchBar
             value={view === "map" ? mapQuery : listQuery} onChange={view === "map" ? changeMapQuery : setListQuery} onSubmit={view === "map" ? searchMap : undefined}
@@ -360,9 +365,10 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Theme.surface.page },
-  // `controls` es el hueco estático (fondo + alto reservado); `controlsInner` es lo que se traslada al ocultar la búsqueda.
-  controls: { backgroundColor: Theme.surface.card },
-  controlsInner: { paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
+  logoBar: { zIndex: 1, backgroundColor: Theme.surface.card },
+  // `controls` es el hueco estático y TRANSPARENTE (solo reserva alto); `controlsInner` lleva el fondo, el borde y se traslada.
+  controls: {},
+  controlsInner: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: Theme.surface.card, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
   rightCluster: { flexDirection: "row", alignItems: "center", gap: 8 },
   chipRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 },
   // Controles flotantes del mapa: su `bottom` es TAB_BAR_CLEARANCE (por encima de la tab bar), se aplica en línea.

@@ -453,8 +453,11 @@ reemplaza la decisión de §7 sobre el FAB de 73 px.
 - **Búsqueda de Home (lista) sin saltos:** (1) en las zonas de rebote de iOS (offset <= 0, o se llegó al final) `onListScroll`
   ignora los cambios de dirección — el rebote invierte el offset solo y antes hacía reaparecer la búsqueda al soltar al
   final; (2) histéresis: hace falta recorrer `SCROLL_HYSTERESIS` (20 px) seguidos en una dirección para ocultarla/mostrarla;
-  (3) se oculta SOLO con transformaciones (`translateY` + opacidad), nunca cambiando la altura de nada: la cabecera
-  conserva su alto, y el bloque de controles, los avisos y el área de contenido suben `SEARCH_H` (54) juntos; el marco
+  (3) se oculta SOLO con transformaciones (`translateY` + opacidad), nunca cambiando la altura de nada: la barra del
+  logo tiene su propio fondo y va por encima (`zIndex`); el hueco de los controles (`controls`) es transparente y solo reserva
+  alto, mientras que el fondo blanco, el borde inferior y la sombra viven en `controlsInner`, que es lo que se traslada —
+  así, con la búsqueda oculta, el encabezado termina justo debajo de los chips y no queda ninguna franja blanca sobre las
+  tarjetas. El bloque de controles, los avisos y el área de contenido suben `SEARCH_H` (54) juntos; el marco
   de la lista ya viene `SEARCH_H` más alto por debajo (`marginBottom: -SEARCH_H`, queda detrás de la tab bar, con ese
   padding extra al final) y es el propio contenedor del área el que se traslada, para que los toques caigan siempre
   dentro de sus límites (también en Android); (4) con `useReducedMotion` el cambio es instantáneo. La lista nunca se
