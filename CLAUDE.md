@@ -155,7 +155,7 @@ Estos quedaron anotados a lo largo de la sesión como pendientes deliberados par
 
 ## 7. Decisiones de UX ya validadas — no reabrir sin razón nueva
 
-- **FAB en esquina inferior derecha, 73px, flotante** — posición ergonómica validada (zona de alcance del pulgar), no moverlo al header ni cambiar tamaño.
+- **(Reemplazado en v1.1 por la tab bar flotante con Report integrado — ver la nota "v1.1" al final.)** ~~FAB en esquina inferior derecha, 73px, flotante~~ — — posición ergonómica validada (zona de alcance del pulgar), no moverlo al header ni cambiar tamaño.
 - **Tab bar con 4 ítems, todos en negro/teal cuando activos** — decisión explícita de NO destacar "Support" con un color distinto en el nav, para no cargar el indicador de navegación con un segundo significado (se evaluó y descartó deliberadamente).
 - **List como vista por defecto de Home, Map como alternativa de igual jerarquía** — válido en tanto Map use un proveedor real (ver requisito técnico #1); si eso no ocurre, reconsiderar la jerarquía.
 - **Registro después del reporte, no antes, en la mayoría de los casos** — el onboarding permite completar Welcome → intención → Signup mínimo (2 campos) → reporte, todo saltable. Es la mejor versión posible dado que Signup sigue precediendo al reporte por estructura del flujo; si se quiere invertir esto del todo, es una decisión de producto pendiente, no un bug.
@@ -340,7 +340,7 @@ y aprobación).
   Dentro de `pet/RemovePetSheet.tsx`, el paso de confirmar "Remove from my profile" usa `danger.bg` (es destructiva);
   el paso de confirmar "My pet passed away" usa el botón `secondary` (momento de duelo, nunca rojo). El bloqueo con
   Lost activo y el archivado vía `archive_pet()` (nunca borra la fila, ver 0017) no cambiaron.
-- **Fase 3, FAB:** vive una sola vez en `app/(tabs)/_layout.tsx`, compartido por las 4 pestañas vía `state/fab.tsx`.
+- **Fase 3, FAB (retirado en v1.1, ver nota final):** vivía una sola vez en `app/(tabs)/_layout.tsx`, compartido por las 4 pestañas vía `state/fab.tsx`.
   Se le agregó `hidden` (independiente de `collapsed`, que ya existía para el scroll) y el hook `hooks/useFabHidden.ts`
   (mismo patrón `useFocusEffect` que `useFabScroll`) — Profile lo llama y pierde el FAB al enfocarse, lo recupera al
   salir. My Reports (`components/TabScreen.tsx`) y Support usan `FAB_CLEARANCE` en vez de `paddingBottom: 200` a
@@ -418,8 +418,97 @@ y aprobación).
 - **Ajustes finales antes de congelar (2026-10-02):** la hoja "Sample resource" ya muestra su título (Heading/18; antes
   usaba un estilo con `flex: 1` que lo colapsaba a altura 0). El header de Pet profile en edición dice "Edit {nombre}"
   ("Add pet" si es nueva). La descripción de las tarjetas de recurso usa `CardDescription` (`components/resources/
-  parts.tsx`): mide el ancho real de su contenedor y se lo da al `Text` como `width` explícito, con `numberOfLines={2}`.
+  parts.tsx`): mide el ancho real de su contenedor y se lo da al `Text` como `width` explícito, con `numberOfLines={2}`
+  (2026-10-03: dos intentos posteriores se revirtieron; esta es la versión vigente, ver abajo).
   Motivo: en iOS, con el ancho intrínseco, la descripción de Riverside Animal Sanctuary se medía a 2 líneas pero se
   pintaba en una sola, cortada a media palabra; ni quitar el wrapper del grupo "rehoming" ni cambiar `numberOfLines`
   por `maxHeight` lo arreglaron. Si aparece el mismo síntoma en otro `Text` multilínea dentro de una columna `flex: 1`,
   usar el mismo patrón (ancho explícito medido con `onLayout`).
+
+## Nota adicional — v1.1: tab bar flotante con Report integrado (rama `feature/floating-tab-bar`)
+
+Sustituye la tab bar de 4 pestañas **y** el FAB "Report" por una sola barra flotante (Figma "TabBar — Floating"). Esto
+reemplaza la decisión de §7 sobre el FAB de 73 px.
+
+- **`components/FloatingTabBar.tsx`** (prop `tabBar` de `Tabs`, en `app/(tabs)/_layout.tsx`): posición absoluta, márgenes
+  laterales de 16 (`TAB_BAR_SIDE_MARGIN`), fondo `surface.card`, borde `border.default`, radio `radius.xl` (28, token
+  nuevo), `elevation[2]`, padding 8. Cinco huecos: Home, My Reports, **Report**, Support, Profile. Report no es una ruta:
+  es un botón de 56×44 (`radius.pill`, `brand.primary`, `Plus` de 24 en `text.onAccent`) en un hueco de ancho fijo de 64
+  (`REPORT_BUTTON`); las cuatro pestañas (`TabBarButton`, `flex: 1`) se reparten el resto por igual. Al pulsarlo abre la
+  misma `ReportSheet` que abría el FAB ("I lost my pet" / "I saw a pet") y de ahí `/report/lost` o `/report/sighted` —
+  el flujo no cambió. Las pestañas usan `accessibilityRole="tab"` y emiten `tabPress`/`tabLongPress`; Report es
+  `button` con label "Report a pet" y hint "Report a lost pet or a sighting".
+- **Ancho verificado con las métricas reales de Manrope Bold 11:** "My Reports" mide 60,3 pt; en 360 dp el hueco de
+  pestaña es 61,5 pt (cabe con 1,2 pt de margen, sin truncar ni reducir fuente), en 375 pt 65,2 pt, en 393 pt 69,8 pt. En
+  320 pt (iPhone SE de 1.ª generación) NO cabe — decisión explícita: no se diseña para 320.
+- **`hooks/useTabBarClearance.ts`:** `TAB_BAR_CLEARANCE` = `TAB_BAR_HEIGHT` (65) + distancia inferior
+  (`Math.max(insets.bottom - 8, 12)`, también `tabBarBottomDistance`) + `spacing.lg`. Es un hook, no una constante fija,
+  porque depende de la safe area real. Lo usan el padding inferior de Home (lista), My Reports (`TabScreen`), Support y
+  Profile, y la base de los controles flotantes: `Snackbar` (siempre por encima de la barra), y en el mapa la tarjeta de
+  vista previa, el botón de recentrar y el estado vacío. El mapa se extiende hasta el borde inferior, por detrás de la barra;
+  `MapboxWebView` recibe `bottomInset` y `mapHtml.ts` sube `.mapboxgl-ctrl-bottom-left/right` (atribución y logo de Mapbox,
+  obligatorios por sus términos) ese tanto, y el `fitBounds` automático deja libre ese espacio. Con la tarjeta inferior del mapa
+  abierta (vista previa de un pin o aviso de estado vacío) Home mide su alto real con `onLayout` y envía
+  `TAB_BAR_CLEARANCE + alto + 8`; el inset inicial va en el HTML y los cambios se inyectan con `window.__setInset(px)` (nunca
+  se recarga el mapa), de modo que el logo y la "i" quedan visibles con y sin tarjeta.
+- **FAB retirado:** se eliminaron `ExtendedFab`, `state/fab.tsx` (`FabProvider`), `useFabScroll`, `useFabHidden`,
+  `FAB_SIZE` y `FAB_CLEARANCE`. La búsqueda de Home que se ocultaba al bajar usaba el estado del FAB; ahora usa un estado
+  local de dirección de scroll solo en Home (`onListScroll`/`scrollingDown`), independiente de la barra.
+- **Búsqueda de Home (lista) sin saltos:** (1) en las zonas de rebote de iOS (offset <= 0, o se llegó al final) `onListScroll`
+  ignora los cambios de dirección — el rebote invierte el offset solo y antes hacía reaparecer la búsqueda al soltar al
+  final; (2) histéresis: hace falta recorrer `SCROLL_HYSTERESIS` (20 px) seguidos en una dirección para ocultarla/mostrarla;
+  (3) se oculta SOLO con transformaciones (`translateY` + opacidad), nunca cambiando la altura de nada: la barra del
+  logo tiene su propio fondo y va por encima (`zIndex`); el hueco de los controles (`controls`) es transparente y solo reserva
+  alto, mientras que el fondo blanco, el borde inferior y la sombra viven en `controlsInner`, que es lo que se traslada —
+  así, con la búsqueda oculta, el encabezado termina justo debajo de los chips y no queda ninguna franja blanca sobre las
+  tarjetas. El bloque de controles, los avisos y el área de contenido suben `SEARCH_H` (54) juntos; el marco
+  de la lista ya viene `SEARCH_H` más alto por debajo (`marginBottom: -SEARCH_H`, queda detrás de la tab bar, con ese
+  padding extra al final) y es el propio contenedor del área el que se traslada, para que los toques caigan siempre
+  dentro de sus límites (también en Android); (4) con `useReducedMotion` el cambio es instantáneo. La lista nunca se
+  recoloca, así que el salto de layout no puede ocurrir.
+- **Comportamiento:** la barra es fija y siempre visible (no se oculta ni se minimiza al hacer scroll) y desaparece
+  mientras el teclado está abierto (`useKeyboardVisible`: `keyboardWillShow/Hide` en iOS, `keyboardDidShow/Hide` en
+  Android). Las pantallas del Stack raíz (`pet`, `report/*`, `help`, `edit-*`, `privacy`, `delete-account`, `flyer`) no la
+  muestran porque no están dentro de `(tabs)`; no hizo falta código extra. En Android < 9 `boxShadow` no dibuja sombra
+  (aceptado).
+- **`CardDescription` vuelve a la versión de v1.0 (2026-10-03):** ancho explícito medido con `onLayout` + `numberOfLines={2}`
+  — la misma del tag `v1.0-case-study`, con la que Riverside se veía completa. Se revirtieron DOS intentos posteriores que
+  no resolvieron el corte: quitar `numberOfLines` con `maxHeight = 2 × lineHeight` (recortaba la segunda línea por la mitad: el
+  `lineHeight` nominal de Body-Sm/13, 19, es menor que la altura real de la línea de Manrope, ≈ 1.366 em) y una versión con
+  `onTextLayout` (líneas reales + "…" propia). Riverside siguió cortada en el iPhone con esta versión, así que su descripción de
+  muestra se acortó a "No-kill shelter with surrender counseling." en `seed.sql` y `seed_demo_reset.sql` (paso 5b; hay que
+  correr el reset en Supabase para que la base la tome). La causa del corte en la tarjeta sigue sin entenderse.
+  La lista de Support usa un `contentContainerStyle` estable (`useMemo`) en vez de un array nuevo por render.
+
+## Nota adicional — texto dinámico: pendiente para la etapa B (2026-10-03)
+
+Auditoría del tamaño de texto del sistema (Dynamic Type / "Texto más grande"). **No se implementó solución de texto
+dinámico en v1.1** (cambio de plan): quedó SOLO un cambio, `minHeight` en lugar de alto fijo en `CompactSegmented` (pista 36 /
+segmento 32), `ActiveFilters` (chip y "Clear all" 30), `SearchBar` (campo 44) y `FilterButton` (40), para que esos controles
+crezcan con el texto en vez de recortarlo.
+
+- **Intento descartado — contención con `AppText`/`maxFontSizeMultiplier`:** se creó un componente `AppText` (envoltorio de
+  `Text` con tope por rol: tab 1.0, control 1.3, title 1.5, reading 1.5) y se aplicó a los 75 archivos. Se revirtió (commits
+  `4dff487` y `28ec92f`, reverts `b1e4398` y `257be84`): el cambio de fondo en cómo se miden los textos coincidió con recortes
+  a media letra en la descripción de Riverside y no se pudo aislar la causa, así que no se mantiene sin entenderla.
+  **Hipótesis pendientes de investigar:**
+  1. **Medidas obsoletas al cambiar el tamaño de texto con la app abierta:** un texto medido (ancho de `onLayout`,
+     `onTextLayout`) con una escala de fuente puede quedar con esa medida si el usuario cambia "Texto más grande" sin cerrar
+     la app, y se pinta con otra escala.
+  2. **Textos medidos antes de cargar Manrope:** si se mide con la fuente del sistema como respaldo y luego se pinta con
+     Manrope (altura de línea natural distinta, ≈ 1.366 em), la medida queda corta y el contenedor recorta.
+
+**Pendiente para la etapa B (NO tocado a propósito):**
+1. **Tarjetas con `numberOfLines={1}`** — con texto ampliado el nombre/raza/ubicación se recortan en una línea. Hay que
+   decidir cuáles admiten 2 líneas: `pet.tsx` (178, 276), `(tabs)/index.tsx` 315, `profile.tsx` (96, 123, 159, 182),
+   `ReportCard.tsx` (31, 42, 58, 59), `MyReportStatusCard.tsx` 55, `PastReports.tsx` (31, 34), `ReportRow.tsx` (25, 32),
+   `ReportFlow.tsx` (178, 179), `BreedPicker.tsx` 41, `resources/parts.tsx` 14 (`OpenNow`), `TabBarButton.tsx` 52.
+   `ReportCard` ya tiene su modo apilado `ACCESSIBILITY_FONT_SCALE = 1.5`.
+2. **Siete estilos de `theme/typography.ts` con `lineHeight` por DEBAJO de la altura natural de su fuente** (Manrope 1.366 em,
+   Outfit 1.26, Geist 1.30): `display28` (34), `title24` (29), `heading20` (25, marginal), `button16` (19), `button14` (17),
+   `badge12` (14), `micro11` (13). iOS multiplica el `lineHeight` por el factor de fuente y, si queda por debajo de la
+   altura natural, no aplica el desplazamiento de línea base — con texto grande los glifos pueden tocar el borde del
+   contenedor.
+3. **`TextInput`** (búsqueda y formularios) no tiene tope de escala propio.
+4. Las etiquetas de la tab bar (Micro/11, alto fijo 65) y el flyer (`FlyerTemplate`, pieza impresa) tampoco tienen
+   tratamiento de escala.

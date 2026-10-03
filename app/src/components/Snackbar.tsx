@@ -1,16 +1,16 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Theme, FAB_SIZE, MIN_HIT, radius } from "../theme/tokens";
+import { useTabBarClearance } from "../hooks/useTabBarClearance";
+import { Theme, MIN_HIT, radius } from "../theme/tokens";
 import { elevation } from "../theme/elevation";
 import { typography } from "../theme/typography";
 
 type Opts = { message: string; actionLabel?: string; onAction?: () => void; duration?: number };
 const Ctx = createContext<{ show: (o: Opts) => void } | null>(null);
 
-// Snackbar global (~5 s por defecto) con acción, p. ej. "Match dismissed · Undo". Se coloca sobre el tab bar y el FAB.
+// Snackbar global (~5 s por defecto) con acción, p. ej. "Match dismissed · Undo". Se coloca siempre por encima de la tab bar flotante (useTabBarClearance).
 export function SnackbarProvider({ children }: { children: ReactNode }) {
-  const insets = useSafeAreaInsets();
+  const TAB_BAR_CLEARANCE = useTabBarClearance();
   const [opts, setOpts] = useState<Opts | null>(null);
   const opacity = useRef(new Animated.Value(0)).current;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -33,7 +33,7 @@ export function SnackbarProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={value}>
       {children}
       {opts ? (
-        <Animated.View pointerEvents="box-none" style={[styles.wrap, { opacity, bottom: insets.bottom + 56 + 16 + FAB_SIZE + 12 }]}>
+        <Animated.View pointerEvents="box-none" style={[styles.wrap, { opacity, bottom: TAB_BAR_CLEARANCE }]}>
           <View style={styles.bar} accessibilityRole="alert" accessibilityLiveRegion="polite">
             <Text style={styles.msg}>{opts.message}</Text>
             {opts.actionLabel ? (

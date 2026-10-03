@@ -65,11 +65,15 @@ export const font = {
   bodyBold: "Manrope_700Bold",
 } as const;
 
-export const radius = { sm: 6, md: 12, lg: 16, pill: 999 } as const; // sm: 8→6 (Fase 4, Warm Beacon) — no se usaba en ningún componente hoy
+export const radius = { sm: 6, md: 12, lg: 16, xl: 28, pill: 999 } as const; // sm: 8→6 (Fase 4, Warm Beacon) — no se usaba en ningún componente hoy
 // Escala de espaciado (Fase 4, Warm Beacon) — agregada como referencia, todavía no reemplaza los números sueltos
 // de padding/gap/margin de cada componente (esa migración queda para una fase posterior, pantalla por pantalla).
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, "2xl": 32 } as const;
 export const MIN_HIT = 44; // objetivo táctil mínimo
-export const FAB_SIZE = 73; // 56px base +30% (CLAUDE.md §3 y §7)
-// Espacio inferior que necesita una lista para que su última tarjeta quede completa sobre el FAB: FAB + su margen (16) + respiro (16).
-export const FAB_CLEARANCE = FAB_SIZE + 16 + 16;
+// Tab bar flotante (v1.1, Figma "TabBar — Floating"): contenedor con padding 8; su alto sale del contenido (cápsula 32 +
+// gap 2 + etiqueta Micro/11 de 13 = 47) + 2 × 8 de padding + 2 × 1 de borde = 65. Report es un hueco de ancho fijo
+// (botón de 56 + 4 de margen a cada lado); las cuatro pestañas se reparten el resto por igual.
+export const TAB_BAR_PADDING = 8;
+export const TAB_BAR_HEIGHT = 65;
+export const TAB_BAR_SIDE_MARGIN = 16;
+export const REPORT_BUTTON = { width: 56, height: 44, slot: 64 } as const;

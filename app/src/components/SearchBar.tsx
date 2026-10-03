@@ -18,7 +18,7 @@ export function SearchBar({ value, onChange, onSubmit, placeholder }: { value: s
 }
 
 const styles = StyleSheet.create({
-  field: { height: MIN_HIT, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, borderRadius: radius.md, backgroundColor: Theme.surface.page, borderWidth: 1, borderColor: Theme.border.default },
+  field: { minHeight: MIN_HIT, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, borderRadius: radius.md, backgroundColor: Theme.surface.page, borderWidth: 1, borderColor: Theme.border.default },
   input: { flex: 1, ...typography.bodyLg16, color: Theme.text.primary, paddingVertical: 0 },
   clear: { width: 24, height: 24, borderRadius: 12, backgroundColor: Theme.border.default, alignItems: "center", justifyContent: "center" },
 });

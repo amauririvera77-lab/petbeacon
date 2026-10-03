@@ -1,7 +1,7 @@
 import { useFocusEffect } from "expo-router";
 import { LocateFixed, X } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Animated, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Animated, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EditLocationSheet } from "../../components/EditLocationSheet";
 import { EndOfFeed } from "../../components/EndOfFeed";
@@ -49,17 +49,21 @@ import { activeFilterCount, applyHomeFilters, mapEventResources } from "../../li
 import { nextRadius } from "../../lib/radius";
 import { reportShareText } from "../../lib/shareText";
 import { sortReports } from "../../lib/sort";
-import { useFab } from "../../state/fab";
-import { useFabScroll } from "../../hooks/useFabScroll";
 import { useHomePrefs, type ViewRadius } from "../../state/homePrefs";
 import { useSession } from "../../state/session";
-import { Theme, FAB_CLEARANCE, radius } from "../../theme/tokens";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
+import { useTabBarClearance } from "../../hooks/useTabBarClearance";
+import { Theme, radius } from "../../theme/tokens";
 import { elevation } from "../../theme/elevation";
 import { typography } from "../../theme/typography";
 
 const MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN;
 
 // List (default) y Map con igual jerarquía (CLAUDE.md §7); ambos leen los mismos datos y el mismo radio.
+// Alto reservado de la búsqueda de la lista y recorrido mínimo en una misma dirección antes de mostrarla u ocultarla.
+const SEARCH_H = 54;
+const SCROLL_HYSTERESIS = 20;
+
 export default function Home() {
   const insets = useSafeAreaInsets();
   const [pinReport, setPinReport] = useState<ReportNearby | null>(null);
@@ -72,8 +76,8 @@ export default function Home() {
   const { city, alertRadiusMi, notifSeenAt, update } = useSession();
   const mapRef = useRef<MapHandle>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const TAB_BAR_CLEARANCE = useTabBarClearance();
   const { prefs, setPrefs, setSort, resetFilters, resetAll, listQuery, setListQuery, mapQuery, setMapQuery, view, setView } = useHomePrefs();
-  const { collapsed: fabCollapsed, setCollapsed } = useFab();
   const uid = useAuthUser();
   const center = useHome();
   const { pos: me, status: posStatus } = useMyPosition(view === "map");
@@ -121,19 +125,42 @@ export default function Home() {
   const [matchesFor, setMatchesFor] = useState<{ id: string; name: string } | null>(null);
   const filterCount = activeFilterCount(prefs);
 
-  // Mismo comportamiento del FAB que el resto de la app (se contrae al bajar, se expande al subir y al entrar a la pantalla).
-  const { onScroll, reset: resetFab } = useFabScroll();
-  useEffect(() => { if (view !== "map") { setPreviewId(null); resetFab(); } else setScrolled(false); }, [view, resetFab]);
-  // En Map el FAB va expandido, salvo con la tarjeta de vista previa abierta: se contrae al círculo para no taparla.
-  useEffect(() => { if (view === "map") setCollapsed(preview !== null); }, [view, preview, setCollapsed]);
+  // Dirección de scroll de la lista (solo Home, independiente de la tab bar): tras recorrer al menos SCROLL_HYSTERESIS px
+  // seguidos hacia abajo se marca `scrollingDown` (oculta la búsqueda); hacia arriba, se limpia. En las zonas de rebote
+  // de iOS (arriba: offset <= 0; abajo: se llegó al final) el offset se invierte solo, así que NO cuentan como cambio de
+  // dirección — sin esto, soltar al final de la lista hacía reaparecer la búsqueda. Al entrar a la pantalla o volver a la
+  // lista empieza en "arriba".
+  const [scrollingDown, setScrollingDown] = useState(false);
+  const lastY = useRef(0);
+  const dirTravel = useRef(0); // recorrido acumulado con signo en la dirección actual
+  const resetScrollDir = useCallback(() => { lastY.current = 0; dirTravel.current = 0; setScrollingDown(false); }, []);
+  const onListScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
+    const y = contentOffset.y, dy = y - lastY.current;
+    lastY.current = y;
+    const bouncing = y <= 0 || y + layoutMeasurement.height >= contentSize.height - 1;
+    if (bouncing || dy === 0) { dirTravel.current = 0; return; }
+    if (Math.sign(dy) !== Math.sign(dirTravel.current)) dirTravel.current = 0;
+    dirTravel.current += dy;
+    if (dirTravel.current >= SCROLL_HYSTERESIS) setScrollingDown(true);
+    else if (dirTravel.current <= -SCROLL_HYSTERESIS) setScrollingDown(false);
+  }, []);
+  useFocusEffect(resetScrollDir);
+  useEffect(() => { if (view !== "map") { setPreviewId(null); resetScrollDir(); } else setScrolled(false); }, [view, resetScrollDir]);
 
-  // D.6: al bajar la lista la búsqueda se contrae (misma señal de scroll que el FAB) y quedan fijos chips y List/Map; al subir reaparece.
+  // D.6: al bajar la lista la búsqueda se contrae y quedan fijos chips y List/Map; al subir reaparece.
   // Con texto en la búsqueda NO se contrae, y en Map siempre está visible.
-  const hideSearch = view === "list" && fabCollapsed && listQuery.trim() === "";
+  const hideSearch = view === "list" && scrollingDown && listQuery.trim() === "";
+  // La búsqueda se muestra/oculta SOLO con transformaciones (translateY + opacidad): nada cambia de tamaño en el layout, así que
+  // la lista nunca se recoloca. El bloque de controles, los avisos y la lista suben/bajan juntos SEARCH_H; el marco de la lista
+  // ya viene SEARCH_H más alto por debajo (queda detrás de la tab bar). Con movimiento reducido el cambio es instantáneo.
+  const reducedMotion = useReducedMotion();
   const searchAnim = useRef(new Animated.Value(1)).current;
   useEffect(() => {
-    Animated.timing(searchAnim, { toValue: hideSearch ? 0 : 1, duration: 180, useNativeDriver: false }).start();
-  }, [hideSearch, searchAnim]);
+    if (reducedMotion) { searchAnim.setValue(hideSearch ? 0 : 1); return; }
+    Animated.timing(searchAnim, { toValue: hideSearch ? 0 : 1, duration: 180, useNativeDriver: true }).start();
+  }, [hideSearch, reducedMotion, searchAnim]);
+  const slide = searchAnim.interpolate({ inputRange: [0, 1], outputRange: [-SEARCH_H, 0] });
 
   // Búsqueda de zona o dirección (modo Map): geocodifica cerca de tu centro y la cámara vuela allí.
   const searchMap = async () => {
@@ -207,12 +234,30 @@ export default function Home() {
     if (r) setTimeout(() => setPinReport(r), 400);
   };
 
+  // Tarjeta inferior del mapa (vista previa de un pin o aviso de estado vacío): tapa la atribución y el logo de Mapbox, que son
+  // obligatorios. Se mide su alto real (onLayout) y se suma al inset que recibe el WebView; sin tarjeta, vuelve al valor normal.
+  const mapEmptyEl = error ? (
+    <EmptyState title="We couldn't load reports" body="Check your connection and try again." actionLabel="Try again" onAction={refresh} />
+  ) : noReportsInRadius && !preview ? (
+    <EmptyState {...emptyRadiusProps} />
+  ) : !loading && reports.length > 0 && mapReports.length === 0 ? (
+    <EmptyState title="No reports match your filters" actionLabel="Reset filters" onAction={resetAll} />
+  ) : null;
+  const [cardH, setCardH] = useState(0);
+  const mapInset = TAB_BAR_CLEARANCE + (preview || mapEmptyEl ? cardH + 8 : 0);
+
   return (
     <View style={styles.root}>
-      <View style={[{ paddingTop: insets.top, backgroundColor: Theme.surface.card }, view === "list" && scrolled && elevation[1]]}>
-        <HomeHeader unread={unread} onBell={openNotifs} />
+      <View>
+        {/* Barra del logo: su propio fondo y por ENCIMA (zIndex) del bloque de controles, que al ocultar la búsqueda sube por detrás de ella. */}
+        <View style={[styles.logoBar, { paddingTop: insets.top }]}>
+          <HomeHeader unread={unread} onBell={openNotifs} />
+        </View>
+        {/* `controls` solo reserva el hueco (transparente). El fondo blanco, el borde inferior y la sombra viven en `controlsInner`,
+            que es lo que se traslada: así el encabezado termina justo debajo de los chips y no queda ninguna franja blanca. */}
         <View style={styles.controls}>
-          <Animated.View style={{ height: searchAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 54] }), opacity: searchAnim, overflow: "hidden" }} pointerEvents={hideSearch ? "none" : "auto"}>
+          <Animated.View pointerEvents="box-none" style={[styles.controlsInner, view === "list" && scrolled && elevation[1], { transform: [{ translateY: slide }] }]}>
+          <Animated.View style={{ height: SEARCH_H, opacity: searchAnim, overflow: "hidden" }} pointerEvents={hideSearch ? "none" : "auto"}>
           <SearchBar
             value={view === "map" ? mapQuery : listQuery} onChange={view === "map" ? changeMapQuery : setListQuery} onSubmit={view === "map" ? searchMap : undefined}
             placeholder={view === "map" ? "Search an area or address" : "Search breed, color or name"} />
@@ -225,12 +270,17 @@ export default function Home() {
             </View>
           </View>
           <ActiveFilters prefs={prefs} onChange={setPrefs} onClearAll={resetFilters} />
+          </Animated.View>
         </View>
       </View>
-      <OfflineBanner lastUpdated={lastUpdated ?? null} failed={failed && !error} onRetry={refresh} />
-      {locPerm === "denied" && !locDismissed ? <LocationOffStrip onSetZone={() => setZoneOpen(true)} onDismiss={() => setLocDismissed(true)} /> : null}
+      <Animated.View pointerEvents="box-none" style={{ transform: [{ translateY: slide }] }}>
+        <OfflineBanner lastUpdated={lastUpdated ?? null} failed={failed && !error} onRetry={refresh} />
+        {locPerm === "denied" && !locDismissed ? <LocationOffStrip onSetZone={() => setZoneOpen(true)} onDismiss={() => setLocDismissed(true)} /> : null}
+      </Animated.View>
 
-      <View style={{ flex: 1 }}>
+      {/* El área de contenido es lo que se traslada (en List, con el marco SEARCH_H más alto por debajo): así los toques de la lista
+          siempre caen dentro de los límites de su contenedor, también en Android. En Map no se mueve ni se alarga. */}
+      <Animated.View style={{ flex: 1, marginBottom: view === "list" ? -SEARCH_H : 0, transform: [{ translateY: slide }] }}>
       {view === "map" ? (
         <View style={styles.mapWrap}>
           {!MAPBOX_TOKEN ? (
@@ -239,7 +289,7 @@ export default function Home() {
             <View style={styles.pad}><SetupNotice /></View>
           ) : (
             <>
-              <MapboxWebView ref={mapRef} alertRadiusMi={alertRadiusMi} selectedId={preview?.id ?? null} token={MAPBOX_TOKEN} reports={mapReports} resources={mapResources} center={center} radiusMi={prefs.viewRadiusMi} me={me} mineIds={mineIds} matchNames={matchNames} focus={focus} onSelect={(sel) => {
+              <MapboxWebView ref={mapRef} bottomInset={mapInset} alertRadiusMi={alertRadiusMi} selectedId={preview?.id ?? null} token={MAPBOX_TOKEN} reports={mapReports} resources={mapResources} center={center} radiusMi={prefs.viewRadiusMi} me={me} mineIds={mineIds} matchNames={matchNames} focus={focus} onSelect={(sel) => {
                 if (!sel) { setPreviewId(null); return; }
                 if (sel.kind === "resource") { setPreviewId(null); const r = mapResources.find((x) => x.id === sel.id); if (r) openResource(r); }
                 else setPreviewId(sel.id);
@@ -250,19 +300,13 @@ export default function Home() {
                   <Text style={styles.findingT}>Finding your location…</Text>
                 </View>
               ) : null}
-              {error ? (
-                <EmptyState style={styles.mapEmpty} title="We couldn't load reports" body="Check your connection and try again." actionLabel="Try again" onAction={refresh} />
-              ) : noReportsInRadius && !preview ? (
-                <EmptyState style={styles.mapEmpty} {...emptyRadiusProps} />
-              ) : !loading && reports.length > 0 && mapReports.length === 0 ? (
-                <EmptyState style={styles.mapEmpty} title="No reports match your filters" actionLabel="Reset filters" onAction={resetAll} />
-              ) : null}
+              {mapEmptyEl ? <View style={[styles.mapEmpty, { bottom: TAB_BAR_CLEARANCE }]} onLayout={(e) => setCardH(e.nativeEvent.layout.height)}>{mapEmptyEl}</View> : null}
               <MapRadiusChip value={prefs.viewRadiusMi} onChange={(mi) => setPrefs({ viewRadiusMi: mi as ViewRadius })} />
-              <Pressable accessibilityRole="button" accessibilityLabel="Center map on my location" onPress={() => mapRef.current?.recenter()} style={styles.recenter}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Center map on my location" onPress={() => mapRef.current?.recenter()} style={[styles.recenter, { bottom: TAB_BAR_CLEARANCE }]}>
                 <LocateFixed size={22} color={Theme.text.primary} />
               </Pressable>
               {preview ? (
-                <View style={styles.preview}>
+                <View style={[styles.preview, { bottom: TAB_BAR_CLEARANCE }]} onLayout={(e) => setCardH(e.nativeEvent.layout.height)}>
                   <ReportCard report={preview} mine={mineIds.includes(preview.id)} matchFor={matchNames[preview.id]} onPress={() => setPinReport(preview)} />
                 </View>
               ) : null}
@@ -276,7 +320,7 @@ export default function Home() {
           )}
         </View>
       ) : (
-        <ScrollView ref={scrollRef} contentContainerStyle={styles.listC} onScroll={(e) => { onScroll(e); setScrolled(e.nativeEvent.contentOffset.y > 0); }} scrollEventThrottle={16}
+        <ScrollView ref={scrollRef} contentContainerStyle={[styles.listC, { paddingBottom: TAB_BAR_CLEARANCE + SEARCH_H }]} onScroll={(e) => { onListScroll(e); setScrolled(e.nativeEvent.contentOffset.y > 0); }} scrollEventThrottle={16}
           refreshControl={<RefreshControl refreshing={pulling} onRefresh={onPull} tintColor={Theme.brand.primary} />}>
           <EnableAlertsCard />
           {celebrate ? <ReunitedCelebration name={celebrate.name} onDone={endCelebration} /> : null}
@@ -310,7 +354,7 @@ export default function Home() {
         </ScrollView>
       )}
       <NewReportsPill count={newVisible} top={view === "map" ? 68 : 12} onPress={showNew} />
-      </View>
+      </Animated.View>
 
       <EditLocationSheet visible={zoneOpen} onClose={() => { setZoneOpen(false); recheckLoc(); }} />
       <FilterSheet visible={filtersOpen} prefs={prefs} onChange={setPrefs} onReset={resetFilters} onClose={() => setFiltersOpen(false)} />
@@ -327,19 +371,24 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Theme.surface.page },
-  controls: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: Theme.surface.card, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
+  logoBar: { zIndex: 1, backgroundColor: Theme.surface.card },
+  // `controls` es el hueco estático y TRANSPARENTE (solo reserva alto); `controlsInner` lleva el fondo, el borde y se traslada.
+  controls: {},
+  controlsInner: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: Theme.surface.card, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
   rightCluster: { flexDirection: "row", alignItems: "center", gap: 8 },
   chipRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 },
-  recenter: { position: "absolute", right: 16, bottom: 16 + 73 + 12, width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: Theme.surface.card, ...elevation[1] },
+  // Controles flotantes del mapa: su `bottom` es TAB_BAR_CLEARANCE (por encima de la tab bar), se aplica en línea.
+  recenter: { position: "absolute", right: 16, width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: Theme.surface.card, ...elevation[1] },
   // Deja libre la columna derecha del FAB (73 px + márgenes).
-  preview: { position: "absolute", left: 12, right: 16 + 73 + 8, bottom: 16, ...elevation[2] },
+  // right: deja sitio al botón de recentrar (48 + 16 de margen + 8 de separación), que comparte línea base con la tarjeta.
+  preview: { position: "absolute", left: 12, right: 16 + 48 + 8, ...elevation[2] },
   focusChip: { position: "absolute", top: 12, right: 12, maxWidth: "55%", minHeight: 44, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: Theme.surface.card, ...elevation[1] },
   focusT: { flexShrink: 1, ...typography.label13, color: Theme.text.primary },
   finding: { position: "absolute", top: 68, left: 12, minHeight: 40, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: Theme.surface.card, ...elevation[1] },
   findingT: { ...typography.label13, color: Theme.text.primary },
-  mapEmpty: { position: "absolute", left: 12, right: 16 + 73 + 8, bottom: 16 },
-  // Padding inferior = FAB + su margen: la última tarjeta se ve completa al llegar al final del scroll.
-  listC: { padding: 16, paddingBottom: FAB_CLEARANCE, gap: 10 },
+  mapEmpty: { position: "absolute", left: 12, right: 16 + 48 + 8 },
+  // El padding inferior (TAB_BAR_CLEARANCE) se aplica en línea: la última tarjeta se ve completa sobre la tab bar.
+  listC: { padding: 16, gap: 10 },
   mapWrap: { flex: 1 },
   pad: { padding: 16 },
 });
