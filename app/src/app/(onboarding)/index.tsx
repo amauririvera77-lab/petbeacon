@@ -2,8 +2,7 @@
 import { Eye, Siren } from "lucide-react-native";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { AppText } from "../../components/AppText";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SaveAccountSheet } from "../../components/account/SaveAccountSheet";
 import { IntentOption } from "../../components/IntentOption";
 import { Logo } from "../../components/Logo";
@@ -43,8 +42,8 @@ export default function Welcome() {
       <View style={styles.wrap}>
         <View style={styles.hero}>
           <Logo width={150} />
-          <AppText style={styles.tagline}>Reunite pets with their people.</AppText>
-          <AppText role="title" style={styles.h1} accessibilityRole="header">What brings you here today?</AppText>
+          <Text style={styles.tagline}>Reunite pets with their people.</Text>
+          <Text style={styles.h1} accessibilityRole="header">What brings you here today?</Text>
         </View>
         {/* Mismo patrón que ReportSheet ("What would you like to report?"): tarjeta neutra, color de estado solo en
             el círculo del ícono — nunca en el fondo del botón (CLAUDE.md). Mismos textos e íconos que esa hoja. */}
@@ -53,16 +52,16 @@ export default function Welcome() {
           <IntentOption title="I saw a pet" sub="Help a lost pet get back to its owner" Icon={Eye} color={Theme.status.sighted.bg} onPress={() => pick("seen")} />
         </View>
         <Pressable accessibilityRole="link" onPress={() => pick("register")} style={styles.link}>
-          <AppText style={styles.linkT}>Just setting up — I'll register my pet now</AppText>
+          <Text style={styles.linkT}>Just setting up — I'll register my pet now</Text>
         </Pressable>
         {/* En vista previa (Design tools) se ocultan: llevarían a una cuenta o pantalla REALES, fuera del sandbox del onboarding. */}
         {!preview.active ? (
           <>
             <Pressable accessibilityRole="link" onPress={() => router.push("/(tabs)/support")} style={[styles.link, { marginTop: 18 }]}>
-              <AppText style={styles.linkT}>{"Struggling to care for your pet right now?\nSee local support"}</AppText>
+              <Text style={styles.linkT}>{"Struggling to care for your pet right now?\nSee local support"}</Text>
             </Pressable>
             <Pressable accessibilityRole="link" onPress={() => setLoginOpen(true)} style={[styles.link, { marginTop: 10 }]}>
-              <AppText style={styles.linkT}>Already saved your account? Log in</AppText>
+              <Text style={styles.linkT}>Already saved your account? Log in</Text>
             </Pressable>
           </>
         ) : null}

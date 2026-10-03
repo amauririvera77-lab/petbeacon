@@ -1,8 +1,7 @@
 import { router } from "expo-router";
 import { ChevronDown, ChevronLeft } from "lucide-react-native";
 import { useState } from "react";
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { AppText } from "../components/AppText";
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "../components/Button";
 import { SUPPORT_EMAIL } from "../lib/config";
@@ -32,22 +31,22 @@ export default function Help() {
     <View style={styles.root}>
       <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={Theme.text.primary} /></Pressable>
-        <AppText role="title" style={styles.h} accessibilityRole="header">Help and FAQ</AppText>
+        <Text style={styles.h} accessibilityRole="header">Help and FAQ</Text>
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}>
         {FAQ.map((sec) => (
           <View key={sec.title} style={{ marginBottom: 24 }}>
-            <AppText style={styles.sec}>{sec.title}</AppText>
+            <Text style={styles.sec}>{sec.title}</Text>
             <View style={styles.card}>
               {sec.items.map(([q, a], i) => {
                 const key = `${sec.title}-${i}`, on = open === key;
                 return (
                   <View key={key} style={i > 0 && styles.divider}>
                     <Pressable accessibilityRole="button" accessibilityState={{ expanded: on }} onPress={() => setOpen(on ? null : key)} style={styles.q}>
-                      <AppText style={styles.qT}>{q}</AppText>
+                      <Text style={styles.qT}>{q}</Text>
                       <View style={on && { transform: [{ rotate: "180deg" }] }}><ChevronDown size={18} color={Theme.text.muted} /></View>
                     </Pressable>
-                    {on ? <AppText style={styles.a}>{a}</AppText> : null}
+                    {on ? <Text style={styles.a}>{a}</Text> : null}
                   </View>
                 );
               })}
@@ -56,8 +55,8 @@ export default function Help() {
         ))}
         {/* "Still need help?" (Fase 11 de congelación): vía de contacto real al final del FAQ, por si las preguntas no alcanzan. */}
         <View style={styles.help}>
-          <AppText style={styles.helpT}>Still need help?</AppText>
-          <AppText style={styles.helpS}>Our team usually replies within 2 business days.</AppText>
+          <Text style={styles.helpT}>Still need help?</Text>
+          <Text style={styles.helpS}>Our team usually replies within 2 business days.</Text>
           <Button variant="secondary" label="Contact us"
             onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`).catch(() => Alert.alert("Couldn't open email", `Reach us at ${SUPPORT_EMAIL}`))} />
         </View>

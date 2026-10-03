@@ -1,6 +1,5 @@
 import { X } from "lucide-react-native";
-import { Pressable, StyleSheet, View } from "react-native";
-import { AppText } from "./AppText";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { activeFilterChips } from "../lib/homeFilters";
 import type { Prefs } from "../state/homePrefs";
 import { Theme, radius } from "../theme/tokens";
@@ -16,12 +15,12 @@ export function ActiveFilters({ prefs, onChange, onClearAll }: { prefs: Prefs; o
       {chips.map((c) => (
         <Pressable key={c.key} accessibilityRole="button" accessibilityLabel={`Remove filter: ${c.label}`} onPress={() => onChange(c.clear)}
           hitSlop={{ top: 6, bottom: 6 }} style={styles.chip}>
-          <AppText role="control" style={styles.t}>{c.label}</AppText>
+          <Text style={styles.t}>{c.label}</Text>
           <X size={13} color={Theme.text.primary} />
         </Pressable>
       ))}
       <Pressable accessibilityRole="button" onPress={onClearAll} hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }} style={styles.clear}>
-        <AppText role="control" style={styles.clearT}>Clear all</AppText>
+        <Text style={styles.clearT}>Clear all</Text>
       </Pressable>
     </View>
   );

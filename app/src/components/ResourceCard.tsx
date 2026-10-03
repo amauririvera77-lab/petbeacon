@@ -1,6 +1,5 @@
 import { CalendarDays, ChevronRight, HeartHandshake } from "lucide-react-native";
-import { Pressable, StyleSheet, View } from "react-native";
-import { AppText } from "./AppText";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { ResourceNearby } from "../lib/database.types";
 import { CATEGORY_STYLE, resourceAction, resourceIcon, type ResourceActionKind } from "../lib/resources";
 import { CardDescription, OpenNow, TagChips } from "./resources/parts";
@@ -22,9 +21,9 @@ export function ResourceCard({ resource: r, onAction }: { resource: ResourceNear
     <View style={styles.card}>
       <View style={[styles.icon, { backgroundColor: tile }]}><Icon size={22} color={icon} /></View>
       <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
-        <AppText style={styles.name}>{r.name}</AppText>
+        <Text style={styles.name}>{r.name}</Text>
         <View style={styles.metaRow}>
-          <AppText style={styles.dist}>{r.distance_mi.toFixed(1)} mi away</AppText>
+          <Text style={styles.dist}>{r.distance_mi.toFixed(1)} mi away</Text>
           <OpenNow r={r} now={now} />
         </View>
         <TagChips r={r} />
@@ -46,14 +45,14 @@ export function EventResourceCard({ resource: r, onAction }: { resource: Resourc
   return (
     <View style={styles.event} accessibilityLabel={`Event: ${r.name}${when ? `, ${when}` : ""}`}>
       <View style={styles.eHead}>
-        <View style={styles.eTag}><CalendarDays size={14} color={Theme.text.onAccent} /><AppText role="control" style={styles.eTagT}>Event</AppText></View>
-        {when ? <AppText style={styles.eWhen} numberOfLines={2}>{when}</AppText> : null}
+        <View style={styles.eTag}><CalendarDays size={14} color={Theme.text.onAccent} /><Text style={styles.eTagT}>Event</Text></View>
+        {when ? <Text style={styles.eWhen} numberOfLines={2}>{when}</Text> : null}
       </View>
-      <AppText style={styles.eName}>{r.name}</AppText>
+      <Text style={styles.eName}>{r.name}</Text>
       <TagChips r={r} />
       <CardDescription text={r.description} style={styles.eDesc} />
       <View style={styles.foot}>
-        <AppText style={styles.eDist}>{r.distance_mi.toFixed(1)} mi away</AppText>
+        <Text style={styles.eDist}>{r.distance_mi.toFixed(1)} mi away</Text>
         <Button size="compact" Icon={action.Icon} label={action.label} onPress={() => onAction(action.kind)} />
       </View>
     </View>
@@ -69,10 +68,10 @@ export function CommunityResourceCard({ resource: r, onPress }: { resource: Reso
       {/* Mismo contenedor (tamaño, radio, alineación) que la foto/silueta de ReportCard; tokens de "recurso comunitario" (info = blue 700, infoTint = blue 50). */}
       <View style={styles.nIcon}><HeartHandshake size={32} color={Theme.info.bg} /></View>
       <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
-        <AppText role="control" style={styles.nKind}>Community resource</AppText>
-        <AppText style={styles.nName} numberOfLines={2}>{r.name}</AppText>
-        {when ? <AppText style={styles.nWhen}>{when}</AppText> : null}
-        <AppText style={styles.nDist}>{r.distance_mi.toFixed(1)} mi away</AppText>
+        <Text style={styles.nKind}>Community resource</Text>
+        <Text style={styles.nName} numberOfLines={2}>{r.name}</Text>
+        {when ? <Text style={styles.nWhen}>{when}</Text> : null}
+        <Text style={styles.nDist}>{r.distance_mi.toFixed(1)} mi away</Text>
       </View>
       <ChevronRight size={18} color={Theme.text.muted} />
     </Pressable>

@@ -1,7 +1,6 @@
 import { Check, ChevronDown, Search, X } from "lucide-react-native";
 import { useMemo, useState } from "react";
-import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from "react-native";
-import { AppText } from "../AppText";
+import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EMPTY_BREED, MIXED_ID, MIXED_LABEL, OTHER_ID, breedDisplay, searchBreeds, type BreedValue } from "../../lib/breeds";
 import type { Species } from "../../lib/database.types";
@@ -36,12 +35,12 @@ export function BreedPicker({ label = "Breed", optional, species, value, onChang
 
   return (
     <View style={{ gap: 6 }}>
-      <AppText style={styles.label}>{label}{optional ? <AppText style={styles.opt}> (optional)</AppText> : null}</AppText>
+      <Text style={styles.label}>{label}{optional ? <Text style={styles.opt}> (optional)</Text> : null}</Text>
       <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${shown || "not set"}`} disabled={disabled} onPress={openIt}
         style={[styles.field, disabled && { backgroundColor: Theme.surface.page }]}>
-        <AppText style={[styles.fieldT, !shown && { color: Theme.text.muted }]} numberOfLines={1}>
+        <Text style={[styles.fieldT, !shown && { color: Theme.text.muted }]} numberOfLines={1}>
           {shown || (disabled ? "Choose the type first" : "Select a breed")}
-        </AppText>
+        </Text>
         <ChevronDown size={18} color={Theme.text.muted} />
       </Pressable>
 
@@ -51,17 +50,17 @@ export function BreedPicker({ label = "Breed", optional, species, value, onChang
           <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 12) }]}>
             <View style={styles.handleWrap}><View style={styles.handle} /></View>
             <View style={styles.head}>
-              <AppText style={styles.title} accessibilityRole="header">{otherMode ? "Other breed" : label}</AppText>
+              <Text style={styles.title} accessibilityRole="header">{otherMode ? "Other breed" : label}</Text>
               <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={close} style={styles.close}><X size={16} color={Theme.text.secondary} /></Pressable>
             </View>
             {otherMode ? (
               <View style={{ padding: 16, gap: 12 }}>
-                <AppText style={styles.help}>Describe the breed in your own words.</AppText>
+                <Text style={styles.help}>Describe the breed in your own words.</Text>
                 <TextInput value={otherText} onChangeText={setOtherText} placeholder="e.g. Chiweenie" placeholderTextColor={Theme.text.muted} autoFocus maxLength={40}
                   accessibilityLabel="Other breed" style={styles.input} />
                 <Pressable accessibilityRole="button" disabled={!otherText.trim()} onPress={() => pick({ id: OTHER_ID, text: otherText.trim() })}
                   style={[styles.done, !otherText.trim() && { backgroundColor: Theme.border.default }]}>
-                  <AppText role="control" style={[styles.doneT, !otherText.trim() && { color: Theme.text.muted }]}>Done</AppText>
+                  <Text style={[styles.doneT, !otherText.trim() && { color: Theme.text.muted }]}>Done</Text>
                 </Pressable>
               </View>
             ) : (
@@ -75,12 +74,12 @@ export function BreedPicker({ label = "Breed", optional, species, value, onChang
                 <FlatList data={rows} keyExtractor={(r) => r.key} keyboardShouldPersistTaps="handled" style={{ maxHeight: 420 }}
                   renderItem={({ item }) => (
                     <Pressable accessibilityRole="button" accessibilityState={{ selected: item.selected }} onPress={item.onPress} style={({ pressed }) => [styles.row, pressed && { backgroundColor: Theme.surface.page }]}>
-                      <AppText style={styles.rowT}>{item.label}</AppText>
+                      <Text style={styles.rowT}>{item.label}</Text>
                       {item.selected ? <Check size={18} color={Theme.text.primary} /> : null}
                     </Pressable>
                   )} />
                 {value.id || value.text ? (
-                  <Pressable accessibilityRole="button" onPress={() => pick(EMPTY_BREED)} style={styles.clear}><AppText style={styles.clearT}>Clear selection</AppText></Pressable>
+                  <Pressable accessibilityRole="button" onPress={() => pick(EMPTY_BREED)} style={styles.clear}><Text style={styles.clearT}>Clear selection</Text></Pressable>
                 ) : null}
               </>
             )}

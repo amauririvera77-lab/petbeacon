@@ -1,8 +1,7 @@
 import NetInfo from "@react-native-community/netinfo";
 import { WifiOff } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { AppText } from "./AppText";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { agoLong } from "../lib/time";
 import { Theme, MIN_HIT } from "../theme/tokens";
 import { typography } from "../theme/typography";
@@ -27,8 +26,8 @@ export function OfflineBanner({ lastUpdated, failed, onRetry }: { lastUpdated?: 
   return (
     <View style={styles.b} accessibilityRole="alert">
       <WifiOff size={16} color={Theme.text.secondary} />
-      <AppText style={styles.t}>{text}</AppText>
-      {!offline && onRetry ? <Pressable accessibilityRole="button" onPress={onRetry} style={styles.retry}><AppText style={styles.retryT}>Try again</AppText></Pressable> : null}
+      <Text style={styles.t}>{text}</Text>
+      {!offline && onRetry ? <Pressable accessibilityRole="button" onPress={onRetry} style={styles.retry}><Text style={styles.retryT}>Try again</Text></Pressable> : null}
     </View>
   );
 }

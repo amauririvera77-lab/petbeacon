@@ -1,7 +1,6 @@
 import { Check, ChevronDown } from "lucide-react-native";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { AppText } from "./AppText";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SORT_LABEL, SortMode } from "../lib/sort";
 import { Theme, MIN_HIT, radius } from "../theme/tokens";
 import { elevation } from "../theme/elevation";
@@ -12,17 +11,17 @@ export function SortControl({ value, onChange, count, radiusMi }: { value: SortM
   const [open, setOpen] = useState(false);
   return (
     <View style={styles.wrap}>
-      <AppText style={styles.count}>{count} {count === 1 ? "report" : "reports"} within {radiusMi} mi</AppText>
+      <Text style={styles.count}>{count} {count === 1 ? "report" : "reports"} within {radiusMi} mi</Text>
       <View>
         <Pressable accessibilityRole="button" accessibilityLabel={`Sort by: ${SORT_LABEL[value]}`} accessibilityState={{ expanded: open }} onPress={() => setOpen((o) => !o)} style={styles.btn}>
-          <AppText role="control" style={styles.btnT}>{SORT_LABEL[value]}</AppText>
+          <Text style={styles.btnT}>{SORT_LABEL[value]}</Text>
           <ChevronDown size={16} color={Theme.text.primary} />
         </Pressable>
         {open ? (
           <View style={styles.menu}>
             {(Object.keys(SORT_LABEL) as SortMode[]).map((m) => (
               <Pressable key={m} accessibilityRole="menuitem" onPress={() => { onChange(m); setOpen(false); }} style={styles.item}>
-                <AppText style={styles.itemT}>{SORT_LABEL[m]}</AppText>
+                <Text style={styles.itemT}>{SORT_LABEL[m]}</Text>
                 {m === value ? <Check size={16} color={Theme.brand.primary} /> : null}
               </Pressable>
             ))}

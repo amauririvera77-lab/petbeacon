@@ -1,7 +1,6 @@
 import { Eye, Siren } from "lucide-react-native";
 import { useEffect, useRef } from "react";
-import { Animated, Modal, PanResponder, Pressable, StyleSheet, View } from "react-native";
-import { AppText } from "./AppText";
+import { Animated, Modal, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Theme } from "../theme/tokens";
 import { elevation } from "../theme/elevation";
@@ -48,7 +47,7 @@ export function ReportSheet({ visible, onClose, onPick }: { visible: boolean; on
         <Animated.View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16), transform: [{ translateY: y }] }]}>
           <View {...pan.panHandlers} style={styles.dragArea}>
             <View style={styles.handle} />
-            <AppText style={styles.title} accessibilityRole="header">What would you like to report?</AppText>
+            <Text style={styles.title} accessibilityRole="header">What would you like to report?</Text>
           </View>
           <View style={{ gap: 12, paddingHorizontal: 16 }}>
             {options.map(({ kind, title, sub, Icon, color }) => (

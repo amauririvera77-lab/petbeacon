@@ -1,6 +1,5 @@
 import { MapPin } from "lucide-react-native";
-import { StyleSheet, View } from "react-native";
-import { AppText } from "../AppText";
+import { StyleSheet, Text, View } from "react-native";
 import type { Species } from "../../lib/database.types";
 import { Theme, radius } from "../../theme/tokens";
 import { typography } from "../../theme/typography";
@@ -23,14 +22,14 @@ export function ReportRow({ photoUrl, focusX, focusY, species, title, badge, tim
       </View>
       <View style={[styles.text, reserveMenuSpace && styles.textWithMenu]}>
         <View style={styles.nameRow}>
-          <AppText style={styles.name} numberOfLines={1}>{title}</AppText>
+          <Text style={styles.name} numberOfLines={1}>{title}</Text>
           <Badge status={badge} />
         </View>
-        <AppText style={styles.time}>{timeText}</AppText>
+        <Text style={styles.time}>{timeText}</Text>
         {locationText ? (
           <View style={styles.locRow}>
             <MapPin size={12} color={Theme.text.muted} />
-            <AppText style={styles.loc} numberOfLines={1}>{locationText}</AppText>
+            <Text style={styles.loc} numberOfLines={1}>{locationText}</Text>
           </View>
         ) : null}
       </View>

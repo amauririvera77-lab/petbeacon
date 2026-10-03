@@ -1,8 +1,7 @@
 import { router, useFocusEffect } from "expo-router";
 import { ChevronRight, MapPin, PawPrint, Plus } from "lucide-react-native";
 import { useCallback, useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { AppText } from "../../components/AppText";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar } from "../../components/account/Avatar";
 import { SaveAccountSheet } from "../../components/account/SaveAccountSheet";
@@ -94,7 +93,7 @@ export default function Profile() {
         <View style={styles.head}>
           <Avatar uri={avatarUrl} name={name} size={64} />
           <View style={{ flex: 1 }}>
-            <AppText style={styles.name} numberOfLines={1}>{name || "Your profile"}</AppText>
+            <Text style={styles.name} numberOfLines={1}>{name || "Your profile"}</Text>
           </View>
         </View>
         {/* "Save your account" es siempre una llamada a la acción aparte, nunca una fila dentro de otra tarjeta (Fase 9 de
@@ -102,35 +101,35 @@ export default function Profile() {
             tarjeta en los dos casos, solo cambia el texto. */}
         {account.ready && account.isAnonymous ? (
           <View style={styles.saveCard}>
-            <AppText style={styles.saveT}>Save your account</AppText>
-            <AppText style={styles.saveS}>
+            <Text style={styles.saveT}>Save your account</Text>
+            <Text style={styles.saveS}>
               {hasLost
                 ? `You have ${lostNames.length === 1 ? "an active alert" : "active alerts"} for ${lostLabel}. Add your email so you never lose access to it, even if you switch phones.`
                 : "Add your email to get back to your reports and pets from any device."}
-            </AppText>
+            </Text>
             <Pressable accessibilityRole="button" onPress={() => setSaveOpen(true)} style={({ pressed }) => [styles.saveBtn, pressed && { opacity: 0.85 }]}>
-              <AppText role="control" style={styles.saveBtnT}>Add email</AppText>
+              <Text style={styles.saveBtnT}>Add email</Text>
             </Pressable>
           </View>
         ) : null}
 
         {/* "Alert area" (Fase 9 de congelación): una sola tarjeta con la ubicación (antes una línea suelta en el header)
             y el radio de alerta (antes su propia sección) — son la misma idea, "dónde y qué tan lejos te avisamos". */}
-        <AppText style={styles.sec}>Alert area</AppText>
+        <Text style={styles.sec}>Alert area</Text>
         <View style={[styles.card, { marginBottom: 32 }]}>
           <Pressable accessibilityRole="button" accessibilityLabel="Edit alert area" onPress={() => setCityOpen(true)}
             style={({ pressed }) => [styles.row, styles.rowFlex, pressed && { backgroundColor: Theme.surface.page }]}>
             <MapPin size={20} color={Theme.text.secondary} />
-            <AppText style={styles.locationT} numberOfLines={1}>{city || "Add your city"}</AppText>
+            <Text style={styles.locationT} numberOfLines={1}>{city || "Add your city"}</Text>
             <ChevronRight size={18} color={Theme.text.muted} />
           </Pressable>
           <View style={[styles.row, styles.divider, { gap: 12 }]}>
-            <AppText style={styles.radiusHelp}>We'll send you notifications about lost and sighted pets within this distance of your alert area.</AppText>
+            <Text style={styles.radiusHelp}>We'll send you notifications about lost and sighted pets within this distance of your alert area.</Text>
             <RadiusChips value={alertRadiusMi} onChange={(v) => update({ alertRadiusMi: v })} />
           </View>
         </View>
 
-        <AppText style={styles.sec}>Notifications</AppText>
+        <Text style={styles.sec}>Notifications</Text>
         <View style={[styles.card, { marginBottom: 32 }]}>
           <View style={styles.row}>
             <ToggleRow title="Nearby alerts" subtitle="Lost and sighted pets near you" value={nearbyOn} onChange={(v) => (v ? enable("nearby") : disableKind("nearby"))}
@@ -145,7 +144,7 @@ export default function Profile() {
           </View>
         </View>
 
-        <AppText style={styles.sec}>Registered pets</AppText>
+        <Text style={styles.sec}>Registered pets</Text>
         <View style={{ gap: 8, marginBottom: 32 }}>
           {pets.map((p) => {
             const st = petState(p.id, myReports); // Home / Lost / Reunited, derivado de sus reportes
@@ -157,10 +156,10 @@ export default function Profile() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={styles.nameRow}>
-                    <AppText style={styles.rowTitle} numberOfLines={1}>{p.name}</AppText>
+                    <Text style={styles.rowTitle} numberOfLines={1}>{p.name}</Text>
                     {st.state !== "home" ? <Badge status={st.state} /> : null}
                   </View>
-                  {breedLabel(p.breed, p.breed_id) ? <AppText style={styles.rowSubtitle}>{breedLabel(p.breed, p.breed_id)}</AppText> : null}
+                  {breedLabel(p.breed, p.breed_id) ? <Text style={styles.rowSubtitle}>{breedLabel(p.breed, p.breed_id)}</Text> : null}
                 </View>
                 <ChevronRight size={18} color={Theme.text.muted} />
               </Pressable>
@@ -169,18 +168,18 @@ export default function Profile() {
           <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/pet", params: { id: "new" } })}
             style={({ pressed }) => [styles.listRow, styles.addRow, pressed && { backgroundColor: Theme.surface.page }]}>
             <View style={[styles.thumb, { backgroundColor: "transparent" }]}><Plus size={22} color={Theme.text.secondary} /></View>
-            <AppText style={styles.addT}>{pets.length === 0 ? "Register your pet" : "Add another pet"}</AppText>
+            <Text style={styles.addT}>{pets.length === 0 ? "Register your pet" : "Add another pet"}</Text>
           </Pressable>
         </View>
 
         {/* "Account" es una sola tarjeta agrupada con divisores (Fase 9 de congelación) — mismo componente que Notifications,
             en vez de una tarjeta propia por fila. "Account saved" es su primera fila cuando la cuenta ya tiene correo. */}
-        <AppText style={styles.sec}>Account</AppText>
+        <Text style={styles.sec}>Account</Text>
         <View style={[styles.card, { marginBottom: 24 }]}>
           {account.ready && !account.isAnonymous ? (
             <View style={styles.row}>
-              <AppText style={styles.rowTitle}>Account saved</AppText>
-              <AppText style={styles.rowSubtitle} numberOfLines={1}>{account.email}</AppText>
+              <Text style={styles.rowTitle}>Account saved</Text>
+              <Text style={styles.rowSubtitle} numberOfLines={1}>{account.email}</Text>
             </View>
           ) : null}
           <View style={account.ready && !account.isAnonymous ? styles.divider : undefined}>
@@ -196,14 +195,14 @@ export default function Profile() {
 
         <Button variant="secondary" label="Log out" onPress={confirmLogout} />
         <Pressable accessibilityRole="button" onPress={() => router.push("/delete-account")} style={styles.deleteLink}>
-          <AppText style={styles.deleteT}>Delete account</AppText>
+          <Text style={styles.deleteT}>Delete account</Text>
         </Pressable>
 
         {/* ⚠️ HERRAMIENTA DE DISEÑO — quitar o desactivar antes de publicar. Controlada por EXPO_PUBLIC_SHOW_DESIGN_TOOLS (no __DEV__),
             para poder revisarla también en builds de EAS Update. "Replay onboarding" nunca toca la cuenta real: ver state/onboardingPreview.tsx. */}
         {SHOW_DESIGN_TOOLS ? (
           <>
-            <AppText style={[styles.sec, { marginTop: 32 }]}>Design tools</AppText>
+            <Text style={[styles.sec, { marginTop: 32 }]}>Design tools</Text>
             <NavRow title="Replay onboarding" subtitle="Preview only — doesn't affect your account or data" onPress={() => { preview.start(); router.push("/(onboarding)"); }} />
           </>
         ) : null}
@@ -222,8 +221,8 @@ function NavRow({ title, subtitle, onPress, grouped }: { title: string; subtitle
     <Pressable accessibilityRole="button" onPress={onPress}
       style={({ pressed }) => [grouped ? [styles.row, styles.rowFlex] : styles.listRow, pressed && { backgroundColor: Theme.surface.page }]}>
       <View style={{ flex: 1 }}>
-        <AppText style={styles.rowTitle}>{title}</AppText>
-        {subtitle ? <AppText style={styles.rowSubtitle}>{subtitle}</AppText> : null}
+        <Text style={styles.rowTitle}>{title}</Text>
+        {subtitle ? <Text style={styles.rowSubtitle}>{subtitle}</Text> : null}
       </View>
       <ChevronRight size={18} color={Theme.text.muted} />
     </Pressable>

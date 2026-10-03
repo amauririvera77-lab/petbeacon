@@ -1,5 +1,4 @@
-import { Pressable, StyleSheet, View } from "react-native";
-import { AppText } from "./AppText";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Theme, MIN_HIT } from "../theme/tokens";
 import { typography } from "../theme/typography";
 
@@ -8,9 +7,9 @@ import { typography } from "../theme/typography";
 export function EndOfFeed({ radiusMi, maxRadiusMi = 10, onExpand }: { radiusMi: number; maxRadiusMi?: number; onExpand: () => void }) {
   return (
     <View style={styles.box}>
-      <AppText style={styles.t}>You've seen all reports within {radiusMi} mi</AppText>
+      <Text style={styles.t}>You've seen all reports within {radiusMi} mi</Text>
       {radiusMi < maxRadiusMi ? (
-        <Pressable accessibilityRole="button" onPress={onExpand} style={styles.link}><AppText style={styles.linkT}>Expand radius</AppText></Pressable>
+        <Pressable accessibilityRole="button" onPress={onExpand} style={styles.link}><Text style={styles.linkT}>Expand radius</Text></Pressable>
       ) : null}
     </View>
   );

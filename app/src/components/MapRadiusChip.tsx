@@ -1,7 +1,6 @@
 import { Check, ChevronDown } from "lucide-react-native";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { AppText } from "./AppText";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Theme, radius } from "../theme/tokens";
 import { elevation } from "../theme/elevation";
 import { typography } from "../theme/typography";
@@ -23,14 +22,14 @@ export function MapRadiusChip({ value, onChange }: { value: number; onChange: (m
         onPress={() => setOpen((o) => !o)}
         style={styles.chip}
       >
-        <AppText role="control" style={styles.chipT}>{value} mi</AppText>
+        <Text style={styles.chipT}>{value} mi</Text>
         <ChevronDown size={16} color={Theme.text.primary} />
       </Pressable>
       {open ? (
         <View style={styles.menu}>
           {OPTIONS.map((mi) => (
             <Pressable key={mi} accessibilityRole="menuitem" onPress={() => { onChange(mi); setOpen(false); }} style={styles.item}>
-              <AppText style={styles.itemT}>{mi} mi</AppText>
+              <Text style={styles.itemT}>{mi} mi</Text>
               {mi === value ? <Check size={16} color={Theme.brand.primary} /> : null}
             </Pressable>
           ))}

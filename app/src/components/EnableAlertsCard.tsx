@@ -1,6 +1,5 @@
 import { BellRing, X } from "lucide-react-native";
-import { Pressable, StyleSheet, View } from "react-native";
-import { AppText } from "./AppText";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useEnablePush } from "../hooks/useEnablePush";
 import { useSession } from "../state/session";
 import { Theme, MIN_HIT, radius } from "../theme/tokens";
@@ -15,9 +14,9 @@ export function EnableAlertsCard() {
     <View style={styles.box}>
       <View style={styles.icon}><BellRing size={22} color={Theme.brand.primary} /></View>
       <View style={{ flex: 1, gap: 2 }}>
-        <AppText style={styles.t}>Get alerts near you</AppText>
-        <AppText style={styles.s}>Know right away about lost pets nearby and matches for your pet.</AppText>
-        <Pressable accessibilityRole="button" onPress={() => enable()} style={styles.btn}><AppText style={styles.btnT}>Turn on notifications</AppText></Pressable>
+        <Text style={styles.t}>Get alerts near you</Text>
+        <Text style={styles.s}>Know right away about lost pets nearby and matches for your pet.</Text>
+        <Pressable accessibilityRole="button" onPress={() => enable()} style={styles.btn}><Text style={styles.btnT}>Turn on notifications</Text></Pressable>
       </View>
       <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" onPress={() => update({ alertsCardDismissed: true })} style={styles.x}>
         <X size={18} color={Theme.text.muted} />

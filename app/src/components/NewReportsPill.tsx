@@ -1,6 +1,5 @@
 import { ArrowUp } from "lucide-react-native";
-import { Pressable, StyleSheet } from "react-native";
-import { AppText } from "./AppText";
+import { Pressable, StyleSheet, Text } from "react-native";
 import { Theme, MIN_HIT, radius } from "../theme/tokens";
 import { elevation } from "../theme/elevation";
 import { typography } from "../theme/typography";
@@ -12,7 +11,7 @@ export function NewReportsPill({ count, top, onPress }: { count: number; top: nu
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={`Show ${label}`} onPress={onPress} style={({ pressed }) => [styles.pill, { top }, pressed && { opacity: 0.9 }]}>
       <ArrowUp size={16} color={Theme.text.onAccent} />
-      <AppText role="control" style={styles.t}>{label}</AppText>
+      <Text style={styles.t}>{label}</Text>
     </Pressable>
   );
 }

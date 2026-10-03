@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { StyleSheet, View, type StyleProp, type TextStyle } from "react-native";
-import { AppText } from "../AppText";
+import { StyleSheet, Text, View, type StyleProp, type TextStyle } from "react-native";
 import type { ResourceNearby } from "../../lib/database.types";
 import { openStatus } from "../../lib/openHours";
 import { tagLabels } from "../../lib/resources";
@@ -12,7 +11,7 @@ export function OpenNow({ r, now }: { r: Pick<ResourceNearby, "opening_hours" | 
   const s = openStatus(r.opening_hours, r.timezone ?? undefined, now);
   if (!s) return null;
   // flexShrink + una sola línea: comparte fila con la distancia (evaluación UX) sin forzar el salto a una segunda línea.
-  return <AppText numberOfLines={1} style={[styles.open, s.open ? { color: Theme.status.reunited.bg } : { color: Theme.text.secondary }]}>{s.label}</AppText>;
+  return <Text numberOfLines={1} style={[styles.open, s.open ? { color: Theme.status.reunited.bg } : { color: Theme.text.secondary }]}>{s.label}</Text>;
 }
 
 // Descripción de una tarjeta de recurso: hasta 2 líneas con un ANCHO EXPLÍCITO medido del contenedor. En iOS, con el ancho
@@ -26,7 +25,7 @@ export function CardDescription({ text, style }: { text: string; style: StylePro
   const lineHeight = StyleSheet.flatten(style)?.lineHeight ?? 20;
   return (
     <View style={{ alignSelf: "stretch", maxHeight: lineHeight * 2, overflow: "hidden" }} onLayout={(e) => { const x = Math.floor(e.nativeEvent.layout.width); if (x !== w) setW(x); }}>
-      {w > 0 ? <AppText style={[style, { width: w }]}>{text}</AppText> : null}
+      {w > 0 ? <Text style={[style, { width: w }]}>{text}</Text> : null}
     </View>
   );
 }
@@ -34,7 +33,7 @@ export function CardDescription({ text, style }: { text: string; style: StylePro
 // Un único componente Tag (Fase 8 de congelación) para todo chip informativo de costo/acceso — mismo estilo en
 // cualquier tarjeta, incluida la de evento (ya comparten esta función; esto solo lo formaliza como componente).
 export function Tag({ label }: { label: string }) {
-  return <View style={styles.tag}><AppText role="control" style={styles.tagT}>{label}</AppText></View>;
+  return <View style={styles.tag}><Text style={styles.tagT}>{label}</Text></View>;
 }
 
 // Etiquetas de costo y acceso: "Free", "Low cost", "Income-based", "Walk-ins welcome". Siempre en una sola fila con

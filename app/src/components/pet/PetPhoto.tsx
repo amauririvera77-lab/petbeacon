@@ -1,7 +1,6 @@
 import { Camera } from "lucide-react-native";
 import { useState } from "react";
-import { Alert, Pressable, StyleSheet, View } from "react-native";
-import { AppText } from "../AppText";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { choosePhotoSource, pickPhoto } from "../../lib/pickPhoto";
 import { Theme, MIN_HIT, radius } from "../../theme/tokens";
 import { typography } from "../../theme/typography";
@@ -12,7 +11,7 @@ import { FocusImage } from "../FocusImage";
 // + acción de reporte) pueda ir ENTRE ambas, justo debajo de la foto (evaluación UX): imagen → estado → Change/Remove photo → resto del form.
 export function PetPhotoImage({ uri, focusX, focusY }: { uri: string | null; focusX?: number | null; focusY?: number | null }) {
   return uri ? <FocusImage uri={uri} focusX={focusX} focusY={focusY} style={styles.preview} accessibilityLabel="Pet photo" /> : (
-    <View style={styles.empty}><Camera size={36} color={Theme.text.muted} /><AppText style={styles.emptyT}>No photo yet</AppText></View>
+    <View style={styles.empty}><Camera size={36} color={Theme.text.muted} /><Text style={styles.emptyT}>No photo yet</Text></View>
   );
 }
 
@@ -30,7 +29,7 @@ export function PetPhotoActions({ uri, petName, onChange }: { uri: string | null
   return (
     <View style={{ gap: 8 }}>
       <Button variant="secondary" Icon={Camera} label={uri ? "Change photo" : "Add photo"} onPress={change} disabled={busy} />
-      {uri ? <Pressable accessibilityRole="button" onPress={remove} style={styles.remove}><AppText style={styles.removeT}>Remove photo</AppText></Pressable> : null}
+      {uri ? <Pressable accessibilityRole="button" onPress={remove} style={styles.remove}><Text style={styles.removeT}>Remove photo</Text></Pressable> : null}
     </View>
   );
 }

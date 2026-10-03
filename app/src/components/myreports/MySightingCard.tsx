@@ -1,6 +1,5 @@
 import { ChevronRight, Info } from "lucide-react-native";
-import { Alert, Pressable, StyleSheet, View } from "react-native";
-import { AppText } from "../AppText";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import type { ReportNearby } from "../../lib/database.types";
 import { breedLabel } from "../../lib/breeds";
 import { shortAddress } from "../../lib/address";
@@ -37,18 +36,18 @@ export function MySightingCard({ report, onOpen, onEdit, onStillThere, onResolve
       {notice ? (
         <Pressable accessibilityRole="button" onPress={(e) => { e.stopPropagation(); onEdit(); }} style={({ pressed }) => [styles.notice, pressed && { backgroundColor: Theme.brand.tint }]}>
           <Info size={14} color={Theme.text.secondary} />
-          <AppText style={styles.noticeT}>{notice}</AppText>
+          <Text style={styles.noticeT}>{notice}</Text>
           <View style={styles.noticeLink}>
-            <AppText style={styles.noticeLinkT}>Add details</AppText>
+            <Text style={styles.noticeLinkT}>Add details</Text>
             <ChevronRight size={14} color={Theme.text.primary} />
           </View>
         </Pressable>
       ) : null}
       <View style={styles.actions}>
         <Pressable accessibilityRole="button" onPress={(e) => { e.stopPropagation(); onResolve(); }} style={({ pressed }) => [styles.primary, pressed && { opacity: 0.85 }]}>
-          <AppText role="control" style={styles.primaryT}>Mark as resolved</AppText>
+          <Text style={styles.primaryT}>Mark as resolved</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" onPress={(e) => { e.stopPropagation(); onStillThere(); }} style={styles.sec}><AppText role="control" style={styles.secT}>Still there</AppText></Pressable>
+        <Pressable accessibilityRole="button" onPress={(e) => { e.stopPropagation(); onStillThere(); }} style={styles.sec}><Text style={styles.secT}>Still there</Text></Pressable>
       </View>
       <RowMenuButton onPress={openMenu} />
     </Pressable>

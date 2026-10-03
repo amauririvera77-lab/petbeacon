@@ -1,8 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { AppText } from "../components/AppText";
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Primary } from "../components/Primary";
 import { TextField } from "../components/TextField";
@@ -96,22 +95,22 @@ export default function EditReport() {
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={Theme.text.primary} /></Pressable>
-        <AppText role="title" style={styles.h} accessibilityRole="header">{isSighting ? "Edit Sighting" : "Edit Report"}</AppText>
+        <Text style={styles.h} accessibilityRole="header">{isSighting ? "Edit Sighting" : "Edit Report"}</Text>
       </View>
       {loading ? <View style={styles.center}><ActivityIndicator color={Theme.brand.primary} /></View> : (
         <>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
             <View style={{ gap: 8 }}>
-              <AppText style={styles.label}>Photo</AppText>
+              <Text style={styles.label}>Photo</Text>
               <PhotoPicker uri={photoUri ?? photoUrl} onChange={(u) => { setPhotoUri(u); if (!u) setPhotoUrl(null); }} />
             </View>
             {isSighting ? null : <TextField label="Pet's name" placeholder="Max" value={name} onChangeText={setName} />}
             <Chips label="Type" options={SPECIES} value={species} onChange={(s) => { const b = breedById(breed.id); if (b?.species && b.species !== s) setBreed(EMPTY_BREED); setSpecies(s); }} />
             <BreedPicker optional species={species} value={breed} onChange={setBreed} />
-            {isSighting ? <View style={{ gap: 8 }}><AppText style={styles.label}>Condition</AppText><ConditionGrid value={condition} onChange={setCondition} /></View> : null}
+            {isSighting ? <View style={{ gap: 8 }}><Text style={styles.label}>Condition</Text><ConditionGrid value={condition} onChange={setCondition} /></View> : null}
             <TextField label={isSighting ? "Description" : "Distinctive features"} labelSuffix="(optional)" placeholder={isSighting ? "No collar, white paws, very friendly" : "Blue collar, limps on left leg"} value={features} onChangeText={setFeatures} multiline />
             <View style={{ gap: 8 }}>
-              <AppText style={styles.label}>{isSighting ? "Where you saw them" : "Last seen"}</AppText>
+              <Text style={styles.label}>{isSighting ? "Where you saw them" : "Last seen"}</Text>
               <LocationPicker
                 value={keepLocation ? (existingLabel ? { label: existingLabel, lat: 0, lng: 0 } : null) : place}
                 onChange={(p) => { setKeepLocation(false); setPlace(p); }}

@@ -1,7 +1,6 @@
 import { Check } from "lucide-react-native";
 import { ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
-import { AppText } from "../AppText";
+import { StyleSheet, Text, View } from "react-native";
 import { Theme } from "../../theme/tokens";
 import { typography } from "../../theme/typography";
 
@@ -11,7 +10,7 @@ export function SuccessBlock({ title, children }: { title: string; children?: Re
   return (
     <View style={styles.wrap}>
       <View style={styles.circle}><Check size={40} color={Theme.brand.primary} /></View>
-      <AppText role="title" style={styles.h1} accessibilityRole="header">{title}</AppText>
+      <Text style={styles.h1} accessibilityRole="header">{title}</Text>
       {children}
     </View>
   );

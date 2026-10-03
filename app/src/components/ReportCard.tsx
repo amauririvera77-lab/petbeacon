@@ -1,5 +1,4 @@
-import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
-import { AppText } from "./AppText";
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { ReportNearby } from "../lib/database.types";
 import { activityAt } from "../lib/activity";
 import { reportSubtitle, reportTitle } from "../lib/reportText";
@@ -27,9 +26,9 @@ export function ReportCard({ report, onPress, mine, matchFor }: { report: Report
   const title = reportTitle(report);
   const sub = reportSubtitle(report);
   const label = mine ? (
-    <AppText role="control" style={styles.mineT}>Your report</AppText>
+    <Text style={styles.mineT}>Your report</Text>
   ) : matchFor ? (
-    <View style={styles.match} accessibilityLabel={`Match for ${matchFor}`}><AppText role="control" style={styles.matchT} numberOfLines={1}>Match for {matchFor}</AppText></View>
+    <View style={styles.match} accessibilityLabel={`Match for ${matchFor}`}><Text style={styles.matchT} numberOfLines={1}>Match for {matchFor}</Text></View>
   ) : null;
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}>
@@ -40,24 +39,24 @@ export function ReportCard({ report, onPress, mine, matchFor }: { report: Report
       )}
       <View style={styles.center}>
         <View style={styles.titleRow}>
-          <AppText style={styles.name} numberOfLines={1}>{title}</AppText>
+          <Text style={styles.name} numberOfLines={1}>{title}</Text>
           <Badge status={report.status as BadgeStatus} />
         </View>
         {stacked ? (
-          <AppText style={styles.meta}>{report.distance_mi.toFixed(1)} mi · {agoShort(activityAt(report))}</AppText>
+          <Text style={styles.meta}>{report.distance_mi.toFixed(1)} mi · {agoShort(activityAt(report))}</Text>
         ) : null}
         {label || sub ? (
           <View style={styles.subRow}>
             {label}
-            {label && sub ? <AppText style={styles.dotSep}>·</AppText> : null}
-            {sub ? <AppText style={styles.sub} numberOfLines={stacked ? 2 : 1}>{sub}</AppText> : null}
+            {label && sub ? <Text style={styles.dotSep}>·</Text> : null}
+            {sub ? <Text style={styles.sub} numberOfLines={stacked ? 2 : 1}>{sub}</Text> : null}
           </View>
         ) : null}
       </View>
       {stacked ? null : (
         <View style={styles.right}>
-          <AppText style={styles.distance} numberOfLines={1}>{report.distance_mi.toFixed(1)} mi</AppText>
-          <AppText style={styles.time} numberOfLines={1}>{agoShort(activityAt(report))}</AppText>
+          <Text style={styles.distance} numberOfLines={1}>{report.distance_mi.toFixed(1)} mi</Text>
+          <Text style={styles.time} numberOfLines={1}>{agoShort(activityAt(report))}</Text>
         </View>
       )}
     </Pressable>

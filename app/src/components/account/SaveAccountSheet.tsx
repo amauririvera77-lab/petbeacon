@@ -1,7 +1,6 @@
 import { X } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from "react-native";
-import { AppText } from "../AppText";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { confirmLogin, confirmSaveAccount, isEmail, startLogin, startSaveAccount } from "../../lib/authAccount";
 import { Theme, MIN_HIT, radius } from "../../theme/tokens";
@@ -41,33 +40,33 @@ export function SaveAccountSheet({ visible, mode, onClose, onDone }: { visible: 
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.handleWrap}><View style={styles.handle} /></View>
           <View style={styles.head}>
-            <AppText style={styles.title} accessibilityRole="header">{save ? "Save Your Account" : "Log In"}</AppText>
+            <Text style={styles.title} accessibilityRole="header">{save ? "Save Your Account" : "Log In"}</Text>
             <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={Theme.text.secondary} /></Pressable>
           </View>
           <View style={styles.body}>
             {step === "email" ? (
               <>
-                <AppText style={styles.msg}>{save
+                <Text style={styles.msg}>{save
                   ? "Add your email to keep your reports and pets, and to get back to them from any device. We'll send you a 6-digit code — no password needed."
-                  : "Enter the email you saved your account with and we'll send you a 6-digit code."}</AppText>
+                  : "Enter the email you saved your account with and we'll send you a 6-digit code."}</Text>
                 <TextInput value={email} onChangeText={(t) => { setEmail(t); setError(null); }} placeholder="you@email.com" placeholderTextColor={Theme.text.muted}
                   keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" autoFocus accessibilityLabel="Email" style={styles.input} />
               </>
             ) : (
               <>
-                <AppText style={styles.msg}>Enter the 6-digit code we sent to {email.trim().toLowerCase()}.</AppText>
+                <Text style={styles.msg}>Enter the 6-digit code we sent to {email.trim().toLowerCase()}.</Text>
                 <TextInput value={code} onChangeText={(t) => { setCode(t.replace(/\D/g, "").slice(0, 8)); setError(null); }} placeholder="123456" placeholderTextColor={Theme.text.muted}
                   keyboardType="number-pad" autoFocus textContentType="oneTimeCode" accessibilityLabel="Verification code" style={[styles.input, styles.code]} />
               </>
             )}
-            {error ? <AppText style={styles.err} accessibilityRole="alert">{error}</AppText> : null}
+            {error ? <Text style={styles.err} accessibilityRole="alert">{error}</Text> : null}
             <Pressable accessibilityRole="button" disabled={busy} onPress={step === "email" ? send : verify} style={[styles.primary, busy && { opacity: 0.6 }]}>
-              <AppText role="control" style={styles.primaryT}>{busy ? "Please wait…" : step === "email" ? "Send code" : save ? "Save account" : "Log in"}</AppText>
+              <Text style={styles.primaryT}>{busy ? "Please wait…" : step === "email" ? "Send code" : save ? "Save account" : "Log in"}</Text>
             </Pressable>
             {step === "code" ? (
               <View style={styles.links}>
-                <Pressable accessibilityRole="button" disabled={busy} onPress={send} style={styles.link}><AppText style={styles.linkT}>Resend code</AppText></Pressable>
-                <Pressable accessibilityRole="button" onPress={() => { setStep("email"); setError(null); }} style={styles.link}><AppText style={styles.linkT}>Use a different email</AppText></Pressable>
+                <Pressable accessibilityRole="button" disabled={busy} onPress={send} style={styles.link}><Text style={styles.linkT}>Resend code</Text></Pressable>
+                <Pressable accessibilityRole="button" onPress={() => { setStep("email"); setError(null); }} style={styles.link}><Text style={styles.linkT}>Use a different email</Text></Pressable>
               </View>
             ) : null}
           </View>

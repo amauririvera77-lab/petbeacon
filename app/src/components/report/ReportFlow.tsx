@@ -1,8 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronRight, Dog, Mail, MapPin, Phone, Plus, Share2 } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Image, Pressable, Share, StyleSheet, TextInput, View } from "react-native";
-import { AppText } from "../AppText";
+import { ActivityIndicator, Alert, Image, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { shortAddress } from "../../lib/address";
 import { FLYERS_READY } from "../../lib/flyer";
 import { Place } from "../../lib/geocode";
@@ -169,22 +168,22 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   if (chooserActive && homePets.length > 0) {
     return (
       <ScreenLayout header={<FlowHeader title="Report Lost Pet" step={1} accent={accent} onBack={close} showBars={false} showCount={false} />} contentStyle={pad}>
-        <AppText role="title" style={[st.h2, { marginBottom: 8 }]}>Which pet is missing?</AppText>
-        <AppText style={[st.sub, { marginBottom: 24 }]}>Pick one of your pets and we'll fill in the details for you.</AppText>
+        <Text style={[st.h2, { marginBottom: 8 }]}>Which pet is missing?</Text>
+        <Text style={[st.sub, { marginBottom: 24 }]}>Pick one of your pets and we'll fill in the details for you.</Text>
         <View style={{ gap: 10 }}>
           {homePets.map((p) => (
             <Pressable key={p.id} accessibilityRole="button" onPress={() => setPetId(p.id)} style={({ pressed }) => [st.petPick, pressed && { backgroundColor: Theme.surface.page }]}>
               {p.photo_url ? <FocusImage uri={p.photo_url} focusX={p.photo_focus_x} focusY={p.photo_focus_y} style={st.petThumb} /> : <SpeciesPlaceholder species={p.species} size={48} />}
               <View style={{ flex: 1, minWidth: 0 }}>
-                <AppText style={st.petPickName} numberOfLines={1}>{p.name}</AppText>
-                {breedLabel(p.breed, p.breed_id) ? <AppText style={st.petPickBreed} numberOfLines={1}>{breedLabel(p.breed, p.breed_id)}</AppText> : null}
+                <Text style={st.petPickName} numberOfLines={1}>{p.name}</Text>
+                {breedLabel(p.breed, p.breed_id) ? <Text style={st.petPickBreed} numberOfLines={1}>{breedLabel(p.breed, p.breed_id)}</Text> : null}
               </View>
               <ChevronRight size={18} color={Theme.text.muted} />
             </Pressable>
           ))}
           <Pressable accessibilityRole="button" onPress={() => setChooserDone(true)} style={({ pressed }) => [st.petPick, st.petPickDashed, pressed && { backgroundColor: Theme.surface.page }]}>
             <View style={[st.petThumb, { alignItems: "center", justifyContent: "center" }]}><Plus size={22} color={Theme.text.secondary} /></View>
-            <AppText style={[st.petPickName, { flex: 1, color: Theme.text.secondary }]}>Another pet</AppText>
+            <Text style={[st.petPickName, { flex: 1, color: Theme.text.secondary }]}>Another pet</Text>
           </Pressable>
         </View>
       </ScreenLayout>
@@ -194,8 +193,8 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   if (step === "photo") {
     return (
       <ScreenLayout header={header} contentStyle={pad} cta={<Cta label="Continue" tone={tone} onPress={next} />}>
-        <AppText role="title" style={[st.h2, { marginBottom: 8 }]}>{isLost ? "Add a photo of your pet" : "Snap a quick photo"}</AppText>
-        <AppText style={st.sub}>{isLost ? "Helps others recognize them fast. You can skip this." : "Optional, but it helps the owner confirm it's their pet."}</AppText>
+        <Text style={[st.h2, { marginBottom: 8 }]}>{isLost ? "Add a photo of your pet" : "Snap a quick photo"}</Text>
+        <Text style={st.sub}>{isLost ? "Helps others recognize them fast. You can skip this." : "Optional, but it helps the owner confirm it's their pet."}</Text>
         <PhotoDropzone uri={photoUri ?? petPhotoUrl} onChange={(u) => { setPhotoUri(u); if (!u) setPetPhotoUrl(null); }} />
       </ScreenLayout>
     );
@@ -204,14 +203,14 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   if (isLost && step === "details") {
     return (
       <ScreenLayout header={header} contentStyle={pad} cta={<Cta label="Continue" tone={tone} onPress={next} disabled={!petName.trim() || !species} />}>
-        <AppText role="title" style={[st.h2, { marginBottom: 24 }]}>Tell us about your pet</AppText>
+        <Text style={[st.h2, { marginBottom: 24 }]}>Tell us about your pet</Text>
         <View style={st.field}><TextField variant="form" label="Pet's name" placeholder="Max" value={petName} onChangeText={setPetName} /></View>
-        <AppText style={st.label}>Type</AppText>
+        <Text style={st.label}>Type</Text>
         <View style={st.field}><TypeButtons value={species} onChange={changeSpecies} /></View>
         <View style={st.field}><BreedPicker optional species={species} value={breed} onChange={setBreed} /></View>
         <TextField variant="form" label="Distinctive features" labelSuffix="(optional)" placeholder="Blue collar, limps on left leg"
           value={features} onChangeText={setFeatures} multiline maxLength={100} />
-        <AppText style={st.counter}>{features.length}/100</AppText>
+        <Text style={st.counter}>{features.length}/100</Text>
       </ScreenLayout>
     );
   }
@@ -221,8 +220,8 @@ export function ReportFlow({ kind }: { kind: Kind }) {
       <ScreenLayout header={header} contentStyle={pad}
         cta={<Cta label={isLost ? "Review & publish" : "Continue"} tone={tone} disabled={!place || (isLost && !contact.trim())}
           onPress={() => { if (isLost && !checkContact().ok) return; next(); }} />}>
-        <AppText role="title" style={[st.h2, { marginBottom: 8 }]}>{isLost ? "Where did you last see them?" : "Confirm the exact spot"}</AppText>
-        <AppText style={st.sub}>{isLost ? "Use your location or enter the spot manually." : "Use your current location or enter the spot manually."}</AppText>
+        <Text style={[st.h2, { marginBottom: 8 }]}>{isLost ? "Where did you last see them?" : "Confirm the exact spot"}</Text>
+        <Text style={st.sub}>{isLost ? "Use your location or enter the spot manually." : "Use your current location or enter the spot manually."}</Text>
         <LocationPicker variant="flow" value={place} onChange={setPlace} city={city} center={center} />
         {isLost ? (
           <View style={{ marginTop: 24 }}>
@@ -240,22 +239,22 @@ export function ReportFlow({ kind }: { kind: Kind }) {
     return (
       <ScreenLayout header={header} contentStyle={pad}
         cta={<Cta label={publishing ? "Submitting…" : "Submit sighting"} tone={tone} loading={publishing} disabled={!species || !condition || !place} onPress={publishGuard} />}>
-        <AppText role="title" style={[st.h2, { marginBottom: 24 }]}>How do they seem?</AppText>
+        <Text style={[st.h2, { marginBottom: 24 }]}>How do they seem?</Text>
         {/* "Type" no está en el prototipo, pero el matching exige especie exacta: se conserva con el mismo estilo de botones. */}
-        <AppText style={st.label}>Type</AppText>
+        <Text style={st.label}>Type</Text>
         <View style={st.field}><TypeButtons value={species} onChange={changeSpecies} /></View>
         <View style={st.field}><BreedPicker optional species={species} value={breed} onChange={setBreed} /></View>
         <View style={{ marginBottom: 32 }}><ConditionGrid value={condition} onChange={setCondition} /></View>
         <View style={st.field}>
           <TextField variant="form" label="Description" labelSuffix="(optional)" placeholder="No collar, white paws, very friendly" value={features} onChangeText={setFeatures} multiline />
         </View>
-        <AppText style={st.label}>Want updates on this pet? <AppText style={st.optional}>(optional)</AppText></AppText>
+        <Text style={st.label}>Want updates on this pet? <Text style={st.optional}>(optional)</Text></Text>
         <View style={[st.iconField, !!contactError && { borderColor: Theme.danger.border }]}>
           <Mail size={18} color={Theme.text.muted} />
           <TextInput value={contact} onChangeText={(t) => { setContact(t); setContactError(null); }} placeholder="Phone or email" placeholderTextColor={Theme.text.muted}
             accessibilityLabel="Phone or email" keyboardType="email-address" autoCapitalize="none" autoComplete="off" style={st.iconInput} />
         </View>
-        <AppText style={[st.help, !!contactError && { color: Theme.danger.text }]}>{contactError ?? "No account needed — this just lets us notify you if there's a match."}</AppText>
+        <Text style={[st.help, !!contactError && { color: Theme.danger.text }]}>{contactError ?? "No account needed — this just lets us notify you if there's a match."}</Text>
       </ScreenLayout>
     );
   }
@@ -265,18 +264,18 @@ export function ReportFlow({ kind }: { kind: Kind }) {
     return (
       <ScreenLayout header={header} contentStyle={pad}
         cta={<Cta label={publishing ? "Publishing…" : "Publish alert"} tone="lost" loading={publishing} onPress={publishGuard} />}>
-        <AppText role="title" style={[st.h2, { marginBottom: 24 }]}>Review alert</AppText>
+        <Text style={[st.h2, { marginBottom: 24 }]}>Review alert</Text>
         <View style={st.reviewTop}>
           <View style={st.thumb}>{photo ? <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : <Dog size={30} color={Theme.text.muted} />}</View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <AppText style={st.rName}>{petName || "Unnamed pet"}</AppText>
-            <AppText style={st.rType}>{species ? SPECIES_LABEL[species] : "Type not set"}</AppText>
-            {features ? <AppText style={st.rFeat}>{features}</AppText> : null}
+            <Text style={st.rName}>{petName || "Unnamed pet"}</Text>
+            <Text style={st.rType}>{species ? SPECIES_LABEL[species] : "Type not set"}</Text>
+            {features ? <Text style={st.rFeat}>{features}</Text> : null}
           </View>
         </View>
-        <View style={[st.rRow, { marginBottom: 12 }]}><MapPin size={16} color={Theme.status.lost.bg} /><AppText style={st.rRowT}>{shortAddress(place?.label) ?? ""}</AppText></View>
-        <View style={[st.rRow, { marginBottom: 24 }]}><Phone size={16} color={Theme.status.lost.bg} /><AppText style={st.rRowT}>{contact}</AppText></View>
-        <View style={st.warnBox}><AppText style={st.warnT}>This publishes immediately and notifies nearby users. You can edit or delete it later.</AppText></View>
+        <View style={[st.rRow, { marginBottom: 12 }]}><MapPin size={16} color={Theme.status.lost.bg} /><Text style={st.rRowT}>{shortAddress(place?.label) ?? ""}</Text></View>
+        <View style={[st.rRow, { marginBottom: 24 }]}><Phone size={16} color={Theme.status.lost.bg} /><Text style={st.rRowT}>{contact}</Text></View>
+        <View style={st.warnBox}><Text style={st.warnT}>This publishes immediately and notifies nearby users. You can edit or delete it later.</Text></View>
       </ScreenLayout>
     );
   }
@@ -294,7 +293,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   };
   const supportLink = (
     <Pressable accessibilityRole="button" onPress={() => router.dismissTo("/(tabs)/support")} style={st.supportLink}>
-      <AppText style={st.supportT}>Pet care can get expensive. Free local resources</AppText>
+      <Text style={st.supportT}>Pet care can get expensive. Free local resources</Text>
       <ChevronRight size={14} color={Theme.text.muted} />
     </Pressable>
   );
@@ -302,20 +301,20 @@ export function ReportFlow({ kind }: { kind: Kind }) {
     <ScreenLayout header={header}>
       {isLost ? (
         <SuccessBlock title="Your alert is live">
-          <AppText style={[successText.p, { marginBottom: 8 }]}>{"Nearby users have been notified.\nWe'll alert you the moment there's a match."}</AppText>
-          <AppText style={[successText.strong, { marginBottom: 24 }]}>{"Share this with your neighborhood\nto reach more people"}</AppText>
+          <Text style={[successText.p, { marginBottom: 8 }]}>{"Nearby users have been notified.\nWe'll alert you the moment there's a match."}</Text>
+          <Text style={[successText.strong, { marginBottom: 24 }]}>{"Share this with your neighborhood\nto reach more people"}</Text>
           <View style={st.fullW}>
             <Cta label={FLYERS_READY ? "Share flyer" : "Share alert"} tone="lost" icon={<Share2 size={18} color={Theme.text.onAccent} />} disabled={!publishedId} onPress={FLYERS_READY ? goFlyer : shareAlert} />
-            <Pressable accessibilityRole="button" onPress={() => viewOnList()} style={st.textBtn}><AppText role="control" style={st.textBtnT}>View on List</AppText></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => viewOnList()} style={st.textBtn}><Text style={st.textBtnT}>View on List</Text></Pressable>
             {supportLink}
           </View>
         </SuccessBlock>
       ) : (
         <SuccessBlock title="Thanks for helping">
-          <AppText style={[successText.p, { marginBottom: 24 }]}>Your sighting has been posted to the map.</AppText>
+          <Text style={[successText.p, { marginBottom: 24 }]}>Your sighting has been posted to the map.</Text>
           <View style={st.fullW}>
             <Pressable accessibilityRole="button" onPress={FLYERS_READY ? goFlyer : shareAlert} disabled={!publishedId} style={[st.outlineBtn, !publishedId && { opacity: 0.5 }]}>
-              <Share2 size={16} color={Theme.text.primary} /><AppText role="control" style={st.outlineT}>{FLYERS_READY ? "Share sighting" : "Share alert"}</AppText>
+              <Share2 size={16} color={Theme.text.primary} /><Text style={st.outlineT}>{FLYERS_READY ? "Share sighting" : "Share alert"}</Text>
             </Pressable>
             <Cta label="View on List" tone="sighted" onPress={() => viewOnList()} />
             {supportLink}

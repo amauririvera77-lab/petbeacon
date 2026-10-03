@@ -1,8 +1,7 @@
 import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { AppText } from "../components/AppText";
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Badge } from "../components/Badge";
 import { Button } from "../components/Button";
@@ -176,21 +175,21 @@ export default function PetScreen() {
       <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={Theme.text.primary} /></Pressable>
         {/* Modo vista: solo el botón de volver, sin título (Fase 12 de congelación) — el nombre ya está grande debajo de la foto. */}
-        {mode === "edit" ? <AppText role="title" style={styles.h} accessibilityRole="header" numberOfLines={1}>{isNew ? "Add pet" : `Edit ${f.name.trim() || "pet"}`}</AppText> : null}
+        {mode === "edit" ? <Text style={styles.h} accessibilityRole="header" numberOfLines={1}>{isNew ? "Add pet" : `Edit ${f.name.trim() || "pet"}`}</Text> : null}
       </View>
       {loading ? <View style={styles.center}><ActivityIndicator color={Theme.brand.primary} /></View> : mode === "view" ? (
         <ScrollView contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: insets.bottom + 32 }}>
           <PetPhotoImage uri={f.photoUri ?? f.photoUrl} focusX={f.photoUri ? null : f.photoFocusX} focusY={f.photoUri ? null : f.photoFocusY} />
           <View style={{ gap: 4 }}>
-            <AppText role="title" style={styles.viewName}>{f.name.trim() || "Unnamed pet"}</AppText>
-            {viewSubtitle ? <AppText style={styles.viewSubtitle}>{viewSubtitle}</AppText> : null}
+            <Text style={styles.viewName}>{f.name.trim() || "Unnamed pet"}</Text>
+            {viewSubtitle ? <Text style={styles.viewSubtitle}>{viewSubtitle}</Text> : null}
           </View>
 
           {status.state === "lost" ? (
             <View style={styles.stateBox}>
               <View style={styles.stateRow}>
                 <Badge status="lost" />
-                <AppText style={styles.stateT}>Missing for {elapsedShort(status.report.created_at)}</AppText>
+                <Text style={styles.stateT}>Missing for {elapsedShort(status.report.created_at)}</Text>
               </View>
               <Button label="View report" variant="secondary" onPress={viewReport} />
             </View>
@@ -198,7 +197,7 @@ export default function PetScreen() {
             <View style={styles.stateBox}>
               <View style={styles.stateRow}>
                 <Badge status="reunited" />
-                <AppText style={styles.stateT}>{agoShort(status.report.reunited_at ?? status.report.created_at)}</AppText>
+                <Text style={styles.stateT}>{agoShort(status.report.reunited_at ?? status.report.created_at)}</Text>
               </View>
             </View>
           ) : (
@@ -209,7 +208,7 @@ export default function PetScreen() {
           )}
 
           <View>
-            <AppText style={styles.sec}>Details</AppText>
+            <Text style={styles.sec}>Details</Text>
             <View style={styles.card}>
               <DetailRow label="Type" value={SPECIES.find((s) => s.value === f.species)?.label ?? "Not added yet"} empty={!f.species} />
               <View style={styles.divider}><DetailRow label="Breed" value={breedText || "Not added yet"} empty={!breedText} /></View>
@@ -244,7 +243,7 @@ export default function PetScreen() {
           <Chips label="Size" options={SIZE_OPTIONS} value={f.size} onChange={(size) => set({ size })} />
           <View style={{ gap: 6 }}>
             <TextField label="Distinctive features" labelSuffix="(optional)" placeholder="Blue collar, white paws, scar on left ear" value={f.features} onChangeText={(features) => set({ features })} multiline maxLength={100} />
-            <AppText style={styles.counter}>{f.features.length}/100</AppText>
+            <Text style={styles.counter}>{f.features.length}/100</Text>
           </View>
           <TextField label="Microchip number" labelSuffix="(optional)" placeholder="9, 10 or 15 characters" value={f.microchip}
             onChangeText={(microchip) => { set({ microchip }); setMicrochipError(null); }}
@@ -253,7 +252,7 @@ export default function PetScreen() {
 
           <Primary label={saving ? "Saving…" : isNew ? "Add pet" : "Save changes"} onPress={save} disabled={!valid || saving || (!isNew && !dirty)} />
           {!isNew ? <Button variant="secondary" label="Cancel" onPress={cancelEdit} disabled={saving} /> : null}
-          {!isNew ? <Pressable accessibilityRole="button" onPress={() => setRemoveOpen(true)} style={styles.remove}><AppText style={styles.removeT}>Remove from my pets</AppText></Pressable> : null}
+          {!isNew ? <Pressable accessibilityRole="button" onPress={() => setRemoveOpen(true)} style={styles.remove}><Text style={styles.removeT}>Remove from my pets</Text></Pressable> : null}
         </ScrollView>
       )}
       <RemovePetSheet visible={removeOpen} petName={f.name} hasActiveReport={status.state === "lost"} busy={removing} onClose={() => setRemoveOpen(false)} onConfirm={remove} />
@@ -272,10 +271,10 @@ export default function PetScreen() {
 function DetailRow({ label, value, empty, note }: { label: string; value: string; empty?: boolean; note?: string }) {
   return (
     <View style={styles.detailRow}>
-      <AppText style={styles.detailLabel}>{label}</AppText>
+      <Text style={styles.detailLabel}>{label}</Text>
       <View style={{ flex: 1, alignItems: "flex-end" }}>
-        <AppText style={[styles.detailValue, empty && { color: Theme.text.muted }]} numberOfLines={1}>{value}</AppText>
-        {note ? <AppText style={styles.detailNote}>{note}</AppText> : null}
+        <Text style={[styles.detailValue, empty && { color: Theme.text.muted }]} numberOfLines={1}>{value}</Text>
+        {note ? <Text style={styles.detailNote}>{note}</Text> : null}
       </View>
     </View>
   );

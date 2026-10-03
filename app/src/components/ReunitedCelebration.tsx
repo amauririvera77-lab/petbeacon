@@ -1,7 +1,6 @@
 import { Check } from "lucide-react-native";
 import { useEffect } from "react";
-import { StyleSheet, View } from "react-native";
-import { AppText } from "./AppText";
+import { StyleSheet, Text, View } from "react-native";
 import { Theme, radius } from "../theme/tokens";
 import { typography } from "../theme/typography";
 
@@ -12,8 +11,8 @@ export function ReunitedCelebration({ name, onDone, ms = 6000 }: { name: string;
     <View style={styles.box} accessibilityRole="alert" accessibilityLiveRegion="polite">
       <View style={styles.circle}><Check size={24} color={Theme.text.onAccent} /></View>
       <View style={{ flex: 1, gap: 2 }}>
-        <AppText style={styles.title}>Welcome home, {name}!</AppText>
-        <AppText style={styles.sub}>We're so glad you found each other. We've stopped alerting neighbors about this report.</AppText>
+        <Text style={styles.title}>Welcome home, {name}!</Text>
+        <Text style={styles.sub}>We're so glad you found each other. We've stopped alerting neighbors about this report.</Text>
       </View>
     </View>
   );

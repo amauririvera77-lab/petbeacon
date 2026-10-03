@@ -1,8 +1,7 @@
 import { useFocusEffect } from "expo-router";
 import { LocateFixed, X } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Animated, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, Share, StyleSheet, View } from "react-native";
-import { AppText } from "../../components/AppText";
+import { ActivityIndicator, Alert, Animated, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EditLocationSheet } from "../../components/EditLocationSheet";
 import { EndOfFeed } from "../../components/EndOfFeed";
@@ -298,7 +297,7 @@ export default function Home() {
               {posStatus === "finding" ? (
                 <View style={styles.finding} accessibilityLiveRegion="polite">
                   <ActivityIndicator size="small" color={Theme.text.primary} />
-                  <AppText style={styles.findingT}>Finding your location…</AppText>
+                  <Text style={styles.findingT}>Finding your location…</Text>
                 </View>
               ) : null}
               {mapEmptyEl ? <View style={[styles.mapEmpty, { bottom: TAB_BAR_CLEARANCE }]} onLayout={(e) => setCardH(e.nativeEvent.layout.height)}>{mapEmptyEl}</View> : null}
@@ -313,7 +312,7 @@ export default function Home() {
               ) : null}
               {focus ? (
                 <Pressable accessibilityRole="button" accessibilityLabel="Clear searched area" onPress={() => { setFocus(null); setMapQuery(""); }} style={styles.focusChip}>
-                  <AppText style={styles.focusT} numberOfLines={1}>{focus.label}</AppText>
+                  <Text style={styles.focusT} numberOfLines={1}>{focus.label}</Text>
                   <X size={14} color={Theme.text.primary} />
                 </Pressable>
               ) : null}

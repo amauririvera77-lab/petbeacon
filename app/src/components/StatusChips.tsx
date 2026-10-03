@@ -1,6 +1,5 @@
 import { Eye, Siren } from "lucide-react-native";
-import { Pressable, StyleSheet, View } from "react-native";
-import { AppText } from "./AppText";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Theme, MIN_HIT, radius } from "../theme/tokens";
 import { typography, weightOff } from "../theme/typography";
 
@@ -19,7 +18,7 @@ export function StatusChips({ lost, sighted, onToggle }: { lost: boolean; sighte
         <Pressable key={k} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${label} reports`} accessibilityHint={on ? "Shown. Double tap to hide." : "Hidden. Double tap to show."}
           onPress={() => onToggle(k)} style={[styles.chip, on ? { borderWidth: 2, borderColor: border, backgroundColor: tint } : styles.off]}>
           <Icon size={16} color={on ? icon : Theme.text.muted} />
-          <AppText role="control" style={[styles.t, on ? { color: Theme.text.primary } : [weightOff.button14, { color: Theme.text.muted }]]}>{label}</AppText>
+          <Text style={[styles.t, on ? { color: Theme.text.primary } : [weightOff.button14, { color: Theme.text.muted }]]}>{label}</Text>
         </Pressable>
       ))}
     </View>

@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from "react-native";
-import { AppText } from "./AppText";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { updateProfileLocation } from "../lib/account";
 import { geocodeCity } from "../lib/geocode";
@@ -37,7 +36,7 @@ export function EditLocationSheet({ visible, onClose }: { visible: boolean; onCl
         <Pressable style={styles.scrim} onPress={onClose} accessibilityLabel="Close" />
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.handleWrap}><View style={styles.handle} /></View>
-          <AppText style={styles.title} accessibilityRole="header">Edit Location</AppText>
+          <Text style={styles.title} accessibilityRole="header">Edit Location</Text>
           <TextField label="City or ZIP code" value={draft} onChangeText={setDraft} placeholder="North Bergen, NJ" autoCapitalize="words"
             helper={error ?? "Use this if your location was detected incorrectly."} />
           <View style={{ height: 24 }} />

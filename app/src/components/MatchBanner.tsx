@@ -1,6 +1,5 @@
 import { X } from "lucide-react-native";
-import { Pressable, StyleSheet, View } from "react-native";
-import { AppText } from "./AppText";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { MyMatch } from "../lib/database.types";
 import { matchSubtitle, matchTitle } from "../lib/matchCopy";
 import { Theme, MIN_HIT, radius } from "../theme/tokens";
@@ -20,10 +19,10 @@ export function MatchBanner({ match, onViewSighting, onDismiss }: { match: MyMat
         <SpeciesPlaceholder species={match.sighted_species ?? "other"} size={48} style={styles.photo} />
       )}
       <View style={styles.body}>
-        <AppText style={styles.title}>{matchTitle(match)}</AppText>
-        <AppText style={styles.sub}>{matchSubtitle(match)}</AppText>
+        <Text style={styles.title}>{matchTitle(match)}</Text>
+        <Text style={styles.sub}>{matchSubtitle(match)}</Text>
         <Pressable accessibilityRole="button" onPress={onViewSighting} style={({ pressed }) => [styles.cta, pressed && { opacity: 0.85 }]}>
-          <AppText role="control" style={styles.ctaT}>View sighting</AppText>
+          <Text style={styles.ctaT}>View sighting</Text>
         </Pressable>
       </View>
       {/* Zona táctil de 44×44 pt como mínimo. */}

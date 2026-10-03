@@ -1,7 +1,6 @@
 import { HeartHandshake, Search, X } from "lucide-react-native";
 import { Fragment, useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
-import { AppText } from "../../components/AppText";
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OfflineBanner } from "../../components/OfflineBanner";
 import { ScreenTitle } from "../../components/ScreenTitle";
@@ -85,7 +84,7 @@ export default function Support() {
             return (
               <Pressable key={c.key} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => setCategory(c.key)}
                 style={[styles.chip, on && styles.chipOn]}>
-                <AppText role="control" style={[styles.chipT, on && { color: Theme.text.onAccent }]}>{c.label}</AppText>
+                <Text style={[styles.chipT, on && { color: Theme.text.onAccent }]}>{c.label}</Text>
               </Pressable>
             );
           })}
@@ -97,20 +96,20 @@ export default function Support() {
       <ScrollView contentContainerStyle={listStyle} keyboardShouldPersistTaps="handled">
         {error === "supabase-not-configured" ? <SetupNotice /> : error ? (
           <View style={{ gap: 8 }}>
-            <AppText style={styles.err}>Couldn't load resources: {error}</AppText>
-            <Pressable accessibilityRole="button" onPress={refresh} style={styles.retry}><AppText role="control" style={styles.retryT}>Retry</AppText></Pressable>
+            <Text style={styles.err}>Couldn't load resources: {error}</Text>
+            <Pressable accessibilityRole="button" onPress={refresh} style={styles.retry}><Text style={styles.retryT}>Retry</Text></Pressable>
           </View>
         ) : loading ? <ActivityIndicator style={{ marginTop: 24 }} color={Theme.brand.primary} /> : filtered.length === 0 ? (
           <View style={styles.empty}>
             <View style={styles.emptyIcon}><HeartHandshake size={26} color={Theme.text.muted} /></View>
-            <AppText style={styles.emptyT}>{resources.length === 0 ? "No resources near you yet" : "No matching resources"}</AppText>
-            <AppText style={styles.emptyS}>{resources.length === 0 ? "We're still adding local resources in your area." : "Try a different category or search term."}</AppText>
-            {resources.length > 0 ? <Pressable accessibilityRole="button" onPress={reset} style={styles.emptyBtn}><AppText role="control" style={styles.emptyBtnT}>Clear filters</AppText></Pressable> : null}
+            <Text style={styles.emptyT}>{resources.length === 0 ? "No resources near you yet" : "No matching resources"}</Text>
+            <Text style={styles.emptyS}>{resources.length === 0 ? "We're still adding local resources in your area." : "Try a different category or search term."}</Text>
+            {resources.length > 0 ? <Pressable accessibilityRole="button" onPress={reset} style={styles.emptyBtn}><Text style={styles.emptyBtnT}>Clear filters</Text></Pressable> : null}
           </View>
         ) : (
           <>
             {hasSample ? (
-              <View style={styles.sampleBanner}><AppText style={styles.sampleBannerT}>These resources are sample data for testing.</AppText></View>
+              <View style={styles.sampleBanner}><Text style={styles.sampleBannerT}>These resources are sample data for testing.</Text></View>
             ) : null}
             {filtered.map((r, i) => {
               const onAction = (kind: "directions" | "learn" | "contact") => act(r, kind);
@@ -122,8 +121,8 @@ export default function Support() {
               return (
                 <Fragment key={`shelter-group-${r.id}`}>
                   <View style={styles.rehomeHead}>
-                    <AppText style={styles.rehomeT}>If you're considering rehoming</AppText>
-                    <AppText style={styles.rehomeS}>These organizations can help you find a safe next home.</AppText>
+                    <Text style={styles.rehomeT}>If you're considering rehoming</Text>
+                    <Text style={styles.rehomeS}>These organizations can help you find a safe next home.</Text>
                   </View>
                   {card}
                 </Fragment>

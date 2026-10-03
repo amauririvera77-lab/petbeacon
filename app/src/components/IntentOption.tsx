@@ -1,6 +1,5 @@
 import { ChevronRight, type LucideIcon } from "lucide-react-native";
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import { AppText } from "./AppText";
+import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { Theme, radius } from "../theme/tokens";
 import { typography } from "../theme/typography";
 
@@ -16,8 +15,8 @@ export function IntentOption({ title, sub, Icon, color, onPress, style }: {
       style={({ pressed }) => [styles.option, pressed && { backgroundColor: Theme.surface.page }, style]}>
       <View style={[styles.icon, { backgroundColor: color }]}><Icon size={24} color={Theme.text.onAccent} /></View>
       <View style={{ flex: 1, gap: 2 }}>
-        <AppText style={styles.optT}>{title}</AppText>
-        <AppText style={styles.optS}>{sub}</AppText>
+        <Text style={styles.optT}>{title}</Text>
+        <Text style={styles.optS}>{sub}</Text>
       </View>
       <ChevronRight size={20} color={Theme.text.muted} />
     </Pressable>
