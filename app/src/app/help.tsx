@@ -1,9 +1,12 @@
 import { router } from "expo-router";
 import { ChevronDown, ChevronLeft } from "lucide-react-native";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { C, MIN_HIT, font, radius } from "../theme/tokens";
+import { Button } from "../components/Button";
+import { SUPPORT_EMAIL } from "../lib/config";
+import { Theme, MIN_HIT, radius } from "../theme/tokens";
+import { typography } from "../theme/typography";
 
 // La sección "Support and care" es deliberada (refuerza el diferenciador del producto, CLAUDE.md §2 y §1).
 const FAQ = [
@@ -27,7 +30,7 @@ export default function Help() {
   return (
     <View style={styles.root}>
       <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={C.ink} /></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={Theme.text.primary} /></Pressable>
         <Text style={styles.h} accessibilityRole="header">Help and FAQ</Text>
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}>
@@ -41,7 +44,7 @@ export default function Help() {
                   <View key={key} style={i > 0 && styles.divider}>
                     <Pressable accessibilityRole="button" accessibilityState={{ expanded: on }} onPress={() => setOpen(on ? null : key)} style={styles.q}>
                       <Text style={styles.qT}>{q}</Text>
-                      <View style={on && { transform: [{ rotate: "180deg" }] }}><ChevronDown size={18} color={C.slate500} /></View>
+                      <View style={on && { transform: [{ rotate: "180deg" }] }}><ChevronDown size={18} color={Theme.text.muted} /></View>
                     </Pressable>
                     {on ? <Text style={styles.a}>{a}</Text> : null}
                   </View>
@@ -50,20 +53,32 @@ export default function Help() {
             </View>
           </View>
         ))}
+        {/* "Still need help?" (Fase 11 de congelación): vía de contacto real al final del FAQ, por si las preguntas no alcanzan. */}
+        <View style={styles.help}>
+          <Text style={styles.helpT}>Still need help?</Text>
+          <Text style={styles.helpS}>Our team usually replies within 2 business days.</Text>
+          <Button variant="secondary" label="Contact us"
+            onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`).catch(() => Alert.alert("Couldn't open email", `Reach us at ${SUPPORT_EMAIL}`))} />
+        </View>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.surface },
-  top: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingBottom: 8, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
+  root: { flex: 1, backgroundColor: Theme.surface.page },
+  top: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingBottom: 8, backgroundColor: Theme.surface.card, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
   back: { width: MIN_HIT, height: MIN_HIT, alignItems: "center", justifyContent: "center" },
-  h: { fontFamily: font.displayMedium, fontSize: 22, color: C.ink },
-  sec: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 0.72, textTransform: "uppercase", color: C.slate500, marginBottom: 12 },
-  card: { borderRadius: radius.lg, backgroundColor: C.white, borderWidth: 1, borderColor: C.border, overflow: "hidden" },
-  divider: { borderTopWidth: 1, borderTopColor: C.border },
+  h: { ...typography.title24, color: Theme.text.primary },
+  // Label/13 mayúsculas, text/secondary (Fase 10 de congelación — antes text/muted).
+  sec: { ...typography.label13, letterSpacing: 0.72, textTransform: "uppercase", color: Theme.text.secondary, marginBottom: 12 },
+  card: { borderRadius: radius.lg, backgroundColor: Theme.surface.card, borderWidth: 1, borderColor: Theme.border.default, overflow: "hidden" },
+  divider: { borderTopWidth: 1, borderTopColor: Theme.border.default },
   q: { minHeight: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, padding: 16 },
-  qT: { flex: 1, fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
-  a: { fontFamily: font.bodyRegular, fontSize: 14, lineHeight: 21, color: C.slate700, paddingHorizontal: 16, paddingBottom: 16 },
+  // Heading/16 (Fase 10 de congelación — antes Label/14), para compartir estilo de título con "Nearby alerts"/"Edit profile".
+  qT: { flex: 1, ...typography.heading16, color: Theme.text.primary },
+  a: { ...typography.body14, color: Theme.text.secondary, paddingHorizontal: 16, paddingBottom: 16 },
+  help: { padding: 16, borderRadius: radius.lg, backgroundColor: Theme.surface.card, borderWidth: 1, borderColor: Theme.border.default, gap: 8 },
+  helpT: { ...typography.heading18, color: Theme.text.primary },
+  helpS: { ...typography.body14, color: Theme.text.secondary },
 });

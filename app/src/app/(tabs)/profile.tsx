@@ -1,11 +1,12 @@
 import { router, useFocusEffect } from "expo-router";
-import { ChevronRight, PawPrint, Plus } from "lucide-react-native";
+import { ChevronRight, MapPin, PawPrint, Plus } from "lucide-react-native";
 import { useCallback, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar } from "../../components/account/Avatar";
 import { SaveAccountSheet } from "../../components/account/SaveAccountSheet";
 import { Badge } from "../../components/Badge";
+import { Button } from "../../components/Button";
 import { EditLocationSheet } from "../../components/EditLocationSheet";
 import { FocusImage } from "../../components/FocusImage";
 import { OfflineBanner } from "../../components/OfflineBanner";
@@ -15,14 +16,16 @@ import { useSnackbar } from "../../components/Snackbar";
 import { ToggleRow } from "../../components/ToggleRow";
 import { useAccount } from "../../hooks/useAccount";
 import { saveProfilePref, useEnablePush } from "../../hooks/useEnablePush";
-import { useFabScroll } from "../../hooks/useFabScroll";
+import { useFabHidden } from "../../hooks/useFabHidden";
 import { useMyReports } from "../../hooks/useMyReports";
 import { usePets } from "../../hooks/usePets";
 import { logout } from "../../lib/account";
+import { breedLabel } from "../../lib/breeds";
 import { petState } from "../../lib/petStatus";
 import { useOnboardingPreview } from "../../state/onboardingPreview";
 import { useSession } from "../../state/session";
-import { C, MIN_HIT, font, radius } from "../../theme/tokens";
+import { Theme, MIN_HIT, radius, spacing } from "../../theme/tokens";
+import { typography } from "../../theme/typography";
 
 // ⚠️ HERRAMIENTA DE DISEÑO — quitar junto con la sección "Design tools" (más abajo) antes de publicar.
 // Solo visible con EXPO_PUBLIC_SHOW_DESIGN_TOOLS=true (no __DEV__), para poder revisarla también en builds de EAS Update.
@@ -38,16 +41,17 @@ export default function Profile() {
   const { pets, refresh: refreshPets } = usePets();
   const { reports: myReports, refresh: refreshMine } = useMyReports();
   const account = useAccount();
-  const { onScroll } = useFabScroll();
+  useFabHidden(); // Fase 3 de congelación: Profile no muestra FAB.
   const snackbar = useSnackbar();
   const [cityOpen, setCityOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
 
   useFocusEffect(useCallback(() => { refreshPets(); refreshMine(); }, [refreshPets, refreshMine]));
 
-  // Nombres de las mascotas con un Lost activo: para advertir al apagar "Match updates" y al cerrar sesión.
+  // Nombres de las mascotas con un Lost activo: para advertir al apagar "Match updates" y al cerrar sesión. 3+ muestra
+  // el número real ("3 pets"), no un genérico "your pets" (fase de congelación, Fase 11 — plural correcto en "Save your account").
   const lostNames = useMemo(() => myReports.filter((r) => r.status === "lost").map((r) => r.name?.trim() || "your pet"), [myReports]);
-  const lostLabel = lostNames.length === 0 ? "" : lostNames.length === 1 ? lostNames[0] : lostNames.length === 2 ? `${lostNames[0]} and ${lostNames[1]}` : "your pets";
+  const lostLabel = lostNames.length === 0 ? "" : lostNames.length === 1 ? lostNames[0] : lostNames.length === 2 ? `${lostNames[0]} and ${lostNames[1]}` : `${lostNames.length} pets`;
   const hasLost = lostNames.length > 0;
 
   const toggleMatch = (v: boolean) => {
@@ -79,38 +83,50 @@ export default function Profile() {
 
   return (
     <View style={styles.root}>
-      <View style={{ paddingTop: insets.top, backgroundColor: C.white }}>
+      <View style={{ paddingTop: insets.top, backgroundColor: Theme.surface.card }}>
         <OfflineBanner />
       </View>
 
       {/* Cabecera (foto, nombre, zona de alertas) DENTRO del scroll (evaluación UX): se desplaza con el contenido, no queda fija. */}
-      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: 200 }} onScroll={onScroll} scrollEventThrottle={16}>
-        <View style={styles.titleWrap}><ScreenTitle title="Profile" /></View>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 24, paddingBottom: spacing["2xl"] }}>
+        <View style={styles.titleWrap}><ScreenTitle title="Profile" variant="display" /></View>
         <View style={styles.head}>
           <Avatar uri={avatarUrl} name={name} size={64} />
           <View style={{ flex: 1 }}>
             <Text style={styles.name} numberOfLines={1}>{name || "Your profile"}</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="Edit alert area" onPress={() => setCityOpen(true)} style={styles.cityBtn}>
-              <Text style={styles.city} numberOfLines={1}>Alert area: {city || "add your city"}</Text>
-              <ChevronRight size={14} color="#94A3B8" />
-            </Pressable>
           </View>
         </View>
-        {/* Con un Lost activo y la cuenta sin guardar, la invitación es prominente: perder la cuenta sería perder el reporte. */}
-        {account.ready && account.isAnonymous && hasLost ? (
+        {/* "Save your account" es siempre una llamada a la acción aparte, nunca una fila dentro de otra tarjeta (Fase 9 de
+            congelación) — antes, sin un Lost activo, vivía como fila discreta dentro de "Account"; ahora es la misma
+            tarjeta en los dos casos, solo cambia el texto. */}
+        {account.ready && account.isAnonymous ? (
           <View style={styles.saveCard}>
             <Text style={styles.saveT}>Save your account</Text>
-            <Text style={styles.saveS}>{`You have an active alert for ${lostLabel}. Add your email so you never lose access to it, even if you switch phones.`}</Text>
+            <Text style={styles.saveS}>
+              {hasLost
+                ? `You have ${lostNames.length === 1 ? "an active alert" : "active alerts"} for ${lostLabel}. Add your email so you never lose access to it, even if you switch phones.`
+                : "Add your email to get back to your reports and pets from any device."}
+            </Text>
             <Pressable accessibilityRole="button" onPress={() => setSaveOpen(true)} style={({ pressed }) => [styles.saveBtn, pressed && { opacity: 0.85 }]}>
               <Text style={styles.saveBtnT}>Add email</Text>
             </Pressable>
           </View>
         ) : null}
 
-        <Text style={styles.sec}>Alert radius</Text>
-        <View style={[styles.card, { padding: 16, marginBottom: 32, gap: 12 }]}>
-          <Text style={styles.radiusHelp}>We'll send you notifications about lost and sighted pets within this distance of your alert area.</Text>
-          <RadiusChips value={alertRadiusMi} onChange={(v) => update({ alertRadiusMi: v })} />
+        {/* "Alert area" (Fase 9 de congelación): una sola tarjeta con la ubicación (antes una línea suelta en el header)
+            y el radio de alerta (antes su propia sección) — son la misma idea, "dónde y qué tan lejos te avisamos". */}
+        <Text style={styles.sec}>Alert area</Text>
+        <View style={[styles.card, { marginBottom: 32 }]}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Edit alert area" onPress={() => setCityOpen(true)}
+            style={({ pressed }) => [styles.row, styles.rowFlex, pressed && { backgroundColor: Theme.surface.page }]}>
+            <MapPin size={20} color={Theme.text.secondary} />
+            <Text style={styles.locationT} numberOfLines={1}>{city || "Add your city"}</Text>
+            <ChevronRight size={18} color={Theme.text.muted} />
+          </Pressable>
+          <View style={[styles.row, styles.divider, { gap: 12 }]}>
+            <Text style={styles.radiusHelp}>We'll send you notifications about lost and sighted pets within this distance of your alert area.</Text>
+            <RadiusChips value={alertRadiusMi} onChange={(v) => update({ alertRadiusMi: v })} />
+          </View>
         </View>
 
         <Text style={styles.sec}>Notifications</Text>
@@ -134,49 +150,50 @@ export default function Profile() {
             const st = petState(p.id, myReports); // Home / Lost / Reunited, derivado de sus reportes
             return (
               <Pressable key={p.id} accessibilityRole="button" onPress={() => router.push({ pathname: "/pet", params: { id: p.id } })}
-                style={({ pressed }) => [styles.listRow, pressed && { backgroundColor: C.surface }]}>
+                style={({ pressed }) => [styles.listRow, pressed && { backgroundColor: Theme.surface.page }]}>
                 <View style={styles.thumb}>
-                  {p.photo_url ? <FocusImage uri={p.photo_url} style={StyleSheet.absoluteFill} /> : <PawPrint size={22} color="#94A3B8" />}
+                  {p.photo_url ? <FocusImage uri={p.photo_url} focusX={p.photo_focus_x} focusY={p.photo_focus_y} style={StyleSheet.absoluteFill} /> : <PawPrint size={22} color={Theme.text.muted} />}
                 </View>
                 <View style={{ flex: 1 }}>
                   <View style={styles.nameRow}>
-                    <Text style={styles.petName} numberOfLines={1}>{p.name}</Text>
+                    <Text style={styles.rowTitle} numberOfLines={1}>{p.name}</Text>
                     {st.state !== "home" ? <Badge status={st.state} /> : null}
                   </View>
-                  {p.breed ? <Text style={styles.petBreed}>{p.breed}</Text> : null}
+                  {breedLabel(p.breed, p.breed_id) ? <Text style={styles.rowSubtitle}>{breedLabel(p.breed, p.breed_id)}</Text> : null}
                 </View>
-                <ChevronRight size={18} color="#94A3B8" />
+                <ChevronRight size={18} color={Theme.text.muted} />
               </Pressable>
             );
           })}
           <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/pet", params: { id: "new" } })}
-            style={({ pressed }) => [styles.listRow, styles.addRow, pressed && { backgroundColor: C.surface }]}>
-            <View style={[styles.thumb, { backgroundColor: "transparent" }]}><Plus size={22} color={C.slate700} /></View>
+            style={({ pressed }) => [styles.listRow, styles.addRow, pressed && { backgroundColor: Theme.surface.page }]}>
+            <View style={[styles.thumb, { backgroundColor: "transparent" }]}><Plus size={22} color={Theme.text.secondary} /></View>
             <Text style={styles.addT}>{pets.length === 0 ? "Register your pet" : "Add another pet"}</Text>
           </Pressable>
         </View>
 
+        {/* "Account" es una sola tarjeta agrupada con divisores (Fase 9 de congelación) — mismo componente que Notifications,
+            en vez de una tarjeta propia por fila. "Account saved" es su primera fila cuando la cuenta ya tiene correo. */}
         <Text style={styles.sec}>Account</Text>
-        <View style={{ gap: 8, marginBottom: 24 }}>
-          <NavRow title="Edit profile" subtitle="Name, photo and contact details" onPress={() => router.push("/edit-profile")} />
-          <NavRow title="Privacy" subtitle="What others can see and what stays private" onPress={() => router.push("/privacy")} />
-          {account.ready && account.isAnonymous && !hasLost ? (
-            <NavRow title="Save your account" subtitle="Add your email to get back to your reports and pets from any device" onPress={() => setSaveOpen(true)} />
-          ) : null}
+        <View style={[styles.card, { marginBottom: 24 }]}>
           {account.ready && !account.isAnonymous ? (
-            <View style={[styles.listRow, { opacity: 0.9 }]}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.petName}>Account saved</Text>
-                <Text style={styles.petBreed} numberOfLines={1}>{account.email}</Text>
-              </View>
+            <View style={styles.row}>
+              <Text style={styles.rowTitle}>Account saved</Text>
+              <Text style={styles.rowSubtitle} numberOfLines={1}>{account.email}</Text>
             </View>
           ) : null}
-          <NavRow title="Help and FAQ" onPress={() => router.push("/help")} />
+          <View style={account.ready && !account.isAnonymous ? styles.divider : undefined}>
+            <NavRow grouped title="Edit profile" subtitle="Name, photo and contact details" onPress={() => router.push("/edit-profile")} />
+          </View>
+          <View style={styles.divider}>
+            <NavRow grouped title="Privacy" subtitle="What others can see and what stays private" onPress={() => router.push("/privacy")} />
+          </View>
+          <View style={styles.divider}>
+            <NavRow grouped title="Help and FAQ" onPress={() => router.push("/help")} />
+          </View>
         </View>
 
-        <Pressable accessibilityRole="button" onPress={confirmLogout} style={({ pressed }) => [styles.logout, pressed && { backgroundColor: "#F1F5F9" }]}>
-          <Text style={styles.logoutT}>Log out</Text>
-        </Pressable>
+        <Button variant="secondary" label="Log out" onPress={confirmLogout} />
         <Pressable accessibilityRole="button" onPress={() => router.push("/delete-account")} style={styles.deleteLink}>
           <Text style={styles.deleteT}>Delete account</Text>
         </Pressable>
@@ -197,46 +214,49 @@ export default function Profile() {
   );
 }
 
-// Fila de lista tocable: mismo estilo que las filas de mascotas.
-function NavRow({ title, subtitle, onPress }: { title: string; subtitle?: string; onPress: () => void }) {
+// Fila de lista tocable: `grouped` la pone dentro de una tarjeta compartida (Account, Fase 9 de congelación) en vez
+// de ser su propia tarjeta con borde (Registered pets, Design tools).
+function NavRow({ title, subtitle, onPress, grouped }: { title: string; subtitle?: string; onPress: () => void; grouped?: boolean }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.listRow, pressed && { backgroundColor: C.surface }]}>
+    <Pressable accessibilityRole="button" onPress={onPress}
+      style={({ pressed }) => [grouped ? [styles.row, styles.rowFlex] : styles.listRow, pressed && { backgroundColor: Theme.surface.page }]}>
       <View style={{ flex: 1 }}>
-        <Text style={styles.petName}>{title}</Text>
-        {subtitle ? <Text style={styles.petBreed}>{subtitle}</Text> : null}
+        <Text style={styles.rowTitle}>{title}</Text>
+        {subtitle ? <Text style={styles.rowSubtitle}>{subtitle}</Text> : null}
       </View>
-      <ChevronRight size={18} color="#94A3B8" />
+      <ChevronRight size={18} color={Theme.text.muted} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.surface },
+  root: { flex: 1, backgroundColor: Theme.surface.page },
   // El padding horizontal y superior ya los da el contenedor del ScrollView: esta cabecera vive DENTRO de él y se desplaza con el resto.
   titleWrap: { marginBottom: 4 },
-  head: { flexDirection: "row", alignItems: "center", gap: 16, paddingBottom: 20, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: C.border },
-  name: { fontFamily: font.head, fontSize: 20, color: C.ink },
-  cityBtn: { flexDirection: "row", alignItems: "center", gap: 4, minHeight: 28, alignSelf: "flex-start" },
-  city: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700, flexShrink: 1 },
-  saveCard: { gap: 8, padding: 16, marginBottom: 24, borderRadius: radius.lg, borderWidth: 2, borderColor: C.ink, backgroundColor: C.white },
-  saveT: { fontFamily: font.head, fontSize: 17, color: C.ink },
-  saveS: { fontFamily: font.bodyRegular, fontSize: 14, lineHeight: 20, color: C.slate700 },
-  saveBtn: { minHeight: 48, borderRadius: radius.md, backgroundColor: C.ink, alignItems: "center", justifyContent: "center", marginTop: 4 },
-  saveBtnT: { fontFamily: font.bodyBold, fontSize: 15, color: C.white },
-  sec: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 0.72, textTransform: "uppercase", color: C.slate500, marginBottom: 12 },
-  card: { borderRadius: radius.lg, backgroundColor: C.white, borderWidth: 1, borderColor: C.border, overflow: "hidden" },
-  radiusHelp: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 19, color: C.slate700 },
+  head: { flexDirection: "row", alignItems: "center", gap: 16, paddingBottom: 20, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
+  name: { ...typography.heading20, color: Theme.text.primary },
+  saveCard: { gap: 8, padding: 16, marginBottom: 24, borderRadius: radius.lg, borderWidth: 2, borderColor: Theme.brand.primary, backgroundColor: Theme.surface.card },
+  saveT: { ...typography.heading18, color: Theme.text.primary },
+  saveS: { ...typography.body14, color: Theme.text.secondary },
+  saveBtn: { minHeight: 48, borderRadius: radius.md, backgroundColor: Theme.brand.primary, alignItems: "center", justifyContent: "center", marginTop: 4 },
+  saveBtnT: { ...typography.button16, color: Theme.text.onAccent },
+  // Label/13 mayúsculas, text/secondary (Fase 10 de congelación — antes usaba text/muted).
+  sec: { ...typography.label13, letterSpacing: 0.72, textTransform: "uppercase", color: Theme.text.secondary, marginBottom: 12 },
+  card: { borderRadius: radius.lg, backgroundColor: Theme.surface.card, borderWidth: 1, borderColor: Theme.border.default, overflow: "hidden" },
+  radiusHelp: { ...typography.bodySm13, color: Theme.text.secondary },
   row: { padding: 16 },
-  divider: { borderTopWidth: 1, borderTopColor: C.border },
-  listRow: { minHeight: MIN_HIT + 16, flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderRadius: radius.lg, backgroundColor: C.white, borderWidth: 1, borderColor: C.border },
-  addRow: { borderStyle: "dashed", borderColor: C.border2 },
-  thumb: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  rowFlex: { flexDirection: "row", alignItems: "center", gap: 12 },
+  locationT: { flex: 1, ...typography.heading16, color: Theme.text.primary },
+  divider: { borderTopWidth: 1, borderTopColor: Theme.border.default },
+  listRow: { minHeight: MIN_HIT + 16, flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderRadius: radius.lg, backgroundColor: Theme.surface.card, borderWidth: 1, borderColor: Theme.border.default },
+  addRow: { borderStyle: "dashed", borderColor: Theme.border.strong },
+  thumb: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: Theme.surface.page, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  petName: { flexShrink: 1, fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
-  petBreed: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate500 },
-  addT: { flex: 1, fontFamily: font.bodyBold, fontSize: 15, color: C.slate700 },
-  logout: { height: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2, backgroundColor: C.white, alignItems: "center", justifyContent: "center" },
+  // Título de fila de lista navegable: Heading/16. Subtítulo: Body/14 text/secondary (Fase 10 de congelación — antes
+  // Caption/12 text/muted). Mismo par para mascotas registradas, NavRow y "Account saved".
+  rowTitle: { flexShrink: 1, ...typography.heading16, color: Theme.text.primary },
+  rowSubtitle: { ...typography.body14, color: Theme.text.secondary },
+  addT: { flex: 1, ...typography.heading16, color: Theme.text.secondary },
   deleteLink: { minHeight: MIN_HIT, alignItems: "center", justifyContent: "center", marginTop: 8 },
-  deleteT: { fontFamily: font.bodySemi, fontSize: 13, color: C.sosDark, textDecorationLine: "underline" },
-  logoutT: { fontFamily: font.bodyBold, fontSize: 15, color: C.slate700 },
+  deleteT: { ...typography.label14, color: Theme.danger.text, textDecorationLine: "underline" },
 });
