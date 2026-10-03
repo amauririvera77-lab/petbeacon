@@ -29,8 +29,8 @@ export function ActiveFilters({ prefs, onChange, onClearAll }: { prefs: Prefs; o
 
 const styles = StyleSheet.create({
   row: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 10 },
-  chip: { height: 30, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, borderRadius: radius.pill, backgroundColor: Theme.brand.tint, borderWidth: 1, borderColor: Theme.border.strong },
+  chip: { minHeight: 30, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, borderRadius: radius.pill, backgroundColor: Theme.brand.tint, borderWidth: 1, borderColor: Theme.border.strong },
   t: { ...typography.button14, color: Theme.text.primary },
-  clear: { height: 30, justifyContent: "center", paddingHorizontal: 4 },
+  clear: { minHeight: 30, justifyContent: "center", paddingHorizontal: 4 },
   clearT: { ...typography.button14, color: Theme.text.secondary, textDecorationLine: "underline" },
 });

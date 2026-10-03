@@ -5,7 +5,7 @@ import { Theme, MIN_HIT } from "../theme/tokens";
 import { elevation } from "../theme/elevation";
 import { typography } from "../theme/typography";
 
-// Segmented control List | Map compacto (fase 4.2): 32 px de alto (antes 40 a todo el ancho) y estado activo ligero (segmento blanco
+// Segmented control List | Map compacto (fase 4.2): 32 px de alto mínimo (antes 40 a todo el ancho; minHeight para que crezca con el texto grande) y estado activo ligero (segmento blanco
 // sobre pista gris, sin relleno negro). Recupera espacio vertical para el contenido. El toque conserva ≥44 px con `hitSlop`.
 export function CompactSegmented({ value, onChange }: { value: "list" | "map"; onChange: (v: "list" | "map") => void }) {
   const items = [["list", "List", List], ["map", "Map", MapIcon]] as const;
@@ -26,8 +26,8 @@ export function CompactSegmented({ value, onChange }: { value: "list" | "map"; o
 }
 
 const styles = StyleSheet.create({
-  track: { flexDirection: "row", height: 36, padding: 2, borderRadius: 10, backgroundColor: Theme.border.default },
-  seg: { minWidth: 58, height: 32, paddingHorizontal: 8, borderRadius: 8, flexDirection: "row", gap: 4, alignItems: "center", justifyContent: "center" },
+  track: { flexDirection: "row", minHeight: 36, padding: 2, borderRadius: 10, backgroundColor: Theme.border.default },
+  seg: { minWidth: 58, minHeight: 32, paddingHorizontal: 8, borderRadius: 8, flexDirection: "row", gap: 4, alignItems: "center", justifyContent: "center" },
   segOn: { backgroundColor: Theme.surface.card, ...elevation[1] },
   t: typography.button14,
 });

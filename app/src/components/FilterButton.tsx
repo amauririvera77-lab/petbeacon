@@ -16,7 +16,7 @@ export function FilterButton({ count, onPress }: { count: number; onPress: () =>
 }
 
 const styles = StyleSheet.create({
-  btn: { width: MIN_HIT, height: MIN_HIT - 4, borderRadius: radius.md, borderWidth: 1, borderColor: Theme.border.strong, backgroundColor: Theme.surface.card, alignItems: "center", justifyContent: "center" },
+  btn: { width: MIN_HIT, minHeight: MIN_HIT - 4, borderRadius: radius.md, borderWidth: 1, borderColor: Theme.border.strong, backgroundColor: Theme.surface.card, alignItems: "center", justifyContent: "center" },
   badge: { position: "absolute", top: -6, right: -6, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: Theme.brand.primary, borderWidth: 2, borderColor: Theme.surface.card, alignItems: "center", justifyContent: "center" },
   badgeT: { ...typography.micro11, color: Theme.text.onAccent },
 });
