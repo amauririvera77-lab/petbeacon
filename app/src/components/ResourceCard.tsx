@@ -1,37 +1,35 @@
 import { CalendarDays, ChevronRight, HeartHandshake } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { ResourceNearby } from "../lib/database.types";
-import { CATEGORY_STYLE, isSample, resourceAction, resourceIcon, type ResourceActionKind } from "../lib/resources";
-import { OpenNow, SampleTag, TagChips } from "./resources/parts";
+import { CATEGORY_STYLE, resourceAction, resourceIcon, type ResourceActionKind } from "../lib/resources";
+import { CardDescription, OpenNow, TagChips } from "./resources/parts";
 import { eventLabel } from "../lib/events";
 import { useNow } from "../hooks/useNow";
-import { C, MIN_HIT, font, radius } from "../theme/tokens";
+import { Button } from "./Button";
+import { Theme, radius } from "../theme/tokens";
+import { typography } from "../theme/typography";
 
-// Tarjeta de Support and care: ícono tintado por categoría, nombre, "Sample data" si es ficticio, distancia + "Open now", etiquetas, descripción y la
-// acción principal según el tipo de recurso (Contact / Learn more). Con is_sample la acción queda deshabilitada.
+// Tarjeta de Support and care: ícono tintado por categoría, nombre, distancia + "Open now", etiquetas, descripción y la acción
+// principal según el tipo de recurso (Contact / Learn more). El botón se ve siempre activo, incluso con datos de muestra —
+// tocarlo abre una explicación (Fase 6), nunca se muestra deshabilitado sin decir por qué (Fase 1).
 export function ResourceCard({ resource: r, onAction }: { resource: ResourceNearby; onAction: (kind: ResourceActionKind) => void }) {
-  const { color, tint } = CATEGORY_STYLE[r.category];
+  const { icon, tile } = CATEGORY_STYLE[r.category];
   const Icon = resourceIcon(r);
   const now = useNow();
   const action = resourceAction(r, false);
-  const sample = isSample(r);
   return (
     <View style={styles.card}>
-      <View style={[styles.icon, { backgroundColor: tint }]}><Icon size={22} color={color} /></View>
-      <View style={{ flex: 1, gap: 6 }}>
+      <View style={[styles.icon, { backgroundColor: tile }]}><Icon size={22} color={icon} /></View>
+      <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
         <Text style={styles.name}>{r.name}</Text>
-        {/* "Sample data" ya no va por tarjeta: un único aviso al principio de la lista lo cubre (evaluación UX). */}
         <View style={styles.metaRow}>
           <Text style={styles.dist}>{r.distance_mi.toFixed(1)} mi away</Text>
           <OpenNow r={r} now={now} />
         </View>
         <TagChips r={r} />
-        <Text style={styles.desc} numberOfLines={2}>{r.description}</Text>
+        <CardDescription text={r.description} style={styles.desc} />
         <View style={styles.foot}>
-          <Pressable accessibilityRole="button" accessibilityLabel={`${action.label}: ${r.name}`} accessibilityState={{ disabled: sample }}
-            onPress={() => onAction(action.kind)} style={({ pressed }) => [styles.btn, sample && styles.btnOff, pressed && { backgroundColor: C.ink }]}>
-            {({ pressed }) => (<><action.Icon size={14} color={sample ? C.slate500 : pressed ? C.white : C.ink} /><Text style={[styles.btnT, sample && { color: C.slate500 }, pressed && { color: C.white }]}>{action.label}</Text></>)}
-          </Pressable>
+          <Button variant="secondary" size="compact" Icon={action.Icon} label={action.label} onPress={() => onAction(action.kind)} />
         </View>
       </View>
     </View>
@@ -44,23 +42,18 @@ export function EventResourceCard({ resource: r, onAction }: { resource: Resourc
   const now = useNow();
   const when = eventLabel(r, now);
   const action = resourceAction(r, true);
-  const sample = isSample(r);
   return (
     <View style={styles.event} accessibilityLabel={`Event: ${r.name}${when ? `, ${when}` : ""}`}>
       <View style={styles.eHead}>
-        <View style={styles.eTag}><CalendarDays size={14} color={C.white} /><Text style={styles.eTagT}>Event</Text></View>
+        <View style={styles.eTag}><CalendarDays size={14} color={Theme.text.onAccent} /><Text style={styles.eTagT}>Event</Text></View>
         {when ? <Text style={styles.eWhen} numberOfLines={2}>{when}</Text> : null}
       </View>
       <Text style={styles.eName}>{r.name}</Text>
-      {sample ? <SampleTag /> : null}
       <TagChips r={r} />
-      <Text style={styles.eDesc}>{r.description}</Text>
+      <CardDescription text={r.description} style={styles.eDesc} />
       <View style={styles.foot}>
         <Text style={styles.eDist}>{r.distance_mi.toFixed(1)} mi away</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel={`${action.label}: ${r.name}`} accessibilityState={{ disabled: sample }}
-          onPress={() => onAction(action.kind)} style={({ pressed }) => [styles.eBtn, sample && styles.eBtnOff, pressed && { opacity: 0.85 }]}>
-          <action.Icon size={14} color={sample ? C.slate500 : C.white} /><Text style={[styles.eBtnT, sample && { color: C.slate500 }]}>{action.label}</Text>
-        </Pressable>
+        <Button size="compact" Icon={action.Icon} label={action.label} onPress={() => onAction(action.kind)} />
       </View>
     </View>
   );
@@ -73,47 +66,40 @@ export function CommunityResourceCard({ resource: r, onPress }: { resource: Reso
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={`Community resource: ${r.name}`} onPress={onPress} style={({ pressed }) => [styles.neutral, pressed && { opacity: 0.9 }]}>
       {/* Mismo contenedor (tamaño, radio, alineación) que la foto/silueta de ReportCard; tokens de "recurso comunitario" (info = blue 700, infoTint = blue 50). */}
-      <View style={styles.nIcon}><HeartHandshake size={32} color={C.info} /></View>
+      <View style={styles.nIcon}><HeartHandshake size={32} color={Theme.info.bg} /></View>
       <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
         <Text style={styles.nKind}>Community resource</Text>
         <Text style={styles.nName} numberOfLines={2}>{r.name}</Text>
-        {isSample(r) ? <SampleTag /> : null}
         {when ? <Text style={styles.nWhen}>{when}</Text> : null}
         <Text style={styles.nDist}>{r.distance_mi.toFixed(1)} mi away</Text>
       </View>
-      <ChevronRight size={18} color={C.slate500} />
+      <ChevronRight size={18} color={Theme.text.muted} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { flexDirection: "row", gap: 12, padding: 16, borderRadius: radius.lg, backgroundColor: C.white, borderWidth: 1, borderColor: C.border },
+  card: { flexDirection: "row", gap: 12, padding: 16, borderRadius: radius.lg, backgroundColor: Theme.surface.card, borderWidth: 1, borderColor: Theme.border.default },
   icon: { width: 48, height: 48, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
-  name: { fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
-  desc: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 19, color: C.slate700 },
+  name: { ...typography.heading16, color: Theme.text.primary },
+  desc: { ...typography.bodySm13, color: Theme.text.secondary },
   // Distancia y estado de apertura SIEMPRE en una sola línea (evaluación UX): sin flexWrap; el estado se encoge antes de saltar de línea.
   metaRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   foot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 6 },
-  dist: { flexShrink: 0, fontFamily: font.bodyBold, fontSize: 12, color: C.teal },
-  btn: { minHeight: MIN_HIT - 4, paddingHorizontal: 16, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.ink, backgroundColor: C.white, flexDirection: "row", gap: 6, alignItems: "center" },
-  btnT: { fontFamily: font.bodyBold, fontSize: 13, color: C.ink },
-  btnOff: { borderColor: C.border2, backgroundColor: C.surface },
-  event: { gap: 8, padding: 16, borderRadius: radius.lg, backgroundColor: C.infoTint, borderWidth: 2, borderColor: C.info },
+  dist: { flexShrink: 0, ...typography.label13, color: Theme.brand.primary },
+  event: { gap: 8, padding: 16, borderRadius: radius.lg, backgroundColor: Theme.info.tint, borderWidth: 2, borderColor: Theme.info.bg },
   eHead: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 10, rowGap: 4 },
-  eTag: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, height: 26, borderRadius: radius.pill, backgroundColor: C.info },
-  eTagT: { fontFamily: font.bodyBold, fontSize: 12, letterSpacing: 0.5, textTransform: "uppercase", color: C.white },
-  eWhen: { flexShrink: 1, fontFamily: font.bodyBold, fontSize: 15, color: C.info },
-  eName: { fontFamily: font.head, fontSize: 19, color: C.ink },
-  eDesc: { fontFamily: font.bodyRegular, fontSize: 14, lineHeight: 20, color: C.slate700 },
-  eDist: { fontFamily: font.bodyBold, fontSize: 12, color: C.info },
-  eBtn: { minHeight: MIN_HIT - 4, paddingHorizontal: 18, borderRadius: radius.md, backgroundColor: C.info, flexDirection: "row", gap: 6, alignItems: "center" },
-  eBtnOff: { backgroundColor: C.border },
-  eBtnT: { fontFamily: font.bodyBold, fontSize: 13, color: C.white },
-  neutral: { flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: C.border, backgroundColor: C.white },
+  eTag: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, height: 26, borderRadius: radius.pill, backgroundColor: Theme.info.bg },
+  eTagT: { ...typography.badge12, letterSpacing: 0.5, textTransform: "uppercase", color: Theme.text.onAccent },
+  eWhen: { flexShrink: 1, ...typography.label14, color: Theme.info.bg },
+  eName: { ...typography.heading20, color: Theme.text.primary },
+  eDesc: { ...typography.body14, color: Theme.text.secondary },
+  eDist: { ...typography.label13, color: Theme.info.bg },
+  neutral: { flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: Theme.border.default, backgroundColor: Theme.surface.card },
   // Mismas dimensiones y radio que `photo` en ReportCard.tsx (64×64, radius.md), para que la columna de texto empiece a la misma distancia.
-  nIcon: { width: 64, height: 64, borderRadius: radius.md, backgroundColor: C.infoTint, alignItems: "center", justifyContent: "center" },
-  nKind: { fontFamily: font.bodyBold, fontSize: 11, letterSpacing: 0.5, textTransform: "uppercase", color: C.slate500 },
-  nName: { fontFamily: font.head, fontSize: 16, color: C.ink },
-  nWhen: { fontFamily: font.bodySemi, fontSize: 13, color: C.slate700 },
-  nDist: { fontFamily: font.bodyRegular, fontSize: 12, color: C.slate500 },
+  nIcon: { width: 64, height: 64, borderRadius: radius.md, backgroundColor: Theme.info.tint, alignItems: "center", justifyContent: "center" },
+  nKind: { ...typography.badge12, letterSpacing: 0.5, textTransform: "uppercase", color: Theme.text.muted },
+  nName: { ...typography.heading16, color: Theme.text.primary },
+  nWhen: { ...typography.label13, color: Theme.text.secondary },
+  nDist: { ...typography.caption12, color: Theme.text.muted },
 });

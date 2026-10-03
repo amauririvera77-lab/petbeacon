@@ -1,11 +1,9 @@
 import { HeartHandshake, Search, X } from "lucide-react-native";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OfflineBanner } from "../../components/OfflineBanner";
 import { ScreenTitle } from "../../components/ScreenTitle";
-import { useSnackbar } from "../../components/Snackbar";
 import { EventResourceCard, ResourceCard } from "../../components/ResourceCard";
 import { ResourceModal, ResourceSheetMode } from "../../components/ResourceModal";
 import { SetupNotice } from "../../components/SetupNotice";
@@ -17,15 +15,18 @@ import type { ResourceNearby } from "../../lib/database.types";
 import { mapEventResources } from "../../lib/homeFilters";
 import { CATEGORIES, directionsUrl, isSample, supportOrder, webUrl } from "../../lib/resources";
 import { useSession } from "../../state/session";
-import { C, font, radius } from "../../theme/tokens";
+import { FAB_CLEARANCE, Theme, radius } from "../../theme/tokens";
+import { typography } from "../../theme/typography";
 
 // Radio amplio: los recursos comunitarios no dependen del radio de alerta del usuario.
 const SUPPORT_RADIUS_MI = 30;
+// Fase de congelación 6: el banner de "datos de muestra" se ve por defecto — este flag SOLO se pone en true para las
+// capturas del case study (nunca en un build real mientras los recursos sigan siendo de muestra).
+const HIDE_SAMPLE_NOTICE = process.env.EXPO_PUBLIC_HIDE_SAMPLE_NOTICE === "true";
 
 export default function Support() {
   const insets = useSafeAreaInsets();
   const { city } = useSession();
-  const snackbar = useSnackbar();
   const center = useHome();
   const now = useNow();
   const { onScroll } = useFabScroll();
@@ -34,15 +35,6 @@ export default function Support() {
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]["key"]>("all");
   const [contact, setContact] = useState<ResourceNearby | null>(null);
   const [mode, setMode] = useState<ResourceSheetMode>("contact");
-
-  // Desde la tarjeta "Community resource" del feed: abre directamente el detalle de ese recurso.
-  const { resourceId } = useLocalSearchParams<{ resourceId?: string }>();
-  useEffect(() => {
-    if (!resourceId || resources.length === 0) return;
-    const r = resources.find((x) => x.id === resourceId);
-    if (r) { setMode("detail"); setContact(r); }
-    router.setParams({ resourceId: undefined });
-  }, [resourceId, resources]);
 
   const q = query.trim().toLowerCase();
   // Eventos vigentes (hoy o futuros) SIEMPRE arriba, del más próximo al más lejano en fecha; el resto conserva el orden por distancia.
@@ -55,13 +47,14 @@ export default function Support() {
     return { filtered: [...events, ...supportOrder(list.filter((r) => !ids.has(r.id)))], eventIds: ids };
   }, [resources, category, q, now]);
   const reset = () => { setQuery(""); setCategory("all"); };
-  // Con datos de muestra el botón se ve apagado; al tocarlo, un mensaje breve explica por qué no hace nada (en vez de una etiqueta por tarjeta).
-  const hasSample = filtered.some(isSample);
+  // Un único aviso de datos de muestra al principio de la lista (Fase 6) — oculto solo con EXPO_PUBLIC_HIDE_SAMPLE_NOTICE=true.
+  const hasSample = !HIDE_SAMPLE_NOTICE && filtered.some(isSample);
   // "If you're considering rehoming": solo en la vista "All", justo antes del primer recurso de "Rehoming & shelters" (nunca antes de un evento).
   const shelterStart = category === "all" ? filtered.findIndex((r) => r.category === "shelter" && !eventIds.has(r.id)) : -1;
-  // Acción principal de cada tarjeta (5.3). Con datos de muestra no hace nada: la tarjeta ya la muestra deshabilitada.
+  // Acción principal de cada tarjeta (5.3). Con datos de muestra el botón se ve y se toca igual que cualquier otro — abre
+  // la explicación breve del modal (Fase 6) en vez de llamar o abrir un mapa falso.
   const act = (r: ResourceNearby, kind: "directions" | "learn" | "contact") => {
-    if (isSample(r)) { snackbar.show({ message: "Contact details aren't available for sample resources." }); return; }
+    if (isSample(r)) { setMode("sample"); setContact(r); return; }
     if (kind === "contact") { setMode("contact"); setContact(r); return; }
     const url = kind === "directions" ? directionsUrl(r) : webUrl(r.website_url);
     if (url) Linking.openURL(url).catch(() => Alert.alert("Couldn't open that", "Your device couldn't handle this action."));
@@ -70,14 +63,14 @@ export default function Support() {
   return (
     <View style={styles.root}>
       <View style={[styles.head, { paddingTop: insets.top + 24 }]}>
-        <ScreenTitle title="Support" subtitle={`Local resources near ${city || "you"}`} />
+        <ScreenTitle title="Support" subtitle={`Local resources near ${city || "you"}`} variant="display" />
         <View style={{ height: 16 }} />
         <View style={styles.search}>
-          <Search size={18} color={C.slate500} />
-          <TextInput value={query} onChangeText={setQuery} placeholder="Search by name or need" placeholderTextColor={C.slate500}
+          <Search size={18} color={Theme.text.muted} />
+          <TextInput value={query} onChangeText={setQuery} placeholder="Search by name or need" placeholderTextColor={Theme.text.muted}
             accessibilityLabel="Search resources" style={styles.input} returnKeyType="search" />
           {query.length > 0 ? (
-            <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setQuery("")} style={styles.clear}><X size={14} color={C.slate700} /></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setQuery("")} style={styles.clear}><X size={14} color={Theme.text.secondary} /></Pressable>
           ) : null}
         </View>
       </View>
@@ -89,7 +82,7 @@ export default function Support() {
             return (
               <Pressable key={c.key} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => setCategory(c.key)}
                 style={[styles.chip, on && styles.chipOn]}>
-                <Text style={[styles.chipT, on && { color: C.white }]}>{c.label}</Text>
+                <Text style={[styles.chipT, on && { color: Theme.text.onAccent }]}>{c.label}</Text>
               </Pressable>
             );
           })}
@@ -104,9 +97,9 @@ export default function Support() {
             <Text style={styles.err}>Couldn't load resources: {error}</Text>
             <Pressable accessibilityRole="button" onPress={refresh} style={styles.retry}><Text style={styles.retryT}>Retry</Text></Pressable>
           </View>
-        ) : loading ? <ActivityIndicator style={{ marginTop: 24 }} color={C.teal} /> : filtered.length === 0 ? (
+        ) : loading ? <ActivityIndicator style={{ marginTop: 24 }} color={Theme.brand.primary} /> : filtered.length === 0 ? (
           <View style={styles.empty}>
-            <View style={styles.emptyIcon}><HeartHandshake size={26} color="#94A3B8" /></View>
+            <View style={styles.emptyIcon}><HeartHandshake size={26} color={Theme.text.muted} /></View>
             <Text style={styles.emptyT}>{resources.length === 0 ? "No resources near you yet" : "No matching resources"}</Text>
             <Text style={styles.emptyS}>{resources.length === 0 ? "We're still adding local resources in your area." : "Try a different category or search term."}</Text>
             {resources.length > 0 ? <Pressable accessibilityRole="button" onPress={reset} style={styles.emptyBtn}><Text style={styles.emptyBtnT}>Clear filters</Text></Pressable> : null}
@@ -120,14 +113,17 @@ export default function Support() {
               const onAction = (kind: "directions" | "learn" | "contact") => act(r, kind);
               const card = eventIds.has(r.id) ? <EventResourceCard key={r.id} resource={r} onAction={onAction} /> : <ResourceCard key={r.id} resource={r} onAction={onAction} />;
               if (i !== shelterStart) return card;
+              // Sin View envolvente: encabezado y tarjeta cuelgan DIRECTO de la lista (mismo gap de 12 que antes), igual que el
+              // resto de tarjetas. Con el wrapper, en iOS la descripción de la tarjeta se medía a 2 líneas pero se dibujaba
+              // cortada en 1 ("b…") con un hueco debajo.
               return (
-                <View key={`shelter-group-${r.id}`} style={{ gap: 12 }}>
+                <Fragment key={`shelter-group-${r.id}`}>
                   <View style={styles.rehomeHead}>
                     <Text style={styles.rehomeT}>If you're considering rehoming</Text>
                     <Text style={styles.rehomeS}>These organizations can help you find a safe next home.</Text>
                   </View>
                   {card}
-                </View>
+                </Fragment>
               );
             })}
           </>
@@ -140,31 +136,31 @@ export default function Support() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.surface },
-  head: { paddingHorizontal: 16, paddingBottom: 16, backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
-  search: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, height: 52, borderRadius: radius.md, backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.border },
-  input: { flex: 1, fontFamily: font.body, fontSize: 16, color: C.ink },
-  clear: { width: 32, height: 32, borderRadius: 16, backgroundColor: C.border, alignItems: "center", justifyContent: "center" },
-  chipsBar: { backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.border },
+  root: { flex: 1, backgroundColor: Theme.surface.page },
+  head: { paddingHorizontal: 16, paddingBottom: 16, backgroundColor: Theme.surface.card, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
+  search: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, height: 52, borderRadius: radius.md, backgroundColor: Theme.surface.page, borderWidth: 1.5, borderColor: Theme.border.default },
+  input: { flex: 1, ...typography.bodyLg16, color: Theme.text.primary },
+  clear: { width: 32, height: 32, borderRadius: 16, backgroundColor: Theme.border.default, alignItems: "center", justifyContent: "center" },
+  chipsBar: { backgroundColor: Theme.surface.card, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
   chips: { gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
-  chip: { height: 40, paddingHorizontal: 16, borderRadius: radius.pill, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.white, justifyContent: "center" },
-  chipOn: { backgroundColor: C.ink, borderColor: C.ink },
-  chipT: { fontFamily: font.bodyBold, fontSize: 13, color: C.slate700 },
-  list: { padding: 16, paddingBottom: 200, gap: 12 },
-  err: { fontFamily: font.body, fontSize: 14, color: C.sosDark },
-  retry: { alignSelf: "flex-start", paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: C.ink },
-  retryT: { fontFamily: font.bodyBold, fontSize: 13, color: C.white },
-  empty: { alignItems: "center", paddingVertical: 40, paddingHorizontal: 24, borderRadius: radius.lg, backgroundColor: C.white, borderWidth: 1, borderStyle: "dashed", borderColor: C.border2 },
-  emptyIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center", marginBottom: 16 },
-  emptyT: { fontFamily: font.head, fontSize: 17, color: C.ink, marginBottom: 4 },
-  emptyS: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 19, color: C.slate700, textAlign: "center", marginBottom: 20 },
-  emptyBtn: { height: 44, paddingHorizontal: 20, borderRadius: radius.md, backgroundColor: C.ink, justifyContent: "center" },
-  emptyBtnT: { fontFamily: font.bodyBold, fontSize: 14, color: C.white },
+  chip: { height: 40, paddingHorizontal: 16, borderRadius: radius.pill, borderWidth: 1.5, borderColor: Theme.border.default, backgroundColor: Theme.surface.card, justifyContent: "center" },
+  chipOn: { backgroundColor: Theme.brand.primary, borderColor: Theme.brand.primary },
+  chipT: { ...typography.button14, color: Theme.text.secondary },
+  list: { padding: 16, paddingBottom: FAB_CLEARANCE, gap: 12 },
+  err: { ...typography.body14, color: Theme.danger.text },
+  retry: { alignSelf: "flex-start", paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: Theme.brand.primary },
+  retryT: { ...typography.button14, color: Theme.text.onAccent },
+  empty: { alignItems: "center", paddingVertical: 40, paddingHorizontal: 24, borderRadius: radius.lg, backgroundColor: Theme.surface.card, borderWidth: 1, borderStyle: "dashed", borderColor: Theme.border.strong },
+  emptyIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: Theme.surface.page, alignItems: "center", justifyContent: "center", marginBottom: 16 },
+  emptyT: { ...typography.heading18, color: Theme.text.primary, marginBottom: 4 },
+  emptyS: { ...typography.bodySm13, color: Theme.text.secondary, textAlign: "center", marginBottom: 20 },
+  emptyBtn: { height: 44, paddingHorizontal: 20, borderRadius: radius.md, backgroundColor: Theme.brand.primary, justifyContent: "center" },
+  emptyBtnT: { ...typography.button14, color: Theme.text.onAccent },
   // Un único aviso de datos de muestra al principio de la lista, en vez de una etiqueta por tarjeta.
-  sampleBanner: { padding: 12, borderRadius: radius.md, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border2 },
-  sampleBannerT: { fontFamily: font.bodySemi, fontSize: 13, color: C.slate700, textAlign: "center" },
+  sampleBanner: { padding: 12, borderRadius: radius.md, backgroundColor: Theme.surface.page, borderWidth: 1, borderColor: Theme.border.strong },
+  sampleBannerT: { ...typography.label13, color: Theme.text.secondary, textAlign: "center" },
   // "Support Before Surrender" (5.5): encabezado antes del primer recurso de "Rehoming & shelters", solo en la vista "All".
   rehomeHead: { gap: 2 },
-  rehomeT: { fontFamily: font.head, fontSize: 16, color: C.ink },
-  rehomeS: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate700 },
+  rehomeT: { ...typography.heading16, color: Theme.text.primary },
+  rehomeS: { ...typography.bodySm13, color: Theme.text.secondary },
 });

@@ -1,7 +1,7 @@
 import { Contact, ExternalLink, HeartPulse, House, Navigation, PawPrint, Scale, Utensils, type LucideIcon } from "lucide-react-native";
 import type { ResourceCategory, ResourceNearby } from "./database.types";
 import { resourceActionKind, type ResourceActionKind } from "./resourceLogic";
-import { C } from "../theme/tokens";
+import { Theme } from "../theme/tokens";
 
 // Categorías y paleta del prototipo (CLAUDE.md §2): food → info, foster → sosDark, legal → teal.
 export const CATEGORIES: { key: "all" | ResourceCategory; label: string }[] = [
@@ -12,11 +12,14 @@ export const CATEGORIES: { key: "all" | ResourceCategory; label: string }[] = [
   { key: "shelter", label: "Rehoming & shelters" },
 ];
 
-export const CATEGORY_STYLE: Record<ResourceCategory, { Icon: LucideIcon; color: string; tint: string }> = {
-  food: { Icon: Utensils, color: C.info, tint: C.infoTint },
-  foster: { Icon: House, color: C.sosDark, tint: C.sosTint },
-  legal: { Icon: Scale, color: C.teal, tint: C.tealTint },
-  shelter: { Icon: PawPrint, color: C.slate700, tint: C.border },
+// Fase de congelación (Fase 5): las categorías dejan de diferenciarse por color — el significado lo llevan el ícono
+// (ya distinto por categoría) y el filtro. Las 4 usan la misma tile (category.tile.bg/icon, Figma); ninguna usa
+// status.*, danger.* ni brand.primary (antes foster reutilizaba status.lost y legal, brand.primary).
+export const CATEGORY_STYLE: Record<ResourceCategory, { Icon: LucideIcon; icon: string; tile: string }> = {
+  food: { Icon: Utensils, icon: Theme.category.tile.icon, tile: Theme.category.tile.bg },
+  foster: { Icon: House, icon: Theme.category.tile.icon, tile: Theme.category.tile.bg },
+  legal: { Icon: Scale, icon: Theme.category.tile.icon, tile: Theme.category.tile.bg },
+  shelter: { Icon: PawPrint, icon: Theme.category.tile.icon, tile: Theme.category.tile.bg },
 };
 
 // La columna `icon` del recurso (p. ej. clínicas → corazón con pulso, santuario → huella) tiene prioridad sobre la de su categoría.
