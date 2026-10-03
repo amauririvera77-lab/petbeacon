@@ -21,7 +21,7 @@
 ## 2. Inventario completo de pantallas (26+)
 
 ### Onboarding (6 pantallas, secuencia lineal, saltable en cualquier punto excepto la primera)
-1. **Welcome** — "What brings you here today?" con 3 salidas: "I lost my pet" (primario, coral), "I see a pet" (primario, azul), "Just setting up — I'll register my pet now" (link secundario) + **"Struggling to care for your pet right now? See local support"** (link secundario, lleva directo a Support and care sin pasar por registro/permisos).
+1. **Welcome** — "What brings you here today?" con 3 salidas: "I lost my pet" y "I saw a pet" (tarjetas neutras con el color de estado solo en el círculo del ícono — mismo patrón que `ReportSheet`, ver "Nota adicional — colores de estado nunca como fondo de botón"; ya no botones llenos de color), "Just setting up — I'll register my pet now" (link secundario) + **"Struggling to care for your pet right now? See local support"** (link secundario, lleva directo a Support and care sin pasar por registro/permisos).
 2. **Signup** — nombre + ciudad únicamente (sin contraseña ni verificación). Headline dinámico según la intención elegida en Welcome, pero **sin interpolar el nombre que el usuario escribe** (ese bug ya se corrigió — el headline es texto fijo).
 3. **Location priming** — explica el permiso antes de pedirlo (patrón "soft-ask antes del hard-ask del sistema").
 4. **Location manual fallback** — se activa automáticamente si el GPS falla o se rechaza. Campo "City or ZIP code" (label genérico, correcto en este contexto — distinto del label usado dentro de los flujos de Report, ver sección 5).
@@ -45,9 +45,13 @@
 - **Help and FAQ**: dos secciones con acordeón — "Reporting a pet" (4 preguntas) y "Support and care" (3 preguntas). La sección de Support and care es deliberada, no decorativa — refuerza el diferenciador.
 
 ### Sheets / overlays
-- **Pin detail sheet** — 3 estados distintos, no uno solo con texto condicional:
-  - Lost con match → CTA "I've seen this pet" (ícono ojo) + "Share flyer".
-  - Sighted sin match → CTA "Report to network" + **"Share sighting"** (no "Share flyer" — corregido).
+- **Pin detail sheet** — varios estados distintos, no uno solo con texto condicional:
+  - Lost ajeno → CTA "I've seen this pet" (ícono ojo).
+  - Sighted ajeno → CTA "Report to network" + **"Share sighting"** (no "Share flyer" — corregido).
+  - **Lost propio (modo dueño)** — misma jerarquía que My Reports (`MyReportStatusCard`, 2026-09-30): principal
+    "Review matches" (si hay coincidencias abiertas) o "Share alert" (si no las hay); secundaria "Mark as reunited"
+    y "Share flyer" (si `FLYERS_READY`); "Edit report" como acción terciaria (texto subrayado, ya no compite con
+    la principal). Requiere `matchCount`/`onReviewMatches` desde quien abre la hoja (Home, My Reports, Pet profile).
   - Reunited/cerrado → caja verde "Great news — this case is closed.", sin botones de acción.
 - **Notifications sheet** — el badge del header se limpia al abrirlo (corregido).
 - **Edit location sheet**.
@@ -102,7 +106,19 @@ Estos quedaron anotados a lo largo de la sesión como pendientes deliberados par
 
 2. **Geocoding real.** Las direcciones como "near Maple Park" o "Corner of Elm St & Maple Ave" hoy son texto estático — deben convertirse a coordenadas reales vía geocoding para posicionar pines correctamente en el mapa real.
 
-3. **Clustering de pines.** En cuanto exista data real y el radio de búsqueda sea amplio, pines cercanos deben agruparse visualmente (círculo con número) hasta hacer zoom — es prácticamente obligatorio en cualquier mapa de producción con volumen de datos real, no opcional.
+3. **Clustering de pines — implementado (2026-09-30).** `mapHtml.ts`: la fuente "solo" (Lost, avistamientos con
+   match, eventos) ahora también agrupa por debajo de `clusterMaxZoom` (14, mismo umbral que la fuente "items" de
+   Sighted/Reunited) — antes nunca se agrupaba y a un radio amplio (10 mi) los pines se apilaban ilegibles. A zoom
+   alto se mantiene la regla original: Lost, coincidencias y eventos siempre sueltos, nunca escondidos en un cluster.
+   El cluster usa `clusterProperties` para contar cuántos Lost contiene (`lost_count`): si tiene al menos uno, se
+   pinta en `status.lost.bg` y el número mostrado es ESE conteo (no el total); si no, se pinta neutro
+   (`brand.primary`), igual que los clusters de "items". Verificado con datos sintéticos en navegador (Mapbox GL JS
+   real, mismo token público): agrupa a zoom bajo, se expande al tocar el cluster o acercar zoom, un Lost aislado
+   nunca se agrupa con el resto. Encuadre inicial: al abrir el mapa (o cambiar el radio de alerta), la cámara ahora
+   encuadra los REPORTES cercanos (`fitBounds` sobre sus coordenadas, con `maxZoom` para no acercar de más con pocos
+   reportes) en vez del círculo completo del radio — antes, con pocos reportes cerca del centro, el círculo
+   completo (p. ej. 10 mi) los dejaba diminutos. Sin reportes todavía, se usa el círculo como contexto (mejor eso
+   que un mapa vacío sin ninguna referencia de escala).
 
 4. **El selector de radio ("5 mi ⌄") debe volverse funcional** — hoy no filtra nada porque no hay query real detrás. En producción, cambiar el radio debe re-consultar la base de datos con el nuevo radio, no regenerar pines artificialmente.
 
@@ -171,3 +187,239 @@ Se agregó una sección discreta **"Design tools"** al final de Profile, con una
 - Se controla con la variable de entorno `EXPO_PUBLIC_SHOW_DESIGN_TOOLS` (no `__DEV__`, a propósito, para poder activarla también en builds publicados con EAS Update mientras dure el proceso de diseño). En `false` o ausente, la sección no existe.
 - Al tocar "Replay onboarding" se abre el Onboarding completo en un sandbox aislado (`state/onboardingPreview.tsx`): ninguna pantalla lee ni escribe la cuenta, el radio de alertas, las mascotas o Supabase reales; al terminar o cerrar (badge "Preview" con ✕, visible en cualquier paso) vuelve a Profile con todo exactamente como estaba.
 - **Antes del lanzamiento: quitar esta sección de Profile (o dejar `EXPO_PUBLIC_SHOW_DESIGN_TOOLS` siempre en `false`/sin definir en el `.env` de producción).** No es una funcionalidad del producto — es una herramienta temporal de esta etapa de diseño.
+
+**`EXPO_PUBLIC_HIDE_SAMPLE_NOTICE`** (fase de congelación, Fase 6; no existe ningún `EXPO_PUBLIC_SHOW_DEV_TOOLS`): flag separado del anterior — es sobre honestidad de los datos de Support, no sobre una herramienta de QA, así que se controla aparte. Por defecto (`false`/sin definir) el banner "These resources are sample data for testing." SE MUESTRA al principio de la lista de Support mientras existan recursos `is_sample = true`. Se pone en `true` SOLO para tomar capturas del case study — nunca en un build real mientras los recursos de Support sigan siendo de muestra, porque ocultar el aviso sin reemplazar los datos mostraría clínicas/recursos falsos a un usuario real sin explicación. El chip "Sample data" por tarjeta se eliminó por completo (era redundante con el banner, nunca estuvo detrás de ningún flag). Los botones de un recurso de muestra se ven y se tocan como cualquier otro — al tocarlos abren una hoja breve ("Sample resource") en vez de llamar o abrir un mapa falso; nunca se muestran deshabilitados sin explicar por qué (ver `components/ResourceModal.tsx`, modo `"sample"`).
+
+## Nota adicional — escala tipográfica ("Warm Beacon")
+
+15 estilos definidos en Figma a partir del inventario tipográfico de la app, en `theme/typography.ts` (Display/28, Title/24, Heading/20, Heading/18, Heading/16, Body-Lg/16, Body/14, Body-Sm/13, Label/14, Label/13, Button/16, Button/14, Caption/12, Badge/12, Micro/11 — este último solo para badges de conteo y etiquetas de la tab bar). Los componentes usan siempre uno de estos 15 estilos — nunca `fontSize`, `fontFamily` ni `fontWeight` sueltos. El color no forma parte de la escala: se define donde se usa cada texto, con los tokens de `Theme`.
+
+**Tres excepciones documentadas, ninguna más:**
+- `components/flyer/FlyerTemplate.tsx` — pieza impresa/exportada como imagen (el flyer descargable), no una pantalla de la app. Conserva su propia escala tipográfica, con alto contraste deliberado para leerse fotocopiada en blanco y negro (ver §5.7).
+- `theme/typography.ts` exporta también `weightOff`, un modificador de **peso** (nunca tamaño ni line-height) para pares seleccionado/no-seleccionado que necesitan una señal redundante de accesibilidad además del color — hoy solo lo usa `StatusChips` (Lost/Sighted: activo en Bold, inactivo en Regular, ambos en Button/14 exacto para que el chip no cambie de alto).
+- `components/account/Avatar.tsx` — las iniciales del avatar escalan con el tamaño que pide cada pantalla (`fontSize: size * 0.36`, con `size` recibido como prop y usado en 64/96 px según la pantalla), así que no puede fijarse a uno de los 15 pasos de la escala.
+
+**Títulos de pantalla, unificados:** antes había tres tratamientos distintos (un estilo sin usar en `TabScreen.tsx`, `ScreenTitle` con un tamaño y cada pantalla secundaria con su propio bloque "back + título"). Ahora es un solo componente, `components/ScreenTitle.tsx`, con dos variantes (patrón iOS):
+- `variant="display"` (Display/28) — las 3 pestañas principales: My Reports, Support, Profile (y Home, con cabecera propia).
+- `variant="title"` (Title/24, default) — pantallas secundarias y pasos de flujo.
+
+**Nombre de mascota: el rol manda sobre el contenido.** El mismo texto (el nombre de una mascota) usa un estilo distinto según el lugar que ocupa, no según "qué es":
+- Si el nombre ocupa el lugar del **título de pantalla** (back + título de una pantalla secundaria, p. ej. `pet.tsx` al editar una mascota existente) → usa el estilo de título de pantalla (Title/24), igual que cualquier otro título de pantalla secundaria. No es una excepción — es solo que ahí el contenido de esa pantalla es un nombre.
+- Dentro del CONTENIDO de una pantalla (no en el rol de título): **Heading/16** en listas y tarjetas (feed de Home, My Reports, lista de mascotas de Profile, selector "Which pet is missing?"), **Heading/20** en fichas de detalle (`PinDetailSheet`, "Review alert" del flujo de reporte).
+- Esto es válido en toda la app sin excepción — si aparece un nombre de mascota en un lugar nuevo, se clasifica por su rol (¿es el título de la pantalla, una fila de lista/tarjeta, o una ficha de detalle?) antes de asignarle un estilo.
+
+## Nota adicional — fotos del seed de demostración (2026-09-29)
+
+- **Fotos reales, no hotlinks.** Las fotos nuevas del seed se descargan de Unsplash (enlace de descarga oficial) y se
+  re-alojan en Supabase Storage, bucket `report-photos`, carpeta `demo/` — nunca enlazadas directo a
+  `images.unsplash.com`. El crédito de cada una (autor + link a su foto) vive en `PHOTO_CREDITS.md`, junto con la lista
+  de fotos que siguen como hotlink sin atribuir (pendientes de una sesión futura).
+- **Subirlas requiere la service_role key** (RLS de `storage.objects` solo permite subir a `authenticated` dentro de su
+  propia carpeta, 0003) — por eso es un script aparte, `app/scripts/upload-seed-photos.mjs`, que el usuario corre él
+  mismo pasando la key como variable de entorno (nunca en `.env`, nunca visto por Claude Code). El script también borra
+  del bucket cualquier foto vieja de Lazy que ya no esté referenciada.
+- **`pets` también tiene punto focal** (`photo_focus_x/y`, migración 0023) — mismo mecanismo que `reports` ya tenía
+  desde 0007, extendido para que la miniatura cuadrada de una mascota registrada (Profile, selector "Which pet is
+  missing?") también pueda recortarse sin cortar la cara. Ver "Nota adicional — punto focal de fotos" (2026-09-30):
+  el mecanismo cambió de implementación, `photo_zoom` quedó sin usar.
+- **El seed de demostración vive en dos archivos**: `supabase/seed_demo_reset.sql` y `supabase/seed_edge_cases.sql`
+  (este último son reportes propios adicionales para My Reports, no "casos sin foto" — ver su propio encabezado, que
+  documenta qué tiene foto y qué no). Ambos comparten el prefijo de ID de demo (`20000000-0000-0000-0000-0000000000__`),
+  así que se corren siempre juntos, primero el reset y después el segundo — si se corre el reset solo, las filas del
+  segundo desaparecen hasta volver a correrlo.
+- **Raza y color van en su propio campo, nunca mezclados en el texto de la raza** (corregido 2026-09-30): el
+  avistamiento del gato atigrado tenía `breed = 'Domestic shorthair, gray tabby'` (el color pegado a la raza); ahora
+  `breed = 'Domestic Shorthair'` y `color = 'gray'` en su columna. Se revisó el resto de razas del seed (ambos
+  archivos) y no había otro caso igual.
+- **Ya no queda ningún avistamiento sin foto en el seed de demostración** (ajuste de My Reports, 2026-09-30): `...013`
+  (Domestic Shorthair, Simon Lohmann) y `...014` (Siamese, Nirzar Pangarkar) eran los dos últimos casos sin foto
+  (probaban la silueta por especie en Past reports) — ahora tienen foto real, mismo criterio que el resto. Si se
+  quiere un ejemplo dedicado de la silueta/el aviso "Add a photo" en el futuro, hay que agregarlo de nuevo a propósito.
+
+## Nota adicional — punto focal de fotos, vía expo-image (2026-09-30)
+
+- **`photo_focus_x`/`photo_focus_y`** (0-100, % del ancho/alto donde está la cabeza del animal) existen en `reports`
+  (0007) y en `pets` (0023) — no hizo falta una migración nueva para este cambio, las columnas ya alcanzaban.
+- **Implementación: `expo-image`, `contentFit="cover"` + `contentPosition`** (`components/FocusImage.tsx`), NO el
+  cálculo manual anterior con `Image.getSize()` + posicionamiento absoluto en JS. Ese cálculo manual tenía un bug real
+  en dispositivo (la cara quedaba cortada de una forma que no se podía reproducir en el navegador ni diagnosticar a
+  distancia) — probablemente una carrera entre las dimensiones que reportaba la red y las que terminaba usando el
+  visor nativo al dibujar. `contentPosition` lo resuelve el propio decodificador nativo de la plataforma.
+- **`photo_zoom` quedó sin usar** (columna todavía existe en `reports` y `pets`, se puede borrar en una limpieza
+  futura). `contentPosition` no tiene concepto de zoom extra más allá de "cover" — solo posición del recorte, igual
+  que `object-position` en CSS. Los componentes ya no le pasan `zoom` a `FocusImage`.
+- **Dónde se usa** (todos los lugares con foto de mascota recortada): tarjetas del feed (`ReportCard`), carrusel de
+  estado (`MyReportStatusCard`/`ReportRow`), listas de My Reports (`MySightingCard`, `PastReports`), Profile (lista de
+  mascotas), el selector "Which pet is missing?" (`ReportFlow`), `Pet profile` (`PetPhotoImage`, foto grande 4:3),
+  `MatchBanner`/`MatchesSheet`, y la foto grande de `PinDetailSheet`.
+- **Fotos subidas desde la app usan el centro por defecto** — no se les asigna punto focal (queda `null`), y
+  `FocusImage` usa `50%/50%` cuando no hay valor. Al cambiar la foto de un reporte (`edit-report.tsx`) o de una
+  mascota (`lib/pets.ts`) el punto focal anterior se limpia (`null`) — una foto nueva no hereda el foco de la vieja.
+- **Los 14 puntos focales del seed de demostración se revisaron uno por uno**, a ojo, contra la foto real de cada
+  ficha (no solo las que reportaron el bug) — quedan documentados como comentarios en `seed_demo_reset.sql` y
+  `seed_edge_cases.sql`.
+
+## Nota adicional — colores de estado nunca como fondo de botón (2026-09-30)
+
+- **Regla:** `Theme.status.{lost,sighted,reunited}.*` indica ESTADOS — badges, pines del mapa, etiquetas de filtro
+  (`StatusChips`), el ícono de una fila de notificación. **Nunca el fondo de un botón de acción.** Un botón de acción
+  normal usa `Theme.brand.primary`. Una sola excepción documentada:
+  - **Botones dentro del flujo de reporte** (`Cta` con `tone="lost"/"sighted"`, `Button` con `variant="primaryLost"/
+    "primarySighted"`) cuando la acción del botón ES crear/continuar ESE tipo de reporte (ej. "Continue" dentro de
+    Report Lost Pet, "Report lost" en Pet profile). Ahí el color SÍ es la acción, no solo el estado que se está viendo.
+  - Lo que se corrigió (violaba la regla): el CTA principal de `PinDetailSheet` ("I've seen this pet" / "Report to
+    network" / "Edit report") tomaba el color del ESTADO DEL REPORTE QUE SE ESTÁ VIENDO, no de la acción del botón —
+    por eso un Lost (rojo) hacía ver "I've seen this pet" en rojo, aunque esa acción en realidad ABRE un reporte
+    Sighted. Ahora usa `brand.primary`, como cualquier otro botón de acción.
+  - **Las tarjetas "I lost my pet"/"I saw a pet"** (Welcome de onboarding y `ReportSheet` del FAB, componente
+    compartido `IntentOption`) NO son una excepción: son tarjetas NEUTRAS (surface.card + borde), el color de
+    estado va solo en el círculo del ícono. El Welcome antes usaba el color de estado como fondo de todo el botón
+    (era la violación) — corregido 2026-09-30 para seguir el mismo patrón que `ReportSheet` siempre tuvo. Mismos
+    textos/íconos que `ReportSheet` en ambos: "I lost my pet" (Siren) / "I saw a pet" (Eye).
+- **`Theme.danger`** (`bg`/`text`/`border`/`tint`, apuntando a los mismos primitivos `coral` que `status.lost`, pero
+  como tokens propios) es el color de error/peligro genérico — validación de formularios, "Delete account", enlaces
+  destructivos ("Remove photo"). Existía de antes reutilizando `status.lost.bgStrong` por el mismo tono; ahora está
+  separado: `status.lost.*` significa "este reporte está perdido", `danger.*` significa "esto es un error o una
+  acción irreversible". Ninguno de los dos es el fondo de un botón de acción normal.
+- **Caso NO tocado, deliberado:** el enlace rojo "Can't find the right spot? Enter it manually" de
+  `LocationPicker.tsx` (variant "flow") — es una elección de estilo del prototipo original ("enlaces rojos" en el
+  comentario del componente), no un error ni un indicador de estado; no encaja en ninguna de las dos categorías de
+  arriba, así que se deja igual salvo que se pida lo contrario.
+
+## Nota adicional — raza siempre por su etiqueta canónica, nunca el texto libre crudo (2026-09-30)
+
+- **Regla:** cualquier pantalla que muestre la raza de un reporte o una mascota debe resolverla por `breed_id`
+  (`lib/breeds.ts`: `breedLabel(breed, breedId)` para filas de BD con forma `{breed, breed_id}`; `breedDisplay(v)` para
+  el `BreedValue` del formulario de edición) — **nunca** mostrar la columna `breed` (texto libre) directamente. Sin
+  esto, un mismo animal podía verse distinto según la pantalla: el feed de Home mostraba el texto tal cual se guardó
+  ("Siamese cat", "Domestic shorthair, gray tabby") mientras que las pantallas que sí resolvían por id mostraban la
+  etiqueta real del catálogo ("Siamese", "Domestic Shorthair").
+- **Causa raíz (tres partes, las tres corregidas):**
+  1. `active_reports`/`reports_nearby()`/`my_matches()` (funciones SQL que alimentan el feed de Home, `PinDetailSheet`
+     y las coincidencias) nunca seleccionaban `breed_id` — solo `breed` — aunque la columna existe en `reports` desde
+     la 0016. Corregido en la migración `0024_breed_id_nearby.sql` (agrega `breed_id` a las tres; `sighted_breed_id` en
+     `my_matches()`, aunque hoy ningún texto en pantalla lo use todavía — se agrega por simetría con `sighted_breed`).
+  2. `seed_edge_cases.sql` insertaba sus propias filas (`...013/014/017/018`) sin pasarlas por
+     `map_breed_or_mixed()` — ese mapeo vive en el paso 6 de `seed_demo_reset.sql`, que ya corrió antes y nunca ve
+     filas insertadas después. Corregido: `seed_edge_cases.sql` ahora mapea sus propias 4 filas al final de su script.
+  3. Hooks/helpers que leen `reports`/`pets` directamente (no vía las funciones de arriba) tampoco seleccionaban
+     `breed_id` en su lista de columnas, aunque la tabla sí la tiene: `useMyReports.ts` (My Reports/History),
+     `lib/flyer.ts` (`loadFlyerData`, el flyer descargable). Corregido agregando `breed_id` a `COLS_BASE`/`COLS` y al
+     tipo `Pick<...>` de cada uno. `lib/myReports.ts` (`toNearby()`, que convierte un `MyReport` propio a la forma
+     `ReportNearby` para reusar `MySightingCard`) tampoco copiaba `breed_id` al convertir — corregido también.
+- **Dónde se aplicó `breedLabel()`** (antes usaban `r.breed`/`p.breed` crudo): `lib/reportText.ts`
+  (`reportTitle`/`reportSubtitle`, compartido por el feed y `PastReports`), `PinDetailSheet.tsx` (línea de raza bajo el
+  título), `MySightingCard.tsx` (título cuando no hay nombre, y el aviso "Add breed or details"), `profile.tsx` (lista
+  de mascotas registradas), `ReportFlow.tsx` (selector "Which pet is missing?"), `FlyerTemplate.tsx` y
+  `lib/shareText.ts` (texto de "Share alert"/"Share sighting" por la hoja nativa).
+- **Un registro real (no del seed) también estaba mal clasificado:** un avistamiento propio de un perro sin raza en
+  el texto (`breed` null) cuya foto es claramente un Labrador — se le asignó `breed = 'Labrador Retriever'` y
+  `breed_id = 'labrador-retriever'` con un UPDATE puntual (no es una fila del seed, así que no se corrige re-corriendo
+  ningún script).
+- **No re-derivar esto de nuevo:** cualquier pantalla nueva que muestre una raza debe pasar por `breedLabel()`/
+  `breedDisplay()`, no por el campo `breed` directo — es el mismo criterio que ya seguían `lib/matchCopy.ts` (que
+  nunca mostró la raza del avistamiento, solo la especie, así que no necesitó cambios) y los formularios de edición.
+- **"Mark reunited" → "Mark as reunited" (2026-09-30):** `MyReportStatusCard.tsx` decía "Mark reunited" mientras
+  `PinDetailSheet.tsx` ya decía "Mark as reunited" para la misma acción — unificado a "Mark as reunited" en toda la
+  app.
+
+## Nota adicional — fase de congelación: Profile, Support y Pet profile (2026-10-01)
+
+Fases 1–12 del documento "PetBeacon — Fase de congelación", todas aplicadas (1–6 primero; 7–12 después de su auditoría
+y aprobación).
+
+- **Fase 1, botón secundario único:** `components/Button.tsx` es el único componente de botón de la app. Variantes:
+  `primary` (brand.primary, nueva), `primaryLost`/`primarySighted` (excepción ya documentada arriba, sin cambios),
+  `secondary` (surface.card + borde border.strong + text.primary — igual en los 52px por defecto que en
+  `size="compact"`, MIN_HIT-4/Button-14, para botones embebidos en una tarjeta), `ghost`. Acepta un `Icon` opcional
+  (lucide). Migrados a este componente: Log out (`profile.tsx`), Change photo (`pet/PetPhoto.tsx`), el botón de
+  Contact/Learn more de cada `ResourceCard`, el de Get directions de `EventResourceCard`, y la acción principal de
+  `ResourceModal`'s Detail (que además pasó de `info.bg` a `brand.primary` — no es un estado, es una acción normal).
+  Ningún botón de Support se muestra ya deshabilitado por ser `is_sample`: ver Fase 6.
+- **Fase 2, acción destructiva en Pet profile:** el link "Remove from my pets" (`app/pet.tsx`) usa `danger.text`.
+  Dentro de `pet/RemovePetSheet.tsx`, el paso de confirmar "Remove from my profile" usa `danger.bg` (es destructiva);
+  el paso de confirmar "My pet passed away" usa el botón `secondary` (momento de duelo, nunca rojo). El bloqueo con
+  Lost activo y el archivado vía `archive_pet()` (nunca borra la fila, ver 0017) no cambiaron.
+- **Fase 3, FAB:** vive una sola vez en `app/(tabs)/_layout.tsx`, compartido por las 4 pestañas vía `state/fab.tsx`.
+  Se le agregó `hidden` (independiente de `collapsed`, que ya existía para el scroll) y el hook `hooks/useFabHidden.ts`
+  (mismo patrón `useFocusEffect` que `useFabScroll`) — Profile lo llama y pierde el FAB al enfocarse, lo recupera al
+  salir. My Reports (`components/TabScreen.tsx`) y Support usan `FAB_CLEARANCE` en vez de `paddingBottom: 200` a
+  mano; Profile (sin FAB) usa `spacing["2xl"]`.
+- **Fase 4, tokens nuevos:** `P.neutral[400]` (`#8F8B84`), `Theme.control` (`trackOn`/`trackOff`/`knob`, para el
+  Toggle — ya aplicado en el componente, ver Fase 7) y
+  `Theme.category.tile` (`bg`/`icon`, pine/50 y pine/700).
+- **Fase 5, categorías de Support sin color propio:** decisión explícita — las 4 categorías (`food`/`foster`/
+  `legal`/`shelter`) ya NO se diferencian por color; todas usan `category.tile.bg`/`category.tile.icon`. El
+  significado lo llevan el ícono (ya distinto por categoría) y el filtro. Esto reemplaza el mapeo anterior, que
+  violaba la regla de estados: `foster` usaba `status.lost.bgStrong` y `legal` usaba `brand.primary`. El ribbon de
+  evento sigue en `info.*` (es información destacada, no una categoría). `honey` sigue reservado para advertencias —
+  no se usó aquí.
+- **Fase 6, datos de muestra:** el chip "Sample data" por tarjeta se eliminó por completo (`components/resources/
+  parts.tsx`, ya no existe `SampleTag`) — era redundante con el banner. El banner superior de Support
+  ("These resources are sample data for testing.") se sigue mostrando por defecto; se oculta SOLO con
+  `EXPO_PUBLIC_HIDE_SAMPLE_NOTICE=true` (flag nuevo, documentado junto a `EXPO_PUBLIC_SHOW_DESIGN_TOOLS` arriba —
+  son dos flags separados a propósito, uno es QA y el otro es honestidad de datos). Los botones de un recurso de
+  muestra se ven y se tocan como cualquiera: tocarlos abre `ResourceModal` en su tercer modo, `"sample"` — una hoja
+  breve ("Sample resource" + texto + "Got it") en vez de llamar a un teléfono falso o abrir un mapa falso. Aplica a
+  las 4 vías de entrada: el botón de la tarjeta, el de `EventResourceCard`, la acción principal del detalle, y cada
+  fila de la hoja de Contact (Call/WhatsApp/Directions/Website).
+- **Fase 7, Toggle:** `components/Toggle.tsx` usa `control.trackOn`/`control.trackOff`/`control.knob` (antes
+  `brand.primary`/`border.strong`/`surface.card`) — el único cambio visible es el track apagado, ahora más oscuro
+  (contraste WCAG 1.4.11). Sin otros usos sueltos de esos colores que migrar (`ToggleRow` es el único consumidor).
+- **Fase 8, Tags y evento duplicado:** `Tag` (`components/resources/parts.tsx`) es ahora un componente exportado;
+  `TagChips` solo lo recorre. El evento "Free pet food pantry" compartía dominio y teléfono con "Hudson County Pet
+  Pantry" (mismo recurso modelado dos veces) — ahora es "Free microchip day", con su propio marcador ficticio
+  (`(914) 555-0199` / `free-microchip-day.example.org` en `seed.sql`; `(201) 555-0199` / `free-microchip-day.example.org`
+  en la reubicación a North Bergen de `seed_demo_reset.sql`) e ícono `heart-pulse`
+  (antes el genérico de `food`). `seed.sql` ya crea la fila con el nombre nuevo; `seed_demo_reset.sql` acepta ambos
+  nombres (`where name in (...)`) para que una base ya seedeada con el nombre viejo también quede bien. La migración
+  `0022_resource_details.sql` (histórica, no se edita) mapeó `tags`/`in_person` por el nombre viejo — `seed_demo_reset.sql`
+  los vuelve a fijar por el nombre nuevo, así que no dependen de en qué momento se creó la fila.
+- **Dominios de muestra, todos a `*.example.org` (2026-10-01):** los 8 recursos de `seed.sql`/`seed_demo_reset.sql`
+  usaban dominios inventados pero con forma de dominio real (`westchesterpetpantry.org`, `lowcostspayneuter.org`,
+  etc.) — nombres plausibles que alguien podría registrar de verdad. Ahora todos usan `*.example.org`
+  (`westchester-pet-pantry.example.org`, `hudson-county-pet-pantry.example.org`, `low-cost-spay-neuter.example.org`,
+  `vet-aid-fund.example.org`, `bridge-foster-network.example.org`, `crisis-boarding.example.org`,
+  `animal-welfare-legal-aid.example.org`, `riverside-animal-sanctuary.example.org`,
+  `free-microchip-day.example.org`) — `example.org`/`.com`/`.net` están reservados por el RFC 2606 exactamente para
+  esto, nunca se asignan a un sitio real. Los teléfonos `555-01XX` se quedan igual (decisión explícita: ya son el
+  marcador estándar de "no es real" en EE. UU., no hace falta tocarlos).
+- **Fase 9, estructura de Profile:** "Alert area" es ahora una sola tarjeta (ubicación + radio) — antes la ubicación
+  era una línea suelta en el header y el radio su propia sección. "Save your account" es SIEMPRE la tarjeta de
+  llamada a la acción debajo del header (antes, sin un Lost activo, era una fila discreta dentro de "Account") — el
+  texto cambia según haya o no un Lost activo, pero el tratamiento es el mismo. "Account" es una sola tarjeta
+  agrupada con divisores (mismo patrón que "Notifications"), con "Account saved" como su primera fila cuando la
+  cuenta ya tiene correo. `NavRow` ganó una prop `grouped` para los dos modos (tarjeta propia vs. fila agrupada) —
+  sigue usándose como tarjeta propia en "Registered pets" y "Design tools".
+- **Fase 10, tipografía:** `rowTitle`/`rowSubtitle` (antes `petName`/`petBreed`) son Heading/16 y Body/14
+  text/secondary — usados por mascotas registradas, `NavRow` y "Account saved". `ToggleRow` y las preguntas de
+  `help.tsx` subieron de Label/14 a Heading/16 para compartir estilo con lo anterior. Los encabezados de sección
+  (`sec`, mayúsculas) de `profile.tsx` y `help.tsx` pasaron de `text.muted` a `text.secondary`.
+- **Fase 11, microcopy:** `lib/time.ts` → `elapsedShort()` ya no abrevia ("Missing for 3 hours", nunca "3h"/"1d");
+  `agoShort()` se queda igual a propósito ("1h ago" es una convención de metadatos distinta, no una duración). "Save
+  your account" (`profile.tsx`) ya pluraliza bien: "an active alert for Lazy" / "active alerts for Max and Lazy" /
+  "active alerts for 3 pets" (antes siempre decía "an active alert" y el caso de 3+ mostraba el genérico "your
+  pets"). Nuevo `lib/config.ts` con `SUPPORT_EMAIL` (valor de ejemplo, ficticio a propósito) y una tarjeta "Still
+  need help?" al final de `help.tsx` que abre `mailto:` con ese correo.
+- **Fase 12, Pet profile — vista y edición separadas:** `app/pet.tsx` tiene un estado local `mode: "view" | "edit"`.
+  Una mascota nueva entra directo en `"edit"` (no hay nada que ver todavía); una existente entra en `"view"`: foto,
+  nombre (Title/24) + "Breed · Size · Color" (Body/14 secondary), la tarjeta de estado (Lost/Reunited) o "Report
+  lost" si está en casa, y una ficha "Details" de solo lectura (filas clave–valor, Body/14 secondary / Label/14
+  primary, Fase 10) con el microchip enmascarado (`maskMicrochip()`, nuevo en `lib/microchip.ts` — solo los últimos
+  4 caracteres) y campos vacíos como "Not added yet" en `text.muted`. "Edit details" lleva al modo edición (el
+  formulario de siempre); ahí "Change photo"/"Remove photo" y el bloque de estado/"Report lost" YA NO aparecen (se
+  movieron/quedaron en el modo vista). "Save changes" en una mascota existente ya no hace `router.back()`: actualiza
+  el formulario con la fila guardada y vuelve a `"view"` en la misma pantalla. En una mascota nueva, sí navega —
+  pero con `router.replace` a `/pet?id=<la nueva>` (no `router.back()`), para que "atrás" lleve a Profile y no al
+  formulario vacío. "Cancel" (nuevo, junto a "Save changes") revierte a los valores guardados y vuelve a `"view"`;
+  si hay cambios sin guardar pregunta "Discard changes?" — el mismo diálogo que ya usaba el listener de navegación,
+  pero disparado aparte porque cambiar de `mode` es un cambio de estado local, no una navegación que ese listener
+  pueda interceptar.
+- **Ajustes finales antes de congelar (2026-10-02):** la hoja "Sample resource" ya muestra su título (Heading/18; antes
+  usaba un estilo con `flex: 1` que lo colapsaba a altura 0). El header de Pet profile en edición dice "Edit {nombre}"
+  ("Add pet" si es nueva). La descripción de las tarjetas de recurso usa `CardDescription` (`components/resources/
+  parts.tsx`): mide el ancho real de su contenedor y se lo da al `Text` como `width` explícito, con `numberOfLines={2}`.
+  Motivo: en iOS, con el ancho intrínseco, la descripción de Riverside Animal Sanctuary se medía a 2 líneas pero se
+  pintaba en una sola, cortada a media palabra; ni quitar el wrapper del grupo "rehoming" ni cambiar `numberOfLines`
+  por `maxHeight` lo arreglaron. Si aparece el mismo síntoma en otro `Text` multilínea dentro de una columna `flex: 1`,
+  usar el mismo patrón (ancho explícito medido con `onLayout`).

@@ -32,6 +32,7 @@ yarn-error.*
 
 # local env files
 .env*.local
+.service_role_key.local
 
 # typescript
 *.tsbuildinfo
