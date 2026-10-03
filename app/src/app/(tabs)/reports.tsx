@@ -10,7 +10,6 @@ import { PinDetailSheet } from "../../components/PinDetailSheet";
 import { ReportRow } from "../../components/myreports/ReportRow";
 import { useSnackbar } from "../../components/Snackbar";
 import { Placeholder, TabScreen } from "../../components/TabScreen";
-import { useFabScroll } from "../../hooks/useFabScroll";
 import { useHome } from "../../hooks/useHome";
 import { useMyMatches } from "../../hooks/useMyMatches";
 import { useMyReports, type MyReport } from "../../hooks/useMyReports";
@@ -29,7 +28,6 @@ export default function Reports() {
   const { reports, loading, error, refresh, markReunited } = useMyReports();
   const { matches, refresh: refreshMatches, dismiss, restore } = useMyMatches();
   const center = useHome();
-  const { onScroll } = useFabScroll();
   const snackbar = useSnackbar();
   const [sheetFor, setSheetFor] = useState<{ id: string; name: string } | null>(null);
   const [detail, setDetail] = useState<ReportNearby | null>(null);
@@ -84,7 +82,7 @@ export default function Reports() {
 
   const hasActive = lost.length + buckets.reunitedRecent.length > 0;
   return (
-    <TabScreen title="My Reports" subtitle="Manage your active alerts and logged sightings" onScroll={onScroll}>
+    <TabScreen title="My Reports" subtitle="Manage your active alerts and logged sightings">
       {loading ? <ActivityIndicator style={{ marginTop: 24 }} color={Theme.brand.primary} /> : error ? (
         <Text style={styles.err}>Couldn't load your reports: {error}</Text>
       ) : (

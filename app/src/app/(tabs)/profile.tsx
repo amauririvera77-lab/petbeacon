@@ -16,7 +16,6 @@ import { useSnackbar } from "../../components/Snackbar";
 import { ToggleRow } from "../../components/ToggleRow";
 import { useAccount } from "../../hooks/useAccount";
 import { saveProfilePref, useEnablePush } from "../../hooks/useEnablePush";
-import { useFabHidden } from "../../hooks/useFabHidden";
 import { useMyReports } from "../../hooks/useMyReports";
 import { usePets } from "../../hooks/usePets";
 import { logout } from "../../lib/account";
@@ -41,7 +40,6 @@ export default function Profile() {
   const { pets, refresh: refreshPets } = usePets();
   const { reports: myReports, refresh: refreshMine } = useMyReports();
   const account = useAccount();
-  useFabHidden(); // Fase 3 de congelación: Profile no muestra FAB.
   const snackbar = useSnackbar();
   const [cityOpen, setCityOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);

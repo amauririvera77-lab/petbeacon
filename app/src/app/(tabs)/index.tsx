@@ -1,7 +1,7 @@
 import { useFocusEffect } from "expo-router";
 import { LocateFixed, X } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Animated, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Animated, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EditLocationSheet } from "../../components/EditLocationSheet";
 import { EndOfFeed } from "../../components/EndOfFeed";
@@ -49,8 +49,6 @@ import { activeFilterCount, applyHomeFilters, mapEventResources } from "../../li
 import { nextRadius } from "../../lib/radius";
 import { reportShareText } from "../../lib/shareText";
 import { sortReports } from "../../lib/sort";
-import { useFab } from "../../state/fab";
-import { useFabScroll } from "../../hooks/useFabScroll";
 import { useHomePrefs, type ViewRadius } from "../../state/homePrefs";
 import { useSession } from "../../state/session";
 import { Theme, FAB_CLEARANCE, radius } from "../../theme/tokens";
@@ -73,7 +71,6 @@ export default function Home() {
   const mapRef = useRef<MapHandle>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const { prefs, setPrefs, setSort, resetFilters, resetAll, listQuery, setListQuery, mapQuery, setMapQuery, view, setView } = useHomePrefs();
-  const { collapsed: fabCollapsed, setCollapsed } = useFab();
   const uid = useAuthUser();
   const center = useHome();
   const { pos: me, status: posStatus } = useMyPosition(view === "map");
@@ -121,15 +118,23 @@ export default function Home() {
   const [matchesFor, setMatchesFor] = useState<{ id: string; name: string } | null>(null);
   const filterCount = activeFilterCount(prefs);
 
-  // Mismo comportamiento del FAB que el resto de la app (se contrae al bajar, se expande al subir y al entrar a la pantalla).
-  const { onScroll, reset: resetFab } = useFabScroll();
-  useEffect(() => { if (view !== "map") { setPreviewId(null); resetFab(); } else setScrolled(false); }, [view, resetFab]);
-  // En Map el FAB va expandido, salvo con la tarjeta de vista previa abierta: se contrae al círculo para no taparla.
-  useEffect(() => { if (view === "map") setCollapsed(preview !== null); }, [view, preview, setCollapsed]);
+  // Dirección de scroll de la lista (solo Home, independiente de la tab bar): bajando se marca `scrollingDown`, subiendo se limpia.
+  // Al entrar a la pantalla o volver a la lista empieza en "arriba", como si estuvieras al principio del feed.
+  const [scrollingDown, setScrollingDown] = useState(false);
+  const lastY = useRef(0);
+  const resetScrollDir = useCallback(() => { lastY.current = 0; setScrollingDown(false); }, []);
+  const onListScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = e.nativeEvent.contentOffset.y, dy = y - lastY.current;
+    if (Math.abs(dy) < 6) return;
+    lastY.current = y;
+    setScrollingDown(y > 24 && dy > 0);
+  }, []);
+  useFocusEffect(resetScrollDir);
+  useEffect(() => { if (view !== "map") { setPreviewId(null); resetScrollDir(); } else setScrolled(false); }, [view, resetScrollDir]);
 
-  // D.6: al bajar la lista la búsqueda se contrae (misma señal de scroll que el FAB) y quedan fijos chips y List/Map; al subir reaparece.
+  // D.6: al bajar la lista la búsqueda se contrae y quedan fijos chips y List/Map; al subir reaparece.
   // Con texto en la búsqueda NO se contrae, y en Map siempre está visible.
-  const hideSearch = view === "list" && fabCollapsed && listQuery.trim() === "";
+  const hideSearch = view === "list" && scrollingDown && listQuery.trim() === "";
   const searchAnim = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     Animated.timing(searchAnim, { toValue: hideSearch ? 0 : 1, duration: 180, useNativeDriver: false }).start();
@@ -276,7 +281,7 @@ export default function Home() {
           )}
         </View>
       ) : (
-        <ScrollView ref={scrollRef} contentContainerStyle={styles.listC} onScroll={(e) => { onScroll(e); setScrolled(e.nativeEvent.contentOffset.y > 0); }} scrollEventThrottle={16}
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.listC} onScroll={(e) => { onListScroll(e); setScrolled(e.nativeEvent.contentOffset.y > 0); }} scrollEventThrottle={16}
           refreshControl={<RefreshControl refreshing={pulling} onRefresh={onPull} tintColor={Theme.brand.primary} />}>
           <EnableAlertsCard />
           {celebrate ? <ReunitedCelebration name={celebrate.name} onDone={endCelebration} /> : null}
