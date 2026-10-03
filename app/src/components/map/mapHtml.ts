@@ -6,8 +6,9 @@ const GL_VERSION = "3.10.0";
 // Documento que corre dentro del WebView. Protocolo:
 //   RN → WebView:  window.__update({ reports, resources, center:[lng,lat], radiusMi })
 //   WebView → RN:  postMessage JSON { type: "ready" | "select" | "error", ... }
-// bottomInset: px del borde inferior que tapa la tab bar flotante — la atribución y el logo de Mapbox (obligatorios por sus
-// términos) suben ese tanto para quedar visibles por encima de la barra, y el encuadre automático lo deja libre.
+// bottomInset (inicial): px del borde inferior que tapan la tab bar flotante y, si la hay, la tarjeta de vista previa — la atribución
+// y el logo de Mapbox (obligatorios por sus términos) suben ese tanto para quedar visibles; `window.__setInset(px)` lo cambia sin
+// recargar el mapa, y el encuadre automático deja libre ese espacio.
 export function buildMapHtml(token: string, bottomInset = 0): string {
   const colors = { lost: Theme.status.lost.bg, sighted: Theme.status.sighted.bg, reunited: Theme.status.reunited.bg, resource: Theme.info.bg };
   return `<!DOCTYPE html>
@@ -16,7 +17,8 @@ export function buildMapHtml(token: string, bottomInset = 0): string {
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <link href="https://api.mapbox.com/mapbox-gl-js/v${GL_VERSION}/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v${GL_VERSION}/mapbox-gl.js"></script>
-<style>html,body,#map{margin:0;padding:0;width:100%;height:100%;background:${Theme.surface.page}}.mapboxgl-ctrl-bottom-left,.mapboxgl-ctrl-bottom-right{bottom:${bottomInset}px}</style>
+<style>html,body,#map{margin:0;padding:0;width:100%;height:100%;background:${Theme.surface.page}}.mapboxgl-ctrl-bottom-left,.mapboxgl-ctrl-bottom-right{transition:bottom .18s ease}</style>
+<style id="inset">.mapboxgl-ctrl-bottom-left,.mapboxgl-ctrl-bottom-right{bottom:${bottomInset}px}</style>
 </head><body><div id="map"></div>
 <script>
 (function () {
@@ -36,6 +38,12 @@ export function buildMapHtml(token: string, bottomInset = 0): string {
   map.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-left");
   map.touchZoomRotate.disableRotation();
 
+  var insetPx = ${bottomInset};
+  window.__setInset = function (n) {
+    insetPx = n;
+    var st = document.getElementById("inset");
+    if (st) st.textContent = ".mapboxgl-ctrl-bottom-left,.mapboxgl-ctrl-bottom-right{bottom:" + n + "px}";
+  };
   var loaded = false, pending = null, lastP = null, lastRadius = null, meOn = false, lastFocus = null;
 
   // Pin en gota (fase 5.3): la PUNTA es el punto exacto del reporte (icon-anchor "bottom"); el ícono va en la cabeza.
@@ -114,10 +122,10 @@ export function buildMapHtml(token: string, bottomInset = 0): string {
       var b = new mapboxgl.LngLatBounds();
       if (reportPts.length) {
         reportPts.forEach(function (c) { b.extend(c); });
-        map.fitBounds(b, { padding: { top: 56, left: 56, right: 56, bottom: 56 + ${bottomInset} }, maxZoom: 14, duration: 500 });
+        map.fitBounds(b, { padding: { top: 56, left: 56, right: 56, bottom: 56 + insetPx }, maxZoom: 14, duration: 500 });
       } else {
         ring.forEach(function (c) { b.extend(c); });
-        map.fitBounds(b, { padding: { top: 32, left: 32, right: 32, bottom: 32 + ${bottomInset} }, duration: 500 });
+        map.fitBounds(b, { padding: { top: 32, left: 32, right: 32, bottom: 32 + insetPx }, duration: 500 });
       }
     }
   }

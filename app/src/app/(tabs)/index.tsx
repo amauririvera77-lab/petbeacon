@@ -234,6 +234,18 @@ export default function Home() {
     if (r) setTimeout(() => setPinReport(r), 400);
   };
 
+  // Tarjeta inferior del mapa (vista previa de un pin o aviso de estado vacío): tapa la atribución y el logo de Mapbox, que son
+  // obligatorios. Se mide su alto real (onLayout) y se suma al inset que recibe el WebView; sin tarjeta, vuelve al valor normal.
+  const mapEmptyEl = error ? (
+    <EmptyState title="We couldn't load reports" body="Check your connection and try again." actionLabel="Try again" onAction={refresh} />
+  ) : noReportsInRadius && !preview ? (
+    <EmptyState {...emptyRadiusProps} />
+  ) : !loading && reports.length > 0 && mapReports.length === 0 ? (
+    <EmptyState title="No reports match your filters" actionLabel="Reset filters" onAction={resetAll} />
+  ) : null;
+  const [cardH, setCardH] = useState(0);
+  const mapInset = TAB_BAR_CLEARANCE + (preview || mapEmptyEl ? cardH + 8 : 0);
+
   return (
     <View style={styles.root}>
       <View>
@@ -277,7 +289,7 @@ export default function Home() {
             <View style={styles.pad}><SetupNotice /></View>
           ) : (
             <>
-              <MapboxWebView ref={mapRef} bottomInset={TAB_BAR_CLEARANCE} alertRadiusMi={alertRadiusMi} selectedId={preview?.id ?? null} token={MAPBOX_TOKEN} reports={mapReports} resources={mapResources} center={center} radiusMi={prefs.viewRadiusMi} me={me} mineIds={mineIds} matchNames={matchNames} focus={focus} onSelect={(sel) => {
+              <MapboxWebView ref={mapRef} bottomInset={mapInset} alertRadiusMi={alertRadiusMi} selectedId={preview?.id ?? null} token={MAPBOX_TOKEN} reports={mapReports} resources={mapResources} center={center} radiusMi={prefs.viewRadiusMi} me={me} mineIds={mineIds} matchNames={matchNames} focus={focus} onSelect={(sel) => {
                 if (!sel) { setPreviewId(null); return; }
                 if (sel.kind === "resource") { setPreviewId(null); const r = mapResources.find((x) => x.id === sel.id); if (r) openResource(r); }
                 else setPreviewId(sel.id);
@@ -288,19 +300,13 @@ export default function Home() {
                   <Text style={styles.findingT}>Finding your location…</Text>
                 </View>
               ) : null}
-              {error ? (
-                <EmptyState style={[styles.mapEmpty, { bottom: TAB_BAR_CLEARANCE }]} title="We couldn't load reports" body="Check your connection and try again." actionLabel="Try again" onAction={refresh} />
-              ) : noReportsInRadius && !preview ? (
-                <EmptyState style={[styles.mapEmpty, { bottom: TAB_BAR_CLEARANCE }]} {...emptyRadiusProps} />
-              ) : !loading && reports.length > 0 && mapReports.length === 0 ? (
-                <EmptyState style={[styles.mapEmpty, { bottom: TAB_BAR_CLEARANCE }]} title="No reports match your filters" actionLabel="Reset filters" onAction={resetAll} />
-              ) : null}
+              {mapEmptyEl ? <View style={[styles.mapEmpty, { bottom: TAB_BAR_CLEARANCE }]} onLayout={(e) => setCardH(e.nativeEvent.layout.height)}>{mapEmptyEl}</View> : null}
               <MapRadiusChip value={prefs.viewRadiusMi} onChange={(mi) => setPrefs({ viewRadiusMi: mi as ViewRadius })} />
               <Pressable accessibilityRole="button" accessibilityLabel="Center map on my location" onPress={() => mapRef.current?.recenter()} style={[styles.recenter, { bottom: TAB_BAR_CLEARANCE }]}>
                 <LocateFixed size={22} color={Theme.text.primary} />
               </Pressable>
               {preview ? (
-                <View style={[styles.preview, { bottom: TAB_BAR_CLEARANCE }]}>
+                <View style={[styles.preview, { bottom: TAB_BAR_CLEARANCE }]} onLayout={(e) => setCardH(e.nativeEvent.layout.height)}>
                   <ReportCard report={preview} mine={mineIds.includes(preview.id)} matchFor={matchNames[preview.id]} onPress={() => setPinReport(preview)} />
                 </View>
               ) : null}

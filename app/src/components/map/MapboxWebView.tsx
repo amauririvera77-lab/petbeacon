@@ -32,7 +32,9 @@ export const MapboxWebView = forwardRef<MapHandle, Props>(function MapboxWebView
   useImperativeHandle(handle, () => ({ recenter: () => ref.current?.injectJavaScript("window.__recenter && window.__recenter(); true;") }), []);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const html = useMemo(() => buildMapHtml(token, bottomInset), [token, bottomInset]);
+  // El inset INICIAL va en el HTML; los cambios posteriores (p. ej. abrir la vista previa de un pin) se inyectan sin recargar el mapa.
+  const [initialInset] = useState(bottomInset);
+  const html = useMemo(() => buildMapHtml(token, initialInset), [token, initialInset]);
 
   const push = useCallback(() => {
     const payload = {
@@ -49,6 +51,7 @@ export const MapboxWebView = forwardRef<MapHandle, Props>(function MapboxWebView
   }, [reports, resources, center.lat, center.lng, radiusMi, alertRadiusMi, selectedId, matchNames, me?.lat, me?.lng, me?.accuracy, mineIds, focus?.lat, focus?.lng]);
 
   useEffect(() => { if (ready) push(); }, [ready, push]);
+  useEffect(() => { if (ready) ref.current?.injectJavaScript(`window.__setInset && window.__setInset(${bottomInset}); true;`); }, [ready, bottomInset]);
 
   const onMessage = (e: WebViewMessageEvent) => {
     try {
