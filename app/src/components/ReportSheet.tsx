@@ -1,8 +1,11 @@
-import { ChevronRight, Eye, Siren } from "lucide-react-native";
+import { Eye, Siren } from "lucide-react-native";
 import { useEffect, useRef } from "react";
 import { Animated, Modal, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { C, font, radius } from "../theme/tokens";
+import { Theme } from "../theme/tokens";
+import { elevation } from "../theme/elevation";
+import { typography } from "../theme/typography";
+import { IntentOption } from "./IntentOption";
 
 const OFFSCREEN = 600;
 
@@ -33,8 +36,8 @@ export function ReportSheet({ visible, onClose, onPick }: { visible: boolean; on
   })).current;
 
   const options = [
-    { kind: "lost" as const, title: "I lost my pet", sub: "Alert neighbors and start the search", Icon: Siren, color: C.sos },
-    { kind: "sighted" as const, title: "I saw a pet", sub: "Help a lost pet get back to its owner", Icon: Eye, color: C.warn },
+    { kind: "lost" as const, title: "I lost my pet", sub: "Alert neighbors and start the search", Icon: Siren, color: Theme.status.lost.bg },
+    { kind: "sighted" as const, title: "I saw a pet", sub: "Help a lost pet get back to its owner", Icon: Eye, color: Theme.status.sighted.bg },
   ];
 
   return (
@@ -48,15 +51,7 @@ export function ReportSheet({ visible, onClose, onPick }: { visible: boolean; on
           </View>
           <View style={{ gap: 12, paddingHorizontal: 16 }}>
             {options.map(({ kind, title, sub, Icon, color }) => (
-              <Pressable key={kind} accessibilityRole="button" onPress={() => close(() => onPick(kind))}
-                style={({ pressed }) => [styles.option, pressed && { backgroundColor: C.surface }]}>
-                <View style={[styles.icon, { backgroundColor: color }]}><Icon size={24} color={C.white} /></View>
-                <View style={{ flex: 1, gap: 2 }}>
-                  <Text style={styles.optT}>{title}</Text>
-                  <Text style={styles.optS}>{sub}</Text>
-                </View>
-                <ChevronRight size={20} color={C.slate500} />
-              </Pressable>
+              <IntentOption key={kind} title={title} sub={sub} Icon={Icon} color={color} onPress={() => close(() => onPick(kind))} />
             ))}
           </View>
         </Animated.View>
@@ -67,13 +62,9 @@ export function ReportSheet({ visible, onClose, onPick }: { visible: boolean; on
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "flex-end" },
-  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(15,23,42,0.5)" },
-  sheet: { backgroundColor: C.white, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: Theme.scrim(0.5) },
+  sheet: { backgroundColor: Theme.surface.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, ...elevation[3] },
   dragArea: { paddingTop: 12, paddingHorizontal: 20, paddingBottom: 16, alignItems: "center", gap: 14 },
-  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: C.border },
-  title: { alignSelf: "flex-start", fontFamily: font.head, fontSize: 18, color: C.ink },
-  option: { minHeight: 84, flexDirection: "row", alignItems: "center", gap: 14, padding: 14, borderRadius: radius.lg, borderWidth: 1.5, borderColor: C.border2, backgroundColor: C.white },
-  icon: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
-  optT: { fontFamily: font.headBold, fontSize: 18, color: C.ink },
-  optS: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 18, color: C.slate700 },
+  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: Theme.border.default },
+  title: { alignSelf: "flex-start", ...typography.heading18, color: Theme.text.primary },
 });

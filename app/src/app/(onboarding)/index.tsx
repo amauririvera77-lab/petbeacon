@@ -1,9 +1,10 @@
 // 1 · Welcome — contenido centrado; sin CTA: las salidas son los botones de intención y dos enlaces.
-import { Bell, Eye } from "lucide-react-native";
+import { Eye, Siren } from "lucide-react-native";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SaveAccountSheet } from "../../components/account/SaveAccountSheet";
+import { IntentOption } from "../../components/IntentOption";
 import { Logo } from "../../components/Logo";
 import { OnboardingScreen } from "../../components/Screen";
 import { registerPush } from "../../lib/push";
@@ -11,7 +12,8 @@ import { snapRadius } from "../../lib/radius";
 import { supabase } from "../../lib/supabase";
 import { useOnboardingPreview } from "../../state/onboardingPreview";
 import { Intent, useSession } from "../../state/session";
-import { C, font, radius } from "../../theme/tokens";
+import { Theme } from "../../theme/tokens";
+import { typography } from "../../theme/typography";
 
 export default function Welcome() {
   const { update } = useSession();
@@ -43,13 +45,11 @@ export default function Welcome() {
           <Text style={styles.tagline}>Reunite pets with their people.</Text>
           <Text style={styles.h1} accessibilityRole="header">What brings you here today?</Text>
         </View>
+        {/* Mismo patrón que ReportSheet ("What would you like to report?"): tarjeta neutra, color de estado solo en
+            el círculo del ícono — nunca en el fondo del botón (CLAUDE.md). Mismos textos e íconos que esa hoja. */}
         <View style={styles.buttons}>
-          <Pressable accessibilityRole="button" onPress={() => pick("lost")} style={({ pressed }) => [styles.intent, { backgroundColor: C.sos }, pressed && { opacity: 0.9 }]}>
-            <Bell size={20} color={C.white} /><Text style={styles.intentT}>I lost my pet</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => pick("seen")} style={({ pressed }) => [styles.intent, { backgroundColor: C.warn }, pressed && { opacity: 0.9 }]}>
-            <Eye size={20} color={C.white} /><Text style={styles.intentT}>I see a pet</Text>
-          </Pressable>
+          <IntentOption title="I lost my pet" sub="Alert neighbors and start the search" Icon={Siren} color={Theme.status.lost.bg} onPress={() => pick("lost")} />
+          <IntentOption title="I saw a pet" sub="Help a lost pet get back to its owner" Icon={Eye} color={Theme.status.sighted.bg} onPress={() => pick("seen")} />
         </View>
         <Pressable accessibilityRole="link" onPress={() => pick("register")} style={styles.link}>
           <Text style={styles.linkT}>Just setting up — I'll register my pet now</Text>
@@ -58,7 +58,7 @@ export default function Welcome() {
         {!preview.active ? (
           <>
             <Pressable accessibilityRole="link" onPress={() => router.push("/(tabs)/support")} style={[styles.link, { marginTop: 18 }]}>
-              <Text style={[styles.linkT, { lineHeight: 20.3 }]}>{"Struggling to care for your pet right now?\nSee local support"}</Text>
+              <Text style={styles.linkT}>{"Struggling to care for your pet right now?\nSee local support"}</Text>
             </Pressable>
             <Pressable accessibilityRole="link" onPress={() => setLoginOpen(true)} style={[styles.link, { marginTop: 10 }]}>
               <Text style={styles.linkT}>Already saved your account? Log in</Text>
@@ -74,11 +74,9 @@ export default function Welcome() {
 const styles = StyleSheet.create({
   wrap: { padding: 24 },
   hero: { alignItems: "center", marginBottom: 40 },
-  tagline: { fontFamily: font.bodyRegular, fontSize: 14, lineHeight: 19.6, color: C.slate600, marginTop: 8, textAlign: "center" },
-  h1: { fontFamily: font.displayMedium, fontSize: 28, lineHeight: 32.2, letterSpacing: -0.28, color: C.ink, marginTop: 32, textAlign: "center" },
+  tagline: { ...typography.body14, color: Theme.text.secondary, marginTop: 8, textAlign: "center" },
+  h1: { ...typography.display28, color: Theme.text.primary, marginTop: 32, textAlign: "center" },
   buttons: { gap: 12, marginBottom: 24 },
-  intent: { height: 64, borderRadius: radius.md, flexDirection: "row", gap: 10, alignItems: "center", justifyContent: "center" },
-  intentT: { fontFamily: font.bodyBold, fontSize: 17, color: C.white },
   link: { minHeight: 44, paddingHorizontal: 18, paddingVertical: 9, alignItems: "center", justifyContent: "center" },
-  linkT: { fontFamily: font.bodySemi, fontSize: 14, color: C.slate700, textAlign: "center" },
+  linkT: { ...typography.label14, color: Theme.text.secondary, textAlign: "center" },
 });
