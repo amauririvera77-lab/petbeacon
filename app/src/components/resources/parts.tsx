@@ -17,11 +17,15 @@ export function OpenNow({ r, now }: { r: Pick<ResourceNearby, "opening_hours" | 
 // Descripción de una tarjeta de recurso: hasta 2 líneas con un ANCHO EXPLÍCITO medido del contenedor. En iOS, con el ancho
 // intrínseco, la descripción de Riverside se medía a 2 líneas pero se pintaba en una sola (cortada, "counseling b…"/"befo"):
 // el texto se maquetaba con un ancho y se dibujaba con otro. Dándole el ancho real desde el primer pintado no hay dos mediciones.
+// Sin `numberOfLines`: el truncado nativo de iOS (ellipsis en la última línea permitida) era justo lo que fallaba — pintaba la
+// primera línea con "b…" y dejaba la segunda en blanco. El texto envuelve natural y el tope de 2 líneas lo pone la altura del
+// contenedor (maxHeight = 2 × lineHeight, overflow hidden): una tercera línea se recorta en el límite de línea, sin ellipsis.
 export function CardDescription({ text, style }: { text: string; style: StyleProp<TextStyle> }) {
   const [w, setW] = useState(0);
+  const lineHeight = StyleSheet.flatten(style)?.lineHeight ?? 20;
   return (
-    <View style={{ alignSelf: "stretch" }} onLayout={(e) => { const x = Math.floor(e.nativeEvent.layout.width); if (x !== w) setW(x); }}>
-      {w > 0 ? <Text style={[style, { width: w }]} numberOfLines={2}>{text}</Text> : null}
+    <View style={{ alignSelf: "stretch", maxHeight: lineHeight * 2, overflow: "hidden" }} onLayout={(e) => { const x = Math.floor(e.nativeEvent.layout.width); if (x !== w) setW(x); }}>
+      {w > 0 ? <Text style={[style, { width: w }]}>{text}</Text> : null}
     </View>
   );
 }

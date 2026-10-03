@@ -27,6 +27,8 @@ const HIDE_SAMPLE_NOTICE = process.env.EXPO_PUBLIC_HIDE_SAMPLE_NOTICE === "true"
 export default function Support() {
   const insets = useSafeAreaInsets();
   const TAB_BAR_CLEARANCE = useTabBarClearance();
+  // Estable entre renders: `useNow()` re-renderiza esta pantalla cada 30 s y un array nuevo en cada pasada reaplicaba el estilo del contenido.
+  const listStyle = useMemo(() => [styles.list, { paddingBottom: TAB_BAR_CLEARANCE }], [TAB_BAR_CLEARANCE]);
   const { city } = useSession();
   const center = useHome();
   const now = useNow();
@@ -91,7 +93,7 @@ export default function Support() {
 
       <OfflineBanner />
 
-      <ScrollView contentContainerStyle={[styles.list, { paddingBottom: TAB_BAR_CLEARANCE }]} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={listStyle} keyboardShouldPersistTaps="handled">
         {error === "supabase-not-configured" ? <SetupNotice /> : error ? (
           <View style={{ gap: 8 }}>
             <Text style={styles.err}>Couldn't load resources: {error}</Text>
