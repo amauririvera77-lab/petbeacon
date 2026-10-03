@@ -155,7 +155,7 @@ Estos quedaron anotados a lo largo de la sesión como pendientes deliberados par
 
 ## 7. Decisiones de UX ya validadas — no reabrir sin razón nueva
 
-- **FAB en esquina inferior derecha, 73px, flotante** — posición ergonómica validada (zona de alcance del pulgar), no moverlo al header ni cambiar tamaño.
+- **(Reemplazado en v1.1 por la tab bar flotante con Report integrado — ver la nota "v1.1" al final.)** ~~FAB en esquina inferior derecha, 73px, flotante~~ — — posición ergonómica validada (zona de alcance del pulgar), no moverlo al header ni cambiar tamaño.
 - **Tab bar con 4 ítems, todos en negro/teal cuando activos** — decisión explícita de NO destacar "Support" con un color distinto en el nav, para no cargar el indicador de navegación con un segundo significado (se evaluó y descartó deliberadamente).
 - **List como vista por defecto de Home, Map como alternativa de igual jerarquía** — válido en tanto Map use un proveedor real (ver requisito técnico #1); si eso no ocurre, reconsiderar la jerarquía.
 - **Registro después del reporte, no antes, en la mayoría de los casos** — el onboarding permite completar Welcome → intención → Signup mínimo (2 campos) → reporte, todo saltable. Es la mejor versión posible dado que Signup sigue precediendo al reporte por estructura del flujo; si se quiere invertir esto del todo, es una decisión de producto pendiente, no un bug.
@@ -340,7 +340,7 @@ y aprobación).
   Dentro de `pet/RemovePetSheet.tsx`, el paso de confirmar "Remove from my profile" usa `danger.bg` (es destructiva);
   el paso de confirmar "My pet passed away" usa el botón `secondary` (momento de duelo, nunca rojo). El bloqueo con
   Lost activo y el archivado vía `archive_pet()` (nunca borra la fila, ver 0017) no cambiaron.
-- **Fase 3, FAB:** vive una sola vez en `app/(tabs)/_layout.tsx`, compartido por las 4 pestañas vía `state/fab.tsx`.
+- **Fase 3, FAB (retirado en v1.1, ver nota final):** vivía una sola vez en `app/(tabs)/_layout.tsx`, compartido por las 4 pestañas vía `state/fab.tsx`.
   Se le agregó `hidden` (independiente de `collapsed`, que ya existía para el scroll) y el hook `hooks/useFabHidden.ts`
   (mismo patrón `useFocusEffect` que `useFabScroll`) — Profile lo llama y pierde el FAB al enfocarse, lo recupera al
   salir. My Reports (`components/TabScreen.tsx`) y Support usan `FAB_CLEARANCE` en vez de `paddingBottom: 200` a
@@ -423,3 +423,35 @@ y aprobación).
   pintaba en una sola, cortada a media palabra; ni quitar el wrapper del grupo "rehoming" ni cambiar `numberOfLines`
   por `maxHeight` lo arreglaron. Si aparece el mismo síntoma en otro `Text` multilínea dentro de una columna `flex: 1`,
   usar el mismo patrón (ancho explícito medido con `onLayout`).
+
+## Nota adicional — v1.1: tab bar flotante con Report integrado (rama `feature/floating-tab-bar`)
+
+Sustituye la tab bar de 4 pestañas **y** el FAB "Report" por una sola barra flotante (Figma "TabBar — Floating"). Esto
+reemplaza la decisión de §7 sobre el FAB de 73 px.
+
+- **`components/FloatingTabBar.tsx`** (prop `tabBar` de `Tabs`, en `app/(tabs)/_layout.tsx`): posición absoluta, márgenes
+  laterales de 16 (`TAB_BAR_SIDE_MARGIN`), fondo `surface.card`, borde `border.default`, radio `radius.xl` (28, token
+  nuevo), `elevation[2]`, padding 8. Cinco huecos: Home, My Reports, **Report**, Support, Profile. Report no es una ruta:
+  es un botón de 56×44 (`radius.pill`, `brand.primary`, `Plus` de 24 en `text.onAccent`) en un hueco de ancho fijo de 64
+  (`REPORT_BUTTON`); las cuatro pestañas (`TabBarButton`, `flex: 1`) se reparten el resto por igual. Al pulsarlo abre la
+  misma `ReportSheet` que abría el FAB ("I lost my pet" / "I saw a pet") y de ahí `/report/lost` o `/report/sighted` —
+  el flujo no cambió. Las pestañas usan `accessibilityRole="tab"` y emiten `tabPress`/`tabLongPress`; Report es
+  `button` con label "Report a pet" y hint "Report a lost pet or a sighting".
+- **Ancho verificado con las métricas reales de Manrope Bold 11:** "My Reports" mide 60,3 pt; en 360 dp el hueco de
+  pestaña es 61,5 pt (cabe con 1,2 pt de margen, sin truncar ni reducir fuente), en 375 pt 65,2 pt, en 393 pt 69,8 pt. En
+  320 pt (iPhone SE de 1.ª generación) NO cabe — decisión explícita: no se diseña para 320.
+- **`hooks/useTabBarClearance.ts`:** `TAB_BAR_CLEARANCE` = `TAB_BAR_HEIGHT` (65) + distancia inferior
+  (`Math.max(insets.bottom - 8, 12)`, también `tabBarBottomDistance`) + `spacing.lg`. Es un hook, no una constante fija,
+  porque depende de la safe area real. Lo usan el padding inferior de Home (lista), My Reports (`TabScreen`), Support y
+  Profile, y la base de los controles flotantes: `Snackbar` (siempre por encima de la barra), y en el mapa la tarjeta de
+  vista previa, el botón de recentrar y el estado vacío. El mapa se extiende hasta el borde inferior, por detrás de la barra;
+  `MapboxWebView` recibe `bottomInset` y `mapHtml.ts` sube `.mapboxgl-ctrl-bottom-left/right` (atribución y logo de Mapbox,
+  obligatorios por sus términos) ese tanto, y el `fitBounds` automático deja libre ese espacio.
+- **FAB retirado:** se eliminaron `ExtendedFab`, `state/fab.tsx` (`FabProvider`), `useFabScroll`, `useFabHidden`,
+  `FAB_SIZE` y `FAB_CLEARANCE`. La búsqueda de Home que se ocultaba al bajar usaba el estado del FAB; ahora usa un estado
+  local de dirección de scroll solo en Home (`onListScroll`/`scrollingDown`), independiente de la barra.
+- **Comportamiento:** la barra es fija y siempre visible (no se oculta ni se minimiza al hacer scroll) y desaparece
+  mientras el teclado está abierto (`useKeyboardVisible`: `keyboardWillShow/Hide` en iOS, `keyboardDidShow/Hide` en
+  Android). Las pantallas del Stack raíz (`pet`, `report/*`, `help`, `edit-*`, `privacy`, `delete-account`, `flyer`) no la
+  muestran porque no están dentro de `(tabs)`; no hizo falta código extra. En Android < 9 `boxShadow` no dibuja sombra
+  (aceptado).
