@@ -3,7 +3,9 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-nati
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { MyMatch } from "../lib/database.types";
 import { matchSubtitle, matchTitle } from "../lib/matchCopy";
-import { C, MIN_HIT, font, radius } from "../theme/tokens";
+import { Theme, MIN_HIT, radius } from "../theme/tokens";
+import { elevation } from "../theme/elevation";
+import { typography } from "../theme/typography";
 import { FocusImage } from "./FocusImage";
 import { SpeciesPlaceholder } from "./SpeciesPlaceholder";
 
@@ -21,7 +23,7 @@ export function MatchesSheet({ lostName, matches, onClose, onView, onDismiss, on
           <View style={styles.handleWrap}><View style={styles.handle} /></View>
           <View style={styles.head}>
             <Text style={styles.title} accessibilityRole="header">Matches for {lostName}</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={C.slate700} /></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={Theme.text.secondary} /></Pressable>
           </View>
           <ScrollView contentContainerStyle={{ padding: 16, gap: 10 }}>
             {(matches ?? []).length === 0 ? (
@@ -30,7 +32,7 @@ export function MatchesSheet({ lostName, matches, onClose, onView, onDismiss, on
               <View key={m.id} style={[styles.item, m.dismissed && styles.itemDismissed]}>
                 <View style={styles.row}>
                   {m.sighted_photo_url ? (
-                    <FocusImage uri={m.sighted_photo_url} focusX={m.sighted_focus_x} focusY={m.sighted_focus_y} zoom={(m.sighted_zoom ?? 100) / 100} style={styles.photo} />
+                    <FocusImage uri={m.sighted_photo_url} focusX={m.sighted_focus_x} focusY={m.sighted_focus_y} style={styles.photo} />
                   ) : <SpeciesPlaceholder species={m.sighted_species ?? "other"} size={48} style={styles.photo} />}
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={styles.itemT}>{matchTitle(m)}{m.dismissed ? "  ·  Dismissed" : ""}</Text>
@@ -41,10 +43,10 @@ export function MatchesSheet({ lostName, matches, onClose, onView, onDismiss, on
                   <Pressable accessibilityRole="button" onPress={() => onView(m)} style={styles.btn}><Text style={styles.btnT}>View sighting</Text></Pressable>
                   {m.dismissed ? (
                     <Pressable accessibilityRole="button" onPress={() => onRestore(m.id)} style={[styles.btn, styles.btnRestore]}>
-                      <RotateCcw size={14} color={C.ink} /><Text style={styles.btnT}>Restore</Text>
+                      <RotateCcw size={14} color={Theme.text.primary} /><Text style={styles.btnT}>Restore</Text>
                     </Pressable>
                   ) : (
-                    <Pressable accessibilityRole="button" onPress={() => onDismiss(m.id)} style={styles.btn}><Text style={[styles.btnT, { color: C.slate700 }]}>Dismiss</Text></Pressable>
+                    <Pressable accessibilityRole="button" onPress={() => onDismiss(m.id)} style={styles.btn}><Text style={[styles.btnT, { color: Theme.text.secondary }]}>Dismiss</Text></Pressable>
                   )}
                 </View>
               </View>
@@ -58,22 +60,22 @@ export function MatchesSheet({ lostName, matches, onClose, onView, onDismiss, on
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "flex-end" },
-  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(15,23,42,0.5)" },
-  sheet: { maxHeight: "78%", backgroundColor: C.white, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: Theme.scrim(0.5) },
+  sheet: { maxHeight: "78%", backgroundColor: Theme.surface.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, ...elevation[3] },
   handleWrap: { alignItems: "center", paddingTop: 12, paddingBottom: 4 },
-  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: C.border },
-  head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: C.border },
-  title: { flex: 1, fontFamily: font.head, fontSize: 18, color: C.ink },
-  close: { width: 36, height: 36, borderRadius: 18, backgroundColor: C.border, alignItems: "center", justifyContent: "center" },
-  empty: { fontFamily: font.bodyRegular, fontSize: 14, color: C.slate500, textAlign: "center", padding: 16 },
-  item: { padding: 12, gap: 10, borderRadius: radius.lg, borderWidth: 1, borderColor: C.ok, backgroundColor: C.okTint },
-  itemDismissed: { borderColor: C.border, backgroundColor: C.surface },
+  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: Theme.border.default },
+  head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: Theme.border.default },
+  title: { flex: 1, ...typography.heading18, color: Theme.text.primary },
+  close: { width: 36, height: 36, borderRadius: 18, backgroundColor: Theme.border.default, alignItems: "center", justifyContent: "center" },
+  empty: { ...typography.body14, color: Theme.text.muted, textAlign: "center", padding: 16 },
+  item: { padding: 12, gap: 10, borderRadius: radius.lg, borderWidth: 1, borderColor: Theme.status.reunited.bg, backgroundColor: Theme.status.reunited.tint },
+  itemDismissed: { borderColor: Theme.border.default, backgroundColor: Theme.surface.page },
   row: { flexDirection: "row", gap: 12 },
-  photo: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: C.white },
-  itemT: { fontFamily: font.bodyBold, fontSize: 14, color: C.ink },
-  itemS: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 18, color: C.slate700 },
+  photo: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: Theme.surface.card },
+  itemT: { ...typography.label14, color: Theme.text.primary },
+  itemS: { ...typography.bodySm13, color: Theme.text.secondary },
   actions: { flexDirection: "row", gap: 8 },
-  btn: { flex: 1, minHeight: MIN_HIT, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center", borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2, backgroundColor: C.white },
-  btnRestore: { borderColor: C.ok },
-  btnT: { fontFamily: font.bodyBold, fontSize: 13, color: C.ink },
+  btn: { flex: 1, minHeight: MIN_HIT, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center", borderRadius: radius.md, borderWidth: 1.5, borderColor: Theme.border.strong, backgroundColor: Theme.surface.card },
+  btnRestore: { borderColor: Theme.status.reunited.bg },
+  btnT: { ...typography.button14, color: Theme.text.primary },
 });

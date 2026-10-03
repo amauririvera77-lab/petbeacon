@@ -1,35 +1,40 @@
 import { router } from "expo-router";
-import { Cat, Check, Dog, Eye, MapPin, PawPrint, Pencil, Share2, X } from "lucide-react-native";
+import { Cat, Check, Dog, Eye, MapPin, Palette, Share2, Sparkles, StickyNote, X } from "lucide-react-native";
 import { useState } from "react";
 import { Alert, Modal, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ReportNearby } from "../lib/database.types";
-import { C, font, radius } from "../theme/tokens";
+import { MIN_HIT, Theme, radius } from "../theme/tokens";
+import { elevation } from "../theme/elevation";
+import { typography } from "../theme/typography";
 import { FLYERS_READY } from "../lib/flyer";
 import { reportShareText } from "../lib/shareText";
 import { activityAt } from "../lib/activity";
 import { shortAddress } from "../lib/address";
 import { cleanFeatures, reportTitle } from "../lib/reportText";
+import { breedLabel } from "../lib/breeds";
 import { whenLabel } from "../lib/time";
 import { colorLabel, sizeLabel } from "../lib/petOptions";
 import { CONDITION_LABEL } from "./flow/OptionButtons";
-import { Badge } from "./Badge";
 import { FocusImage } from "./FocusImage";
+import { WrappingTitleBadge } from "./WrappingTitleBadge";
 
-const COLOR = { lost: C.sos, sighted: C.warn, reunited: C.ok } as const;
+const COLOR = { lost: Theme.status.lost.bg, sighted: Theme.status.sighted.bg, reunited: Theme.status.reunited.bg } as const;
 
 // Tres estados distintos (CLAUDE.md §2), no uno con texto condicional. El botón del flyer solo aparece con FLYERS_READY (lib/flyer.ts):
 //  · Lost      → "I've seen this pet" + "Share flyer"
 //  · Sighted   → "Report to network" + "Share sighting"
 //  · Reunited  → caja verde de cierre, sin botones de acción
-export function PinDetailSheet({ report, onClose, mine, onMarkReunited }: {
+export function PinDetailSheet({ report, onClose, mine, onMarkReunited, matchCount, onReviewMatches }: {
   report: ReportNearby | null; onClose: () => void; mine?: boolean; onMarkReunited?: (r: ReportNearby) => void | Promise<void>;
+  matchCount?: number; // coincidencias abiertas (no descartadas) de este Lost propio — decide el CTA principal en modo dueño
+  onReviewMatches?: (r: ReportNearby) => void;
 }) {
   const insets = useSafeAreaInsets();
   const [photoFailed, setPhotoFailed] = useState(false);
   const r = report;
   const status = r?.status;
-  const color = status ? COLOR[status] : C.sos;
+  const color = status ? COLOR[status] : Theme.status.lost.bg;
   const title = r ? reportTitle(r) : ""; // el mismo título que la tarjeta, pero aquí completo (sin recortar)
   const Fallback = r?.species === "cat" ? Cat : Dog;
 
@@ -51,6 +56,7 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited }: {
     setTimeout(() => router.push({ pathname: "/edit-report", params: { id: r.id } }), 400);
   };
   const ownLost = !!mine && status === "lost";
+  const hasMatches = (matchCount ?? 0) > 0;
 
   // "Mark as reunited": confirmación explícita antes de cerrar el caso (acción con consecuencias: sale de Lost y se detienen alertas y coincidencias).
   const confirmReunited = () => {
@@ -76,19 +82,16 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited }: {
         {r ? (
           <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
             <View style={styles.handleWrap}><View style={styles.handle} /></View>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={C.slate700} /></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={Theme.text.secondary} /></Pressable>
             <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 }}>
               <View style={styles.photo}>
                 {r.photo_url && !photoFailed ? (
                   <FocusImage uri={r.photo_url} focusX={r.photo_focus_x} focusY={r.photo_focus_y} style={styles.photoImg} accessibilityLabel={title} onError={() => setPhotoFailed(true)} />
-                ) : <Fallback size={56} color={C.slate500} />}
+                ) : <Fallback size={56} color={Theme.text.muted} />}
               </View>
 
-              <View style={styles.titleRow}>
-                <Text style={styles.h}>{title}</Text>
-                <Badge status={r.status} sitOnBaseline />
-              </View>
-              {r.breed && r.breed.trim() !== title ? <Text style={styles.breed}>{r.breed}</Text> : <View style={{ height: 24 }} />}
+              <WrappingTitleBadge title={title} status={r.status} textStyle={styles.h} style={styles.titleRow} />
+              {(() => { const b = breedLabel(r.breed, r.breed_id); return b && b !== title ? <Text style={styles.breed}>{b}</Text> : <View style={{ height: 24 }} />; })()}
 
               <View style={{ gap: 16, marginBottom: 24 }}>
                 <View style={styles.row}>
@@ -100,19 +103,19 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited }: {
                 </View>
                 {colorLabel(r.color) || sizeLabel(r.size) ? (
                   <View style={styles.row}>
-                    <View style={{ marginTop: 2 }}><PawPrint size={18} color={C.slate500} /></View>
+                    <View style={{ marginTop: 2 }}><Palette size={18} color={Theme.text.muted} /></View>
                     <Text style={styles.features}>{[colorLabel(r.color), sizeLabel(r.size)].filter(Boolean).join(" · ")}</Text>
                   </View>
                 ) : null}
                 {r.condition ? (
                   <View style={styles.row}>
-                    <View style={{ marginTop: 2 }}><Eye size={18} color={C.slate500} /></View>
+                    <View style={{ marginTop: 2 }}><Eye size={18} color={Theme.text.muted} /></View>
                     <Text style={styles.features}>Condition: {CONDITION_LABEL[r.condition]}</Text>
                   </View>
                 ) : null}
                 {cleanFeatures(r.features_description) ? (
                   <View style={styles.row}>
-                    <View style={{ marginTop: 2 }}><PawPrint size={18} color={C.slate500} /></View>
+                    <View style={{ marginTop: 2 }}><StickyNote size={18} color={Theme.text.muted} /></View>
                     <Text style={styles.features}>{cleanFeatures(r.features_description)}</Text>
                   </View>
                 ) : null}
@@ -120,35 +123,45 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited }: {
 
               {status === "reunited" ? (
                 <View style={styles.closed}>
-                  <Check size={20} color="#166534" />
+                  <Check size={20} color={Theme.status.reunited.text} />
                   <Text style={styles.closedT}>Great news — this case is closed.</Text>
                 </View>
               ) : (
                 <View style={{ gap: 8 }}>
-                  <Pressable accessibilityRole="button" onPress={ownLost ? editOwn : status === "lost" ? iveSeen : share}
-                    style={({ pressed }) => [styles.cta, { backgroundColor: color }, pressed && { opacity: 0.9 }]}>
-                    {ownLost ? <Pencil size={18} color={C.white} /> : status === "lost" ? <Eye size={18} color={C.white} /> : <Share2 size={18} color={C.white} />}
-                    <Text style={styles.ctaT}>{ownLost ? "Edit report" : status === "lost" ? "I've seen this pet" : "Report to network"}</Text>
+                  {/* brand.primary, no el color de estado (color) — los colores de estado solo indican estados (badges, pins,
+                      etiquetas), nunca el fondo de un botón de acción (CLAUDE.md). Modo dueño: misma jerarquía que My Reports
+                      (MyReportStatusCard) — "Review matches"/"Share alert" como principal según haya o no coincidencias. */}
+                  <Pressable accessibilityRole="button"
+                    onPress={ownLost ? (hasMatches ? () => onReviewMatches?.(r) : share) : status === "lost" ? iveSeen : share}
+                    style={({ pressed }) => [styles.cta, { backgroundColor: Theme.brand.primary }, pressed && { opacity: 0.9 }]}>
+                    {ownLost
+                      ? (hasMatches ? <Sparkles size={18} color={Theme.text.onAccent} /> : <Share2 size={18} color={Theme.text.onAccent} />)
+                      : status === "lost" ? <Eye size={18} color={Theme.text.onAccent} /> : <Share2 size={18} color={Theme.text.onAccent} />}
+                    <Text style={styles.ctaT}>{ownLost ? (hasMatches ? "Review matches" : "Share alert") : status === "lost" ? "I've seen this pet" : "Report to network"}</Text>
                   </Pressable>
                   {ownLost ? (
                     // Modo dueño: cerrar el caso. "Share flyer" se oculta mientras el flyer no funcione (FLYERS_READY).
+                    // "Edit report" pasa a acción terciaria (texto), ya no compite con "Review matches"/"Share alert".
                     <>
                       {onMarkReunited ? (
-                        <Pressable accessibilityRole="button" onPress={confirmReunited} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: C.okTint }]}>
-                          <Check size={16} color={C.ok} />
+                        <Pressable accessibilityRole="button" onPress={confirmReunited} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: Theme.status.reunited.tint }]}>
+                          <Check size={16} color={Theme.status.reunited.bg} />
                           <Text style={styles.secondaryT}>Mark as reunited</Text>
                         </Pressable>
                       ) : null}
                       {FLYERS_READY ? (
-                        <Pressable accessibilityRole="button" onPress={openFlyer} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: "#F1F5F9" }]}>
-                          <Share2 size={16} color={C.ink} /><Text style={styles.secondaryT}>Share flyer</Text>
+                        <Pressable accessibilityRole="button" onPress={openFlyer} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: Theme.surface.page }]}>
+                          <Share2 size={16} color={Theme.text.primary} /><Text style={styles.secondaryT}>Share flyer</Text>
                         </Pressable>
                       ) : null}
+                      <Pressable accessibilityRole="button" onPress={editOwn} style={styles.tertiary}>
+                        <Text style={styles.tertiaryT}>Edit report</Text>
+                      </Pressable>
                     </>
                   ) : FLYERS_READY ? (
                     // "Share flyer" / "Share sighting" abren el flyer: se ocultan en TODOS los detalles mientras FLYERS_READY sea false.
-                    <Pressable accessibilityRole="button" onPress={openFlyer} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: "#F1F5F9" }]}>
-                      <Share2 size={16} color={C.ink} />
+                    <Pressable accessibilityRole="button" onPress={openFlyer} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: Theme.surface.page }]}>
+                      <Share2 size={16} color={Theme.text.primary} />
                       <Text style={styles.secondaryT}>{status === "sighted" ? "Share sighting" : "Share flyer"}</Text>
                     </Pressable>
                   ) : null}
@@ -164,25 +177,28 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited }: {
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "flex-end" },
-  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(15,23,42,0.55)" },
-  sheet: { maxHeight: "78%", backgroundColor: C.white, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  scrim: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: Theme.scrim(0.55) },
+  sheet: { maxHeight: "78%", backgroundColor: Theme.surface.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, ...elevation[3] },
   handleWrap: { alignItems: "center", paddingTop: 12, paddingBottom: 4 },
-  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: C.border },
-  close: { position: "absolute", top: 12, right: 12, width: 36, height: 36, borderRadius: 18, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center", zIndex: 2 },
-  photo: { height: 220, borderRadius: radius.lg, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center", overflow: "hidden", marginBottom: 20 },
+  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: Theme.border.default },
+  close: { position: "absolute", top: 12, right: 12, width: 36, height: 36, borderRadius: 18, backgroundColor: Theme.surface.page, alignItems: "center", justifyContent: "center", zIndex: 2 },
+  photo: { height: 220, borderRadius: radius.lg, backgroundColor: Theme.surface.page, alignItems: "center", justifyContent: "center", overflow: "hidden", marginBottom: 20 },
   photoImg: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
-  // baseline + Badge.sitOnBaseline: la base (borde inferior) de la píldora queda sobre la línea en la que se apoya el nombre.
-  titleRow: { flexDirection: "row", alignItems: "baseline", gap: 8, marginBottom: 4 },
-  h: { flexShrink: 1, fontFamily: font.displayMedium, fontSize: 26, lineHeight: 31, letterSpacing: -0.26, color: C.ink },
-  breed: { fontFamily: font.bodyRegular, fontSize: 15, color: C.slate700, marginBottom: 24 },
+  // El layout de fila/wrap vive en WrappingTitleBadge; aquí solo el margen respecto al resto del contenido.
+  titleRow: { marginBottom: 4 },
+  h: { flexShrink: 1, ...typography.heading20, color: Theme.text.primary },
+  breed: { ...typography.body14, color: Theme.text.secondary, marginBottom: 24 },
   row: { flexDirection: "row", gap: 12 },
-  strong: { fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
-  muted: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate500, marginTop: 2 },
-  features: { flex: 1, fontFamily: font.bodyRegular, fontSize: 14, lineHeight: 21, color: C.slate700 },
-  closed: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderRadius: radius.md, backgroundColor: C.okTint },
-  closedT: { flex: 1, fontFamily: font.bodyBold, fontSize: 14, color: "#166534" },
+  strong: { ...typography.label14, color: Theme.text.primary },
+  muted: { ...typography.bodySm13, color: Theme.text.muted, marginTop: 2 },
+  features: { flex: 1, ...typography.body14, color: Theme.text.secondary },
+  closed: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderRadius: radius.md, backgroundColor: Theme.status.reunited.tint },
+  closedT: { flex: 1, ...typography.label13, color: Theme.status.reunited.text },
   cta: { height: 56, borderRadius: radius.md, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" },
-  ctaT: { fontFamily: font.bodyBold, fontSize: 16, color: C.white },
-  secondary: { height: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.border2, backgroundColor: C.white, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" },
-  secondaryT: { fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
+  ctaT: { ...typography.button16, color: Theme.text.onAccent },
+  secondary: { height: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: Theme.border.strong, backgroundColor: Theme.surface.card, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" },
+  secondaryT: { ...typography.button14, color: Theme.text.primary },
+  // Terciaria: mismo tratamiento que "View all matches" en MyReportStatusCard — texto subrayado, sin fondo ni borde.
+  tertiary: { minHeight: MIN_HIT, alignItems: "center", justifyContent: "center" },
+  tertiaryT: { ...typography.label14, color: Theme.text.secondary, textDecorationLine: "underline" },
 });

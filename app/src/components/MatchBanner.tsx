@@ -2,7 +2,8 @@ import { X } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { MyMatch } from "../lib/database.types";
 import { matchSubtitle, matchTitle } from "../lib/matchCopy";
-import { C, MIN_HIT, font, radius } from "../theme/tokens";
+import { Theme, MIN_HIT, radius } from "../theme/tokens";
+import { typography } from "../theme/typography";
 import { FocusImage } from "./FocusImage";
 import { SpeciesPlaceholder } from "./SpeciesPlaceholder";
 
@@ -13,7 +14,7 @@ export function MatchBanner({ match, onViewSighting, onDismiss }: { match: MyMat
   return (
     <View style={styles.box} accessibilityRole="alert">
       {match.sighted_photo_url ? (
-        <FocusImage uri={match.sighted_photo_url} focusX={match.sighted_focus_x} focusY={match.sighted_focus_y} zoom={(match.sighted_zoom ?? 100) / 100} style={styles.photo} />
+        <FocusImage uri={match.sighted_photo_url} focusX={match.sighted_focus_x} focusY={match.sighted_focus_y} style={styles.photo} />
       ) : (
         <SpeciesPlaceholder species={match.sighted_species ?? "other"} size={48} style={styles.photo} />
       )}
@@ -25,18 +26,18 @@ export function MatchBanner({ match, onViewSighting, onDismiss }: { match: MyMat
         </Pressable>
       </View>
       {/* Zona táctil de 44×44 pt como mínimo. */}
-      <Pressable accessibilityRole="button" accessibilityLabel="Dismiss match" onPress={onDismiss} hitSlop={4} style={styles.x}><X size={18} color={C.slate700} /></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Dismiss match" onPress={onDismiss} hitSlop={4} style={styles.x}><X size={18} color={Theme.text.secondary} /></Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  box: { flexDirection: "row", gap: 10, padding: 10, borderRadius: radius.lg, backgroundColor: C.okTint, borderWidth: 1, borderColor: C.ok },
-  photo: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: C.white },
+  box: { flexDirection: "row", gap: 10, padding: 10, borderRadius: radius.lg, backgroundColor: Theme.status.reunited.tint, borderWidth: 1, borderColor: Theme.status.reunited.bg },
+  photo: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: Theme.surface.card },
   body: { flex: 1, gap: 2 },
-  title: { fontFamily: font.head, fontSize: 16, color: C.ink },
-  sub: { fontFamily: font.bodyRegular, fontSize: 13, lineHeight: 18, color: C.slate700 },
-  cta: { minHeight: MIN_HIT, alignSelf: "flex-start", justifyContent: "center", paddingHorizontal: 16, marginTop: 2, borderRadius: radius.md, borderWidth: 1.5, borderColor: C.ok, backgroundColor: C.white },
-  ctaT: { fontFamily: font.bodyBold, fontSize: 14, color: C.ink },
+  title: { ...typography.heading16, color: Theme.text.primary },
+  sub: { ...typography.bodySm13, color: Theme.text.secondary },
+  cta: { minHeight: MIN_HIT, alignSelf: "flex-start", justifyContent: "center", paddingHorizontal: 16, marginTop: 2, borderRadius: radius.md, borderWidth: 1.5, borderColor: Theme.status.reunited.bg, backgroundColor: Theme.surface.card },
+  ctaT: { ...typography.button14, color: Theme.text.primary },
   x: { width: MIN_HIT, height: MIN_HIT, alignItems: "center", justifyContent: "center", marginTop: -8, marginRight: -8 },
 });
