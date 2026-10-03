@@ -419,7 +419,7 @@ y aprobación).
   usaba un estilo con `flex: 1` que lo colapsaba a altura 0). El header de Pet profile en edición dice "Edit {nombre}"
   ("Add pet" si es nueva). La descripción de las tarjetas de recurso usa `CardDescription` (`components/resources/
   parts.tsx`): mide el ancho real de su contenedor y se lo da al `Text` como `width` explícito, con `numberOfLines={2}`
-  (REVISADO 2026-10-03: ver abajo, `numberOfLines` se quitó).
+  (2026-10-03: dos intentos posteriores se revirtieron; esta es la versión vigente, ver abajo).
   Motivo: en iOS, con el ancho intrínseco, la descripción de Riverside Animal Sanctuary se medía a 2 líneas pero se
   pintaba en una sola, cortada a media palabra; ni quitar el wrapper del grupo "rehoming" ni cambiar `numberOfLines`
   por `maxHeight` lo arreglaron. Si aparece el mismo síntoma en otro `Text` multilínea dentro de una columna `flex: 1`,
