@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View } from "react-native";
-import { C, MIN_HIT } from "../theme/tokens";
+import { Theme, MIN_HIT } from "../theme/tokens";
 
 type Props = { value: boolean; onValueChange: (v: boolean) => void; label: string };
 
@@ -13,7 +13,7 @@ export function Toggle({ value, onValueChange, label }: Props) {
       onPress={() => onValueChange(!value)}
       style={styles.hit}
     >
-      <View style={[styles.track, { backgroundColor: value ? C.teal : C.border2 }]}>
+      <View style={[styles.track, { backgroundColor: value ? Theme.control.trackOn : Theme.control.trackOff }]}>
         <View style={[styles.thumb, value && styles.thumbOn]} />
       </View>
     </Pressable>
@@ -23,6 +23,6 @@ export function Toggle({ value, onValueChange, label }: Props) {
 const styles = StyleSheet.create({
   hit: { minWidth: 56, minHeight: MIN_HIT, justifyContent: "center", alignItems: "center" },
   track: { width: 52, height: 32, borderRadius: 16, padding: 3, justifyContent: "center" },
-  thumb: { width: 26, height: 26, borderRadius: 13, backgroundColor: C.white },
+  thumb: { width: 26, height: 26, borderRadius: 13, backgroundColor: Theme.control.knob },
   thumbOn: { alignSelf: "flex-end" },
 });
