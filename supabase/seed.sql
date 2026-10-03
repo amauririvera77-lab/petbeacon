@@ -10,14 +10,14 @@ insert into profiles (id, name, city, alert_radius_mi, home) values
   ('00000000-0000-0000-0000-000000000002','Demo Reporter','White Plains, NY',5,st_makepoint(-73.7629,41.034)::geography);
 
 insert into resources (name, category, description, address, location, phone, website_url, is_featured_event, icon) values
-  ('Free pet food pantry','food','This Saturday, 9am-1pm. Dry and wet food, litter and flea treatment, no paperwork needed.','Maple Park Community Hall, White Plains, NY',st_makepoint(-73.76890, 41.03800)::geography,'(914) 555-0110','westchesterpetpantry.org/pantry',true,null),
-  ('Westchester Pet Pantry','food','Free pet food distribution, first Saturday of every month.','142 Mamaroneck Ave, White Plains, NY',st_makepoint(-73.75490, 41.04000)::geography,'(914) 555-0142','westchesterpetpantry.org',false,null),
-  ('Low-Cost Spay/Neuter Clinic','food','Sliding-scale fees based on household income, walk-ins welcome.','88 Grand St, White Plains, NY',st_makepoint(-73.75290, 41.02400)::geography,'(914) 555-0188','lowcostspayneuter.org',false,'heart-pulse'),
-  ('Emergency Vet Aid Fund','food','Short-term grants covering urgent veterinary care costs.','210 Central Ave, White Plains, NY',st_makepoint(-73.78290, 41.05400)::geography,'(914) 555-0121','vetaidfund.org',false,'heart-pulse'),
-  ('Bridge Foster Network','foster','Temporary foster homes for pets during hospitalizations or moves.','56 Bank St, White Plains, NY',st_makepoint(-73.77690, 41.02200)::geography,'(914) 555-0156','bridgefosternetwork.org',false,null),
-  ('Crisis Boarding Program','foster','Up to 30 days of free boarding while you get back on your feet.','19 Post Rd, White Plains, NY',st_makepoint(-73.73790, 41.06200)::geography,'(914) 555-0119','crisisboarding.org',false,null),
-  ('Animal Welfare Legal Aid','legal','Free consultations on housing and pet-related legal questions.','301 Main St, White Plains, NY',st_makepoint(-73.76090, 41.04400)::geography,'(914) 555-0301','animalwelfarelegalaid.org',false,null),
-  ('Riverside Animal Sanctuary','legal','Verified no-kill shelter with surrender counseling before intake.','77 Riverside Dr, White Plains, NY',st_makepoint(-73.73290, 41.00400)::geography,'(914) 555-0177','riversideanimalsanctuary.org',false,'paw');
+  ('Free microchip day','food','Free microchipping and registration for dogs and cats. No appointment needed.','Maple Park Community Hall, White Plains, NY',st_makepoint(-73.76890, 41.03800)::geography,'(914) 555-0199','free-microchip-day.example.org',true,'heart-pulse'),
+  ('Westchester Pet Pantry','food','Free pet food distribution, first Saturday of every month.','142 Mamaroneck Ave, White Plains, NY',st_makepoint(-73.75490, 41.04000)::geography,'(914) 555-0142','westchester-pet-pantry.example.org',false,null),
+  ('Low-Cost Spay/Neuter Clinic','food','Sliding-scale fees based on household income, walk-ins welcome.','88 Grand St, White Plains, NY',st_makepoint(-73.75290, 41.02400)::geography,'(914) 555-0188','low-cost-spay-neuter.example.org',false,'heart-pulse'),
+  ('Emergency Vet Aid Fund','food','Short-term grants covering urgent veterinary care costs.','210 Central Ave, White Plains, NY',st_makepoint(-73.78290, 41.05400)::geography,'(914) 555-0121','vet-aid-fund.example.org',false,'heart-pulse'),
+  ('Bridge Foster Network','foster','Temporary foster homes for pets during hospitalizations or moves.','56 Bank St, White Plains, NY',st_makepoint(-73.77690, 41.02200)::geography,'(914) 555-0156','bridge-foster-network.example.org',false,null),
+  ('Crisis Boarding Program','foster','Up to 30 days of free boarding while you get back on your feet.','19 Post Rd, White Plains, NY',st_makepoint(-73.73790, 41.06200)::geography,'(914) 555-0119','crisis-boarding.example.org',false,null),
+  ('Animal Welfare Legal Aid','legal','Free consultations on housing and pet-related legal questions.','301 Main St, White Plains, NY',st_makepoint(-73.76090, 41.04400)::geography,'(914) 555-0301','animal-welfare-legal-aid.example.org',false,null),
+  ('Riverside Animal Sanctuary','legal','Verified no-kill shelter with surrender counseling before intake.','77 Riverside Dr, White Plains, NY',st_makepoint(-73.73290, 41.00400)::geography,'(914) 555-0177','riverside-animal-sanctuary.example.org',false,'paw');
 
 insert into reports (id, user_id, status, species, name, breed, photo_url, features_description, location, location_label, contact_phone_or_email, created_at, reunited_at) values
   ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001','lost','dog','Max','Golden Retriever','https://images.unsplash.com/photo-1552053831-71594a27632d','Blue collar with a silver tag, limps slightly on his left leg.',st_makepoint(-73.77290, 41.04000)::geography,'near Maple Park','(914) 555-0100',now() - interval '3 hours',null),
@@ -32,4 +32,4 @@ insert into reports (id, user_id, status, species, name, breed, photo_url, featu
 --   Sighted #2 (Beagle) vs Max (Golden): pesos incompatibles (razón > 1.7)              => sin coincidencia.
 --   Sighted #3 (gato tabby) vs Luna (Siamese): raza de gato distinta solo baja confianza => 'possible'.
 -- Evento destacado con fecha concreta (columna agregada en 0011): el próximo sábado.
-update resources set event_date = current_date + ((6 - extract(dow from current_date)::int + 7) % 7) where name = 'Free pet food pantry';
+update resources set event_date = current_date + ((6 - extract(dow from current_date)::int + 7) % 7) where name = 'Free microchip day';
