@@ -471,41 +471,43 @@ reemplaza la decisión de §7 sobre el FAB de 73 px.
   Android). Las pantallas del Stack raíz (`pet`, `report/*`, `help`, `edit-*`, `privacy`, `delete-account`, `flyer`) no la
   muestran porque no están dentro de `(tabs)`; no hizo falta código extra. En Android < 9 `boxShadow` no dibuja sombra
   (aceptado).
-- **`CardDescription` con `onTextLayout` (2026-10-03, revisa la versión "sin `numberOfLines`"):** esa versión
-  (`maxHeight = 2 × lineHeight`) recortaba la SEGUNDA línea por la mitad: el `lineHeight` de la tipografía de la app (19 en
-  Body-Sm/13) es MENOR que la altura natural real de la línea de Manrope (≈ 1.366 em), así que dos líneas reales miden más que
-  `2 × lineHeight`. Ahora no se supone ninguna altura: ancho explícito medido + `onTextLayout` (`e.nativeEvent.lines`, con el
-  `text` y el `height` REALES de cada línea). Hasta 2 líneas: el tope de altura es la suma de sus alturas reales. Más de 2: se
-  sustituye el texto por las 2 primeras con la segunda sin su última palabra + "…" y se vuelve a medir hasta que quepa
-  (nunca queda una línea recortada a la mitad). Opacidad 0 hasta tener la medida; se re-mide si cambian texto, ancho o
-  `fontScale`. Lo usan las tarjetas de Support y la de evento. La lista de Support usa un `contentContainerStyle` estable
-  (`useMemo`) en vez de un array nuevo por render.
+- **`CardDescription` vuelve a la versión de v1.0 (2026-10-03):** ancho explícito medido con `onLayout` + `numberOfLines={2}`
+  — la misma del tag `v1.0-case-study`, con la que Riverside se veía completa. Se revirtieron DOS intentos posteriores que
+  no resolvieron el corte: quitar `numberOfLines` con `maxHeight = 2 × lineHeight` (recortaba la segunda línea por la mitad: el
+  `lineHeight` nominal de Body-Sm/13, 19, es menor que la altura real de la línea de Manrope, ≈ 1.366 em) y una versión con
+  `onTextLayout` (líneas reales + "…" propia). Si Riverside sigue cortada en el iPhone, el plan es acortar su descripción de
+  muestra a "No-kill shelter with surrender counseling." en `seed.sql` y `seed_demo_reset.sql` (y correr el reset en Supabase).
+  La lista de Support usa un `contentContainerStyle` estable (`useMemo`) en vez de un array nuevo por render.
 
-## Nota adicional — texto dinámico: contención hecha (v1.1), solución completa pendiente para la etapa B (2026-10-03)
+## Nota adicional — texto dinámico: pendiente para la etapa B (2026-10-03)
 
-Auditoría del tamaño de texto del sistema (Dynamic Type / "Texto más grande"). Se implementó SOLO la contención, para que
-el texto grande no rompa contenedores; la solución completa queda como etapa B.
+Auditoría del tamaño de texto del sistema (Dynamic Type / "Texto más grande"). **No se implementó solución de texto
+dinámico en v1.1** (cambio de plan): quedó SOLO un cambio, `minHeight` en lugar de alto fijo en `CompactSegmented` (pista 36 /
+segmento 32), `ActiveFilters` (chip y "Clear all" 30), `SearchBar` (campo 44) y `FilterButton` (40), para que esos controles
+crezcan con el texto en vez de recortarlo.
 
-- **`components/AppText.tsx`** (nuevo): envuelve `Text` de RN y pone `maxFontSizeMultiplier` según la prop `role`
-  (`Text.defaultProps` no sirve con React 19, por eso es un componente). Todos los `Text` de la app pasan por él
-  (reemplazo mecánico en 75 archivos). Excepción: `FlyerTemplate.tsx` conserva el `Text` de RN (pieza impresa/exportada).
-  Un `TextInput` no pasa por `AppText` (hoy sin tope propio — pendiente de revisar en la etapa B).
-- **Topes por rol:** `tab` 1.0 (etiquetas de la barra: Micro/11, la barra flotante tiene alto fijo) · `control` 1.3 (Button/16,
-  Button/14, Badge/12 y Micro/11 en badges) · `title` 1.5 (Display/28, Title/24) · `reading` 1.5 (Heading, Body, Label,
-  Caption — SUBIRÁ A 2.0 cuando las tarjetas admitan 2 líneas, ver abajo). El rol se asigna por el estilo tipográfico que usa
-  cada texto; si un texto de botón/título nuevo no lleva `role`, cae en `reading`.
-- **Alturas fijas → `minHeight`:** `CompactSegmented` (pista 36 / segmento 32), `ActiveFilters` (chip y "Clear all" 30),
-  `SearchBar` (campo 44), `FilterButton` (40). Con el tope de 1.5 el campo de búsqueda sigue en 44 (su línea más alta es
-  24 × 1.5 = 36), así que `SEARCH_H = 54` en Home sigue alcanzando.
+- **Intento descartado — contención con `AppText`/`maxFontSizeMultiplier`:** se creó un componente `AppText` (envoltorio de
+  `Text` con tope por rol: tab 1.0, control 1.3, title 1.5, reading 1.5) y se aplicó a los 75 archivos. Se revirtió (commits
+  `4dff487` y `28ec92f`, reverts `b1e4398` y `257be84`): el cambio de fondo en cómo se miden los textos coincidió con recortes
+  a media letra en la descripción de Riverside y no se pudo aislar la causa, así que no se mantiene sin entenderla.
+  **Hipótesis pendientes de investigar:**
+  1. **Medidas obsoletas al cambiar el tamaño de texto con la app abierta:** un texto medido (ancho de `onLayout`,
+     `onTextLayout`) con una escala de fuente puede quedar con esa medida si el usuario cambia "Texto más grande" sin cerrar
+     la app, y se pinta con otra escala.
+  2. **Textos medidos antes de cargar Manrope:** si se mide con la fuente del sistema como respaldo y luego se pinta con
+     Manrope (altura de línea natural distinta, ≈ 1.366 em), la medida queda corta y el contenedor recorta.
 
 **Pendiente para la etapa B (NO tocado a propósito):**
 1. **Tarjetas con `numberOfLines={1}`** — con texto ampliado el nombre/raza/ubicación se recortan en una línea. Hay que
-   decidir cuáles admiten 2 líneas (y entonces subir el tope `reading` a 2.0): `pet.tsx` (178, 276), `(tabs)/index.tsx` 315,
-   `profile.tsx` (96, 123, 159, 182), `ReportCard.tsx` (31, 42, 58, 59), `MyReportStatusCard.tsx` 55, `PastReports.tsx` (31, 34),
-   `ReportRow.tsx` (25, 32), `ReportFlow.tsx` (178, 179), `BreedPicker.tsx` 41, `resources/parts.tsx` 14 (`OpenNow`).
-   `TabBarButton.tsx` queda en 1 línea (tope 1.0). `ReportCard` ya tiene su modo apilado `ACCESSIBILITY_FONT_SCALE = 1.5`.
+   decidir cuáles admiten 2 líneas: `pet.tsx` (178, 276), `(tabs)/index.tsx` 315, `profile.tsx` (96, 123, 159, 182),
+   `ReportCard.tsx` (31, 42, 58, 59), `MyReportStatusCard.tsx` 55, `PastReports.tsx` (31, 34), `ReportRow.tsx` (25, 32),
+   `ReportFlow.tsx` (178, 179), `BreedPicker.tsx` 41, `resources/parts.tsx` 14 (`OpenNow`), `TabBarButton.tsx` 52.
+   `ReportCard` ya tiene su modo apilado `ACCESSIBILITY_FONT_SCALE = 1.5`.
 2. **Siete estilos de `theme/typography.ts` con `lineHeight` por DEBAJO de la altura natural de su fuente** (Manrope 1.366 em,
    Outfit 1.26, Geist 1.30): `display28` (34), `title24` (29), `heading20` (25, marginal), `button16` (19), `button14` (17),
    `badge12` (14), `micro11` (13). iOS multiplica el `lineHeight` por el factor de fuente y, si queda por debajo de la
    altura natural, no aplica el desplazamiento de línea base — con texto grande los glifos pueden tocar el borde del
-   contenedor. Revisar junto con el punto 1.
+   contenedor.
+3. **`TextInput`** (búsqueda y formularios) no tiene tope de escala propio.
+4. Las etiquetas de la tab bar (Micro/11, alto fijo 65) y el flyer (`FlyerTemplate`, pieza impresa) tampoco tienen
+   tratamiento de escala.
