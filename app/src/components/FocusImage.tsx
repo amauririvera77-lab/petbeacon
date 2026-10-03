@@ -1,43 +1,35 @@
-import { useEffect, useState } from "react";
-import { Image, LayoutChangeEvent, StyleProp, View, ViewStyle } from "react-native";
-
-const sizeCache = new Map<string, { w: number; h: number }>();
+import { Image, type ImageContentPosition, type ImageStyle } from "expo-image";
+import type { StyleProp, ViewStyle } from "react-native";
 
 type Props = {
   uri: string;
-  focusX?: number | null; // % del ancho donde está el sujeto (cabeza)
-  focusY?: number | null; // % del alto
-  zoom?: number; // 1 = "cover"; >1 acerca al punto focal (miniaturas)
+  focusX?: number | null; // % del ancho (0-100) donde está el sujeto (cabeza). null/undefined = centro.
+  focusY?: number | null; // % del alto (0-100).
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
   onError?: () => void;
   onReady?: () => void; // la imagen ya se dibujó (necesario antes de capturar un flyer)
 };
 
-// Equivale a `object-position` + zoom del prototipo. Un "cover" centrado corta la cabeza en fotos verticales;
-// aquí la imagen se escala hasta cubrir el contenedor (× zoom) y se desplaza para que el punto focal quede en el centro,
-// sin dejar bordes vacíos. Sin foco conocido usa (50%, 30%): las cabezas suelen estar en el tercio superior.
-export function FocusImage({ uri, focusX, focusY, zoom = 1, style, accessibilityLabel, onError, onReady }: Props) {
-  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
-  const [nat, setNat] = useState<{ w: number; h: number } | null>(sizeCache.get(uri) ?? null);
-
-  useEffect(() => {
-    if (nat) return;
-    let alive = true;
-    Image.getSize(uri, (w, h) => { sizeCache.set(uri, { w, h }); if (alive) setNat({ w, h }); }, () => onError?.());
-    return () => { alive = false; };
-  }, [uri, nat, onError]);
-
-  const onLayout = (e: LayoutChangeEvent) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height });
-
-  let img: React.ReactNode = null;
-  if (box && nat && box.w > 0 && box.h > 0) {
-    const s = Math.max(box.w / nat.w, box.h / nat.h) * Math.max(zoom, 1);
-    const iw = nat.w * s, ih = nat.h * s;
-    const fx = ((focusX ?? 50) / 100) * iw, fy = ((focusY ?? 30) / 100) * ih;
-    const left = Math.min(0, Math.max(box.w - iw, box.w / 2 - fx));
-    const top = Math.min(0, Math.max(box.h - ih, box.h / 2 - fy));
-    img = <Image source={{ uri }} resizeMode="stretch" style={{ position: "absolute", left, top, width: iw, height: ih }} accessibilityLabel={accessibilityLabel} onError={onError} onLoad={onReady} />;
-  }
-  return <View onLayout={onLayout} style={[{ overflow: "hidden" }, style]}>{img}</View>;
+// Recorte con punto focal, vía expo-image (contentFit="cover" + contentPosition — igual que object-position en
+// CSS), en vez del cálculo manual anterior con Image.getSize(): ese cálculo dependía de que las dimensiones que
+// reportaba la red coincidieran exactamente con lo que el visor nativo terminaba dibujando, y en dispositivo real
+// se desalineaban (la cara quedaba cortada) de una forma que no se podía reproducir en el navegador. contentPosition
+// lo resuelve el propio decodificador nativo, sin esa carrera.
+//
+// Sin foco conocido (fotos subidas desde la app, antes de que el usuario elija una) usa el centro — el default de
+// contentPosition, sin necesidad de indicarlo.
+export function FocusImage({ uri, focusX, focusY, style, accessibilityLabel, onError, onReady }: Props) {
+  const contentPosition: ImageContentPosition = { left: `${focusX ?? 50}%`, top: `${focusY ?? 50}%` };
+  return (
+    <Image
+      source={{ uri }}
+      contentFit="cover"
+      contentPosition={contentPosition}
+      style={style as StyleProp<ImageStyle>}
+      accessibilityLabel={accessibilityLabel}
+      onError={() => onError?.()}
+      onLoad={() => onReady?.()}
+    />
+  );
 }
