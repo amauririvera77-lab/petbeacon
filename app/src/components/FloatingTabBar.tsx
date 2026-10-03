@@ -3,6 +3,7 @@ import { ClipboardList, HeartHandshake, House, Plus, User, type LucideIcon } fro
 import { useState, type ComponentProps } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useKeyboardVisible } from "../hooks/useKeyboardVisible";
 import { tabBarBottomDistance } from "../hooks/useTabBarClearance";
 import { REPORT_BUTTON, TAB_BAR_PADDING, TAB_BAR_SIDE_MARGIN, Theme, radius } from "../theme/tokens";
 import { elevation } from "../theme/elevation";
@@ -19,6 +20,7 @@ const ICONS: Record<string, LucideIcon> = { index: House, reports: ClipboardList
 export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const [reportOpen, setReportOpen] = useState(false);
+  const keyboardOpen = useKeyboardVisible();
   const bottom = tabBarBottomDistance(insets.bottom);
 
   const tabs = state.routes.map((route, i) => {
@@ -38,6 +40,9 @@ export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) 
 
   return (
     <>
+      {/* Con el teclado abierto la barra desaparece (ni lo cubre ni sube con él) y reaparece al cerrarlo. Fija y siempre visible
+          en cualquier otro caso: no se oculta ni se minimiza al hacer scroll. */}
+      {keyboardOpen ? null : (
       <View style={[styles.bar, { bottom }]} accessibilityRole="tablist">
         {tabs.slice(0, half)}
         <View style={styles.reportSlot}>
@@ -51,6 +56,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) 
         </View>
         {tabs.slice(half)}
       </View>
+      )}
       <ReportSheet visible={reportOpen} onClose={() => setReportOpen(false)} onPick={(kind) => router.push(kind === "lost" ? "/report/lost" : "/report/sighted")} />
     </>
   );
