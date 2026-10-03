@@ -2,7 +2,8 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRe
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
 import type { ReportNearby, ResourceNearby } from "../../lib/database.types";
-import { C, font } from "../../theme/tokens";
+import { Theme } from "../../theme/tokens";
+import { typography } from "../../theme/typography";
 import { buildMapHtml } from "./mapHtml";
 
 export type MapSelection = { kind: "report" | "resource"; id: string } | null;
@@ -73,7 +74,7 @@ export const MapboxWebView = forwardRef<MapHandle, Props>(function MapboxWebView
         onError={(ev) => setError(ev.nativeEvent.description)}
         onHttpError={(ev) => setError(`HTTP ${ev.nativeEvent.statusCode}`)}
       />
-      {!ready && !error ? <View style={styles.overlay}><ActivityIndicator color={C.teal} /></View> : null}
+      {!ready && !error ? <View style={styles.overlay}><ActivityIndicator color={Theme.brand.primary} /></View> : null}
       {error ? (
         <View style={[styles.overlay, { padding: 24 }]}>
           <Text style={styles.errT}>The map couldn't load</Text>
@@ -85,8 +86,8 @@ export const MapboxWebView = forwardRef<MapHandle, Props>(function MapboxWebView
 });
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: C.surface },
-  overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center", backgroundColor: C.surface, gap: 6 },
-  errT: { fontFamily: font.bodyBold, fontSize: 15, color: C.ink },
-  errS: { fontFamily: font.bodyRegular, fontSize: 13, color: C.slate500, textAlign: "center" },
+  fill: { flex: 1, backgroundColor: Theme.surface.page },
+  overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center", backgroundColor: Theme.surface.page, gap: 6 },
+  errT: { ...typography.label14, color: Theme.text.primary },
+  errS: { ...typography.bodySm13, color: Theme.text.muted, textAlign: "center" },
 });
