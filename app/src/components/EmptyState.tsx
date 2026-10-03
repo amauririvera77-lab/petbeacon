@@ -1,4 +1,5 @@
-import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
+import { Pressable, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
+import { AppText } from "./AppText";
 import { Theme, MIN_HIT, radius } from "../theme/tokens";
 import { typography } from "../theme/typography";
 
@@ -6,11 +7,11 @@ import { typography } from "../theme/typography";
 export function EmptyState({ title, body, actionLabel, onAction, style }: { title: string; body?: string; actionLabel?: string; onAction?: () => void; style?: StyleProp<ViewStyle> }) {
   return (
     <View style={[styles.box, style]}>
-      <Text style={styles.t}>{title}</Text>
-      {body ? <Text style={styles.b}>{body}</Text> : null}
+      <AppText style={styles.t}>{title}</AppText>
+      {body ? <AppText style={styles.b}>{body}</AppText> : null}
       {actionLabel && onAction ? (
         <Pressable accessibilityRole="button" onPress={onAction} style={({ pressed }) => [styles.btn, pressed && { opacity: 0.85 }]}>
-          <Text style={styles.btnT}>{actionLabel}</Text>
+          <AppText role="control" style={styles.btnT}>{actionLabel}</AppText>
         </Pressable>
       ) : null}
     </View>

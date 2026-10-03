@@ -1,7 +1,8 @@
 import { router } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { AppText } from "../components/AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Toggle } from "../components/Toggle";
 import { supabase } from "../lib/supabase";
@@ -44,22 +45,22 @@ export default function Privacy() {
     <View style={styles.root}>
       <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={Theme.text.primary} /></Pressable>
-        <Text style={styles.h} accessibilityRole="header">Privacy</Text>
+        <AppText role="title" style={styles.h} accessibilityRole="header">Privacy</AppText>
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: insets.bottom + 32 }}>
         <View style={styles.card}>
           <View style={styles.toggleRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.t}>Include my contact on flyers</Text>
-              <Text style={styles.s}>Your phone or email appears on the flyers you create so people can reach you. Turn it off to leave it out.</Text>
+              <AppText style={styles.t}>Include my contact on flyers</AppText>
+              <AppText style={styles.s}>Your phone or email appears on the flyers you create so people can reach you. Turn it off to leave it out.</AppText>
             </View>
             <Toggle value={showContact} onValueChange={change} label="Include my contact on flyers" />
           </View>
         </View>
         {SECTIONS.map((s) => (
           <View key={s.title} style={{ gap: 4 }}>
-            <Text style={styles.t}>{s.title}</Text>
-            <Text style={styles.body}>{s.body}</Text>
+            <AppText style={styles.t}>{s.title}</AppText>
+            <AppText style={styles.body}>{s.body}</AppText>
           </View>
         ))}
       </ScrollView>

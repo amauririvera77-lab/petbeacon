@@ -1,7 +1,8 @@
 import { router, useNavigation } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { AppText } from "../components/AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar } from "../components/account/Avatar";
 import { Primary } from "../components/Primary";
@@ -92,18 +93,18 @@ export default function EditProfile() {
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={[styles.top, { paddingTop: Math.max(insets.top, 12) }]}>
         <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.back}><ChevronLeft size={26} color={Theme.text.primary} /></Pressable>
-        <Text style={styles.h} accessibilityRole="header">Edit Profile</Text>
+        <AppText role="title" style={styles.h} accessibilityRole="header">Edit Profile</AppText>
       </View>
       {loading ? <View style={styles.center}><ActivityIndicator color={Theme.brand.primary} /></View> : (
         <ScrollView contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: insets.bottom + 32 }} keyboardShouldPersistTaps="handled">
           <View style={{ alignItems: "center", gap: 6 }}>
             <Avatar uri={shown} name={f.name} size={96} />
-            <Pressable accessibilityRole="button" onPress={changePhoto} style={styles.link}><Text style={styles.linkT}>{shown ? "Change photo" : "Add photo"}</Text></Pressable>
-            {shown ? <Pressable accessibilityRole="button" onPress={() => set({ photoUri: null, photoUrl: null })} style={styles.link}><Text style={[styles.linkT, { color: Theme.text.muted }]}>Remove photo</Text></Pressable> : null}
+            <Pressable accessibilityRole="button" onPress={changePhoto} style={styles.link}><AppText style={styles.linkT}>{shown ? "Change photo" : "Add photo"}</AppText></Pressable>
+            {shown ? <Pressable accessibilityRole="button" onPress={() => set({ photoUri: null, photoUrl: null })} style={styles.link}><AppText style={[styles.linkT, { color: Theme.text.muted }]}>Remove photo</AppText></Pressable> : null}
           </View>
           <TextField label="Name" placeholder="Your name" value={f.name} onChangeText={(name) => set({ name })} autoCapitalize="words" />
           <View style={{ gap: 12 }}>
-            <Text style={styles.note}>Contact details are private. They're only used to reach you about a pet, and they're never shown in the app to other people. Your login email is managed in "Save your account".</Text>
+            <AppText style={styles.note}>Contact details are private. They're only used to reach you about a pet, and they're never shown in the app to other people. Your login email is managed in "Save your account".</AppText>
             {/* Cuenta ya guardada: el correo de inicio de sesión se muestra como dato fijo (no editable aquí; eso vive en "Save your account"). */}
             {!account.isAnonymous && account.email ? (
               <TextField label="Account email" value={account.email} disabled helper="Used to sign in" />

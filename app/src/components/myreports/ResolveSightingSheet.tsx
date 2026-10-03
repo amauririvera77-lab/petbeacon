@@ -1,5 +1,6 @@
 import { X } from "lucide-react-native";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "../AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { SightingResolution } from "../../lib/database.types";
 import { RESOLUTION_LABEL } from "../../lib/myReports";
@@ -17,14 +18,14 @@ export function ResolveSightingSheet({ visible, busy, onClose, onPick }: { visib
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.handleWrap}><View style={styles.handle} /></View>
           <View style={styles.head}>
-            <Text style={styles.title} accessibilityRole="header">What happened?</Text>
+            <AppText style={styles.title} accessibilityRole="header">What happened?</AppText>
             <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={Theme.text.secondary} /></Pressable>
           </View>
-          <Text style={styles.sub}>The sighting will stop showing on the map and in the feed.</Text>
+          <AppText style={styles.sub}>The sighting will stop showing on the map and in the feed.</AppText>
           <View style={{ paddingHorizontal: 20, gap: 8 }}>
             {(Object.keys(RESOLUTION_LABEL) as SightingResolution[]).map((k) => (
               <Pressable key={k} accessibilityRole="button" disabled={busy} onPress={() => onPick(k)} style={({ pressed }) => [styles.option, busy && { opacity: 0.6 }, pressed && { backgroundColor: Theme.surface.page }]}>
-                <Text style={styles.optT}>{RESOLUTION_LABEL[k]}</Text>
+                <AppText style={styles.optT}>{RESOLUTION_LABEL[k]}</AppText>
               </Pressable>
             ))}
           </View>

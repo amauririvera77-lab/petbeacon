@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react-native";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
+import { AppText } from "./AppText";
 import { MIN_HIT, Theme, radius } from "../theme/tokens";
 import { typography } from "../theme/typography";
 
@@ -46,7 +47,7 @@ export function Button({ label, onPress, variant = "primary", size = "default", 
       ]}
     >
       {Icon ? <Icon size={compact ? 14 : 18} color={color} /> : null}
-      <Text style={[compact ? styles.labelCompact : styles.label, { color }]}>{label}</Text>
+      <AppText role="control" style={[compact ? styles.labelCompact : styles.label, { color }]}>{label}</AppText>
     </Pressable>
   );
 }

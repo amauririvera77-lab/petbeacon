@@ -1,6 +1,7 @@
 import { router, Stack } from "expo-router";
 import { X } from "lucide-react-native";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "../../components/AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOnboardingPreview } from "../../state/onboardingPreview";
 import { Theme, radius } from "../../theme/tokens";
@@ -19,7 +20,7 @@ export default function OnboardingLayout() {
       <Stack screenOptions={{ headerShown: false, animation: "fade" }} />
       {preview.active ? (
         <Pressable accessibilityRole="button" accessibilityLabel="Exit onboarding preview" onPress={exit} style={[styles.badge, { top: insets.top + 8 }]}>
-          <Text style={styles.badgeT}>Preview</Text>
+          <AppText role="control" style={styles.badgeT}>Preview</AppText>
           <X size={14} color={Theme.text.onAccent} />
         </Pressable>
       ) : null}

@@ -1,5 +1,6 @@
 import { ChevronRight, Dog, Cat, Share2, Sparkles, Users } from "lucide-react-native";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import type { MyReport } from "../hooks/useMyReports";
 import { shortAddress } from "../lib/address";
 import type { MyMatch } from "../lib/database.types";
@@ -52,10 +53,10 @@ export function MyReportStatusCard({ report, matches, width, manage, onOpen, onV
           </View>
           <View style={{ flex: 1, gap: 2 }}>
             <View style={styles.nameRow}>
-              <Text style={styles.name} numberOfLines={1}>{title}</Text>
+              <AppText style={styles.name} numberOfLines={1}>{title}</AppText>
               <Badge status="lost" />
             </View>
-            <Text style={styles.missing}>Missing for {elapsedShort(report.created_at)}</Text>
+            <AppText style={styles.missing}>Missing for {elapsedShort(report.created_at)}</AppText>
           </View>
           <ChevronRight size={18} color={Theme.text.muted} />
         </Pressable>
@@ -65,19 +66,19 @@ export function MyReportStatusCard({ report, matches, width, manage, onOpen, onV
         {alerted != null && alerted > 0 ? (
           <View style={styles.stat}>
             <Users size={14} color={Theme.text.secondary} />
-            <Text style={styles.statT}>{`${alerted} ${alerted === 1 ? "neighbor" : "neighbors"} alerted`}</Text>
+            <AppText style={styles.statT}>{`${alerted} ${alerted === 1 ? "neighbor" : "neighbors"} alerted`}</AppText>
           </View>
         ) : null}
         <View style={styles.stat}>
           <Sparkles size={14} color={Theme.text.secondary} />
-          <Text style={styles.statT}>{openCount === 0 ? "No matches yet" : `${openCount} ${openCount === 1 ? "match" : "matches"}`}</Text>
+          <AppText style={styles.statT}>{openCount === 0 ? "No matches yet" : `${openCount} ${openCount === 1 ? "match" : "matches"}`}</AppText>
         </View>
       </View>
       {alerted === 0 && !manage ? (
         // Cero vecinos alertados (dato real): en vez de un vacío, una acción para ampliar el alcance con la hoja de compartir nativa.
         <Pressable accessibilityRole="button" onPress={onShare} style={styles.share}>
           <Share2 size={16} color={Theme.text.primary} />
-          <Text style={styles.shareT}>Share your alert to reach more neighbors</Text>
+          <AppText role="control" style={styles.shareT}>Share your alert to reach more neighbors</AppText>
         </Pressable>
       ) : null}
 
@@ -85,9 +86,9 @@ export function MyReportStatusCard({ report, matches, width, manage, onOpen, onV
         <View style={styles.manage}>
           <Pressable accessibilityRole="button" onPress={(e) => { e.stopPropagation(); openCount > 0 ? onViewAll() : onShare(); }} style={({ pressed }) => [styles.primary, pressed && { opacity: 0.85 }]}>
             {openCount > 0 ? <Sparkles size={16} color={Theme.text.onAccent} /> : <Share2 size={16} color={Theme.text.onAccent} />}
-            <Text style={styles.primaryT}>{openCount > 0 ? "Review matches" : "Share alert"}</Text>
+            <AppText role="control" style={styles.primaryT}>{openCount > 0 ? "Review matches" : "Share alert"}</AppText>
           </Pressable>
-          <Pressable accessibilityRole="button" onPress={(e) => { e.stopPropagation(); manage.onMarkReunited(); }} style={styles.sec}><Text style={styles.secT}>Mark as reunited</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={(e) => { e.stopPropagation(); manage.onMarkReunited(); }} style={styles.sec}><AppText role="control" style={styles.secT}>Mark as reunited</AppText></Pressable>
         </View>
       ) : null}
 
@@ -98,7 +99,7 @@ export function MyReportStatusCard({ report, matches, width, manage, onOpen, onV
       ) : null}
       {!manage && (matches.length > 1 || (matches.length === 1 && !pending)) ? (
         <Pressable accessibilityRole="button" onPress={onViewAll} style={styles.all}>
-          <Text style={styles.allT}>View all matches ({matches.length})</Text>
+          <AppText style={styles.allT}>View all matches ({matches.length})</AppText>
         </Pressable>
       ) : null}
 

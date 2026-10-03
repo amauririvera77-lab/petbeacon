@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { useTabBarClearance } from "../hooks/useTabBarClearance";
 import { Theme, MIN_HIT, radius } from "../theme/tokens";
 import { elevation } from "../theme/elevation";
@@ -35,10 +36,10 @@ export function SnackbarProvider({ children }: { children: ReactNode }) {
       {opts ? (
         <Animated.View pointerEvents="box-none" style={[styles.wrap, { opacity, bottom: TAB_BAR_CLEARANCE }]}>
           <View style={styles.bar} accessibilityRole="alert" accessibilityLiveRegion="polite">
-            <Text style={styles.msg}>{opts.message}</Text>
+            <AppText style={styles.msg}>{opts.message}</AppText>
             {opts.actionLabel ? (
               <Pressable accessibilityRole="button" onPress={() => { if (timer.current) clearTimeout(timer.current); opts.onAction?.(); hide(); }} style={styles.action}>
-                <Text style={styles.actionT}>{opts.actionLabel}</Text>
+                <AppText style={styles.actionT}>{opts.actionLabel}</AppText>
               </Pressable>
             ) : null}
           </View>

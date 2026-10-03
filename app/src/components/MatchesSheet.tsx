@@ -1,5 +1,6 @@
 import { RotateCcw, X } from "lucide-react-native";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { MyMatch } from "../lib/database.types";
 import { matchSubtitle, matchTitle } from "../lib/matchCopy";
@@ -22,12 +23,12 @@ export function MatchesSheet({ lostName, matches, onClose, onView, onDismiss, on
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.handleWrap}><View style={styles.handle} /></View>
           <View style={styles.head}>
-            <Text style={styles.title} accessibilityRole="header">Matches for {lostName}</Text>
+            <AppText style={styles.title} accessibilityRole="header">Matches for {lostName}</AppText>
             <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={Theme.text.secondary} /></Pressable>
           </View>
           <ScrollView contentContainerStyle={{ padding: 16, gap: 10 }}>
             {(matches ?? []).length === 0 ? (
-              <Text style={styles.empty}>No matches yet. We'll alert you when a sighting fits {lostName}.</Text>
+              <AppText style={styles.empty}>No matches yet. We'll alert you when a sighting fits {lostName}.</AppText>
             ) : (matches ?? []).map((m) => (
               <View key={m.id} style={[styles.item, m.dismissed && styles.itemDismissed]}>
                 <View style={styles.row}>
@@ -35,18 +36,18 @@ export function MatchesSheet({ lostName, matches, onClose, onView, onDismiss, on
                     <FocusImage uri={m.sighted_photo_url} focusX={m.sighted_focus_x} focusY={m.sighted_focus_y} style={styles.photo} />
                   ) : <SpeciesPlaceholder species={m.sighted_species ?? "other"} size={48} style={styles.photo} />}
                   <View style={{ flex: 1, gap: 2 }}>
-                    <Text style={styles.itemT}>{matchTitle(m)}{m.dismissed ? "  ·  Dismissed" : ""}</Text>
-                    <Text style={styles.itemS}>{matchSubtitle(m)}</Text>
+                    <AppText style={styles.itemT}>{matchTitle(m)}{m.dismissed ? "  ·  Dismissed" : ""}</AppText>
+                    <AppText style={styles.itemS}>{matchSubtitle(m)}</AppText>
                   </View>
                 </View>
                 <View style={styles.actions}>
-                  <Pressable accessibilityRole="button" onPress={() => onView(m)} style={styles.btn}><Text style={styles.btnT}>View sighting</Text></Pressable>
+                  <Pressable accessibilityRole="button" onPress={() => onView(m)} style={styles.btn}><AppText role="control" style={styles.btnT}>View sighting</AppText></Pressable>
                   {m.dismissed ? (
                     <Pressable accessibilityRole="button" onPress={() => onRestore(m.id)} style={[styles.btn, styles.btnRestore]}>
-                      <RotateCcw size={14} color={Theme.text.primary} /><Text style={styles.btnT}>Restore</Text>
+                      <RotateCcw size={14} color={Theme.text.primary} /><AppText role="control" style={styles.btnT}>Restore</AppText>
                     </Pressable>
                   ) : (
-                    <Pressable accessibilityRole="button" onPress={() => onDismiss(m.id)} style={styles.btn}><Text style={[styles.btnT, { color: Theme.text.secondary }]}>Dismiss</Text></Pressable>
+                    <Pressable accessibilityRole="button" onPress={() => onDismiss(m.id)} style={styles.btn}><AppText role="control" style={[styles.btnT, { color: Theme.text.secondary }]}>Dismiss</AppText></Pressable>
                   )}
                 </View>
               </View>

@@ -1,5 +1,6 @@
 import { Bell } from "lucide-react-native";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { Theme, MIN_HIT } from "../theme/tokens";
 import { typography } from "../theme/typography";
 import { Logo } from "./Logo";
@@ -12,7 +13,7 @@ export function HomeHeader({ unread, onBell }: { unread: number; onBell: () => v
       <Pressable accessibilityRole="button" accessibilityLabel={unread > 0 ? `Notifications, ${unread} new` : "Notifications"} onPress={onBell} style={styles.bell}>
         <Bell size={22} color={Theme.text.secondary} />
         {unread > 0 ? (
-          <View style={styles.badge}><Text style={styles.badgeT}>{unread > 9 ? "9+" : unread}</Text></View>
+          <View style={styles.badge}><AppText role="control" style={styles.badgeT}>{unread > 9 ? "9+" : unread}</AppText></View>
         ) : null}
       </Pressable>
     </View>

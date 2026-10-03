@@ -1,5 +1,6 @@
 import { List, Map as MapIcon } from "lucide-react-native";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { Theme, MIN_HIT } from "../theme/tokens";
 import { elevation } from "../theme/elevation";
 import { typography } from "../theme/typography";
@@ -16,7 +17,7 @@ export function CompactSegmented({ value, onChange }: { value: "list" | "map"; o
           <Pressable key={v} accessibilityRole="tab" accessibilityState={{ selected: on }} hitSlop={{ top: (MIN_HIT - 32) / 2, bottom: (MIN_HIT - 32) / 2 }}
             onPress={() => onChange(v)} style={[styles.seg, on && styles.segOn]}>
             <Icon size={14} color={on ? Theme.brand.primary : Theme.text.muted} />
-            <Text style={[styles.t, { color: on ? Theme.brand.primary : Theme.text.muted }]}>{label}</Text>
+            <AppText role="control" style={[styles.t, { color: on ? Theme.brand.primary : Theme.text.muted }]}>{label}</AppText>
           </Pressable>
         );
       })}

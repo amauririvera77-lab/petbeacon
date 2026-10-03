@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { Theme } from "../theme/tokens";
 import { typography } from "../theme/typography";
 import { Toggle } from "./Toggle";
@@ -10,12 +11,12 @@ export function ToggleRow({ title, subtitle, value, onChange, note }: {
     <View>
       <View style={styles.row}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.t}>{title}</Text>
-          <Text style={styles.s}>{subtitle}</Text>
+          <AppText style={styles.t}>{title}</AppText>
+          <AppText style={styles.s}>{subtitle}</AppText>
         </View>
         <Toggle value={value} onValueChange={onChange} label={title} />
       </View>
-      {note ? <Text style={styles.note}>{note}</Text> : null}
+      {note ? <AppText style={styles.note}>{note}</AppText> : null}
     </View>
   );
 }

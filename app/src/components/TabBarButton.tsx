@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { Animated, Pressable, StyleSheet, Text, View, type GestureResponderEvent, type StyleProp, type ViewStyle } from "react-native";
+import { Animated, Pressable, StyleSheet, View, type GestureResponderEvent, type StyleProp, type ViewStyle } from "react-native";
+import { AppText } from "./AppText";
 import type { LucideIcon } from "lucide-react-native";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { MIN_HIT, Theme, radius } from "../theme/tokens";
@@ -49,7 +50,7 @@ export function TabBarButton({ Icon, label, onPress, onLongPress, testID, style,
         />
         <Icon size={24} color={color} />
       </View>
-      <Text numberOfLines={1} style={[typography.micro11, { color }, !focused && weightOff.micro11]}>{label}</Text>
+      <AppText role="tab" numberOfLines={1} style={[typography.micro11, { color }, !focused && weightOff.micro11]}>{label}</AppText>
     </Pressable>
   );
 }

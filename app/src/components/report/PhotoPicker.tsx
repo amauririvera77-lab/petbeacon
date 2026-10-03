@@ -1,7 +1,8 @@
 import * as ImagePicker from "expo-image-picker";
 import { Camera, ImageIcon } from "lucide-react-native";
 import { useState } from "react";
-import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Image, Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "../AppText";
 import { Theme, MIN_HIT, radius } from "../../theme/tokens";
 import { typography } from "../../theme/typography";
 
@@ -29,16 +30,16 @@ export function PhotoPicker({ uri, onChange }: { uri: string | null; onChange: (
     return (
       <View style={{ gap: 12 }}>
         <Image source={{ uri }} style={styles.preview} accessibilityLabel="Selected photo" />
-        <Pressable accessibilityRole="button" onPress={() => onChange(null)} style={styles.remove}><Text style={styles.removeT}>Remove photo</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => onChange(null)} style={styles.remove}><AppText style={styles.removeT}>Remove photo</AppText></Pressable>
       </View>
     );
   }
   return (
     <View style={{ gap: 12 }}>
-      <View style={styles.empty}><Camera size={36} color={Theme.text.muted} /><Text style={styles.emptyT}>Tap to add photo</Text><Text style={styles.emptyS}>Optional</Text></View>
+      <View style={styles.empty}><Camera size={36} color={Theme.text.muted} /><AppText style={styles.emptyT}>Tap to add photo</AppText><AppText style={styles.emptyS}>Optional</AppText></View>
       <View style={styles.row}>
-        <Pressable accessibilityRole="button" disabled={busy} onPress={() => pick("camera")} style={styles.btn}><Camera size={18} color={Theme.text.primary} /><Text style={styles.btnT}>Take photo</Text></Pressable>
-        <Pressable accessibilityRole="button" disabled={busy} onPress={() => pick("library")} style={styles.btn}><ImageIcon size={18} color={Theme.text.primary} /><Text style={styles.btnT}>Choose photo</Text></Pressable>
+        <Pressable accessibilityRole="button" disabled={busy} onPress={() => pick("camera")} style={styles.btn}><Camera size={18} color={Theme.text.primary} /><AppText role="control" style={styles.btnT}>Take photo</AppText></Pressable>
+        <Pressable accessibilityRole="button" disabled={busy} onPress={() => pick("library")} style={styles.btn}><ImageIcon size={18} color={Theme.text.primary} /><AppText role="control" style={styles.btnT}>Choose photo</AppText></Pressable>
       </View>
     </View>
   );

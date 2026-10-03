@@ -1,5 +1,6 @@
 import { SlidersHorizontal } from "lucide-react-native";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { Theme, MIN_HIT, radius } from "../theme/tokens";
 import { typography } from "../theme/typography";
 
@@ -9,7 +10,7 @@ export function FilterButton({ count, onPress }: { count: number; onPress: () =>
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={count > 0 ? `Filters, ${count} active` : "Filters"} onPress={onPress} style={styles.btn}>
       <SlidersHorizontal size={20} color={Theme.text.primary} />
-      {count > 0 ? <View style={styles.badge}><Text style={styles.badgeT}>{count}</Text></View> : null}
+      {count > 0 ? <View style={styles.badge}><AppText role="control" style={styles.badgeT}>{count}</AppText></View> : null}
     </Pressable>
   );
 }

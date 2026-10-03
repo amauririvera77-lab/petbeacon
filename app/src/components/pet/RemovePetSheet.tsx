@@ -1,6 +1,7 @@
 import { Heart, UserMinus, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "../AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Theme, MIN_HIT, radius } from "../../theme/tokens";
 import { elevation } from "../../theme/elevation";
@@ -27,7 +28,7 @@ export function RemovePetSheet({ visible, petName, hasActiveReport, busy, onClos
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.handleWrap}><View style={styles.handle} /></View>
           <View style={styles.head}>
-            <Text style={styles.title} accessibilityRole="header">{step === "choose" ? `Remove ${name}` : step === "passed_away" ? "We're so sorry" : `Remove ${name}?`}</Text>
+            <AppText style={styles.title} accessibilityRole="header">{step === "choose" ? `Remove ${name}` : step === "passed_away" ? "We're so sorry" : `Remove ${name}?`}</AppText>
             <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={Theme.text.secondary} /></Pressable>
           </View>
 
@@ -37,35 +38,35 @@ export function RemovePetSheet({ visible, petName, hasActiveReport, busy, onClos
                 style={({ pressed }) => [styles.option, hasActiveReport && { opacity: 0.5 }, pressed && { backgroundColor: Theme.surface.page }]}>
                 <UserMinus size={20} color={Theme.text.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.optT}>Remove from my profile</Text>
-                  <Text style={styles.optS}>{hasActiveReport ? `${name} has an active Lost report. Mark it as reunited first.` : `${name} will no longer appear in your pets.`}</Text>
+                  <AppText style={styles.optT}>Remove from my profile</AppText>
+                  <AppText style={styles.optS}>{hasActiveReport ? `${name} has an active Lost report. Mark it as reunited first.` : `${name} will no longer appear in your pets.`}</AppText>
                 </View>
               </Pressable>
               <Pressable accessibilityRole="button" onPress={() => setStep("passed_away")} style={({ pressed }) => [styles.option, pressed && { backgroundColor: Theme.surface.page }]}>
                 <Heart size={20} color={Theme.text.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.optT}>My pet passed away</Text>
-                  <Text style={styles.optS}>We'll take care of everything for you.</Text>
+                  <AppText style={styles.optT}>My pet passed away</AppText>
+                  <AppText style={styles.optS}>We'll take care of everything for you.</AppText>
                 </View>
               </Pressable>
             </View>
           ) : (
             <View style={styles.body}>
-              <Text style={styles.msg}>
+              <AppText style={styles.msg}>
                 {step === "passed_away"
                   ? `${name} will be removed from your active pets.${hasActiveReport ? " Their active report will be closed, and we won't send any alerts." : ""}`
                   : `${name} will no longer appear in your pets. Reports you already published stay in your history.`}
-              </Text>
+              </AppText>
               {step === "removed" ? (
                 // Destructiva de verdad (Fase 2 de congelación): danger.bg, igual criterio que "Delete account".
                 <Pressable accessibilityRole="button" disabled={busy} onPress={() => onConfirm(step)} style={[styles.danger, busy && { opacity: 0.6 }]}>
-                  <Text style={styles.dangerT}>{busy ? "Removing…" : "Remove"}</Text>
+                  <AppText role="control" style={styles.dangerT}>{busy ? "Removing…" : "Remove"}</AppText>
                 </Pressable>
               ) : (
                 // "My pet passed away": momento de duelo, no una acción destructiva — botón secundario, nunca rojo.
                 <Button variant="secondary" label={busy ? "Removing…" : "Remove from my pets"} disabled={busy} onPress={() => onConfirm(step)} />
               )}
-              <Pressable accessibilityRole="button" onPress={() => setStep("choose")} style={styles.secondary}><Text style={styles.secondaryT}>Back</Text></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => setStep("choose")} style={styles.secondary}><AppText role="control" style={styles.secondaryT}>Back</AppText></Pressable>
             </View>
           )}
         </View>

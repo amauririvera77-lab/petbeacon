@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { Theme } from "../theme/tokens";
 import { typography } from "../theme/typography";
 import { OnboardingHeader } from "./layout/Headers";
@@ -17,8 +18,8 @@ export function PrimingBlock({ icon, title, children }: { icon: ReactNode; title
       <View style={styles.circle}>{icon}</View>
       {/* alignSelf: "stretch" — el texto usa TODO el ancho disponible (como el bloque del prototipo) en vez de ajustarse a su contenido; */}
       {/* si no, iOS parte las líneas antes de tiempo (p. ej. después de "alerts") y el corte no coincide con el prototipo ("…and the map / for your area."). */}
-      <Text style={[ob.h1, { textAlign: "center", marginBottom: 8, alignSelf: "stretch" }]} accessibilityRole="header">{title}</Text>
-      <Text style={[ob.p, { textAlign: "center", alignSelf: "stretch" }]}>{children}</Text>
+      <AppText role="title" style={[ob.h1, { textAlign: "center", marginBottom: 8, alignSelf: "stretch" }]} accessibilityRole="header">{title}</AppText>
+      <AppText style={[ob.p, { textAlign: "center", alignSelf: "stretch" }]}>{children}</AppText>
     </View>
   );
 }

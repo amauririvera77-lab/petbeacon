@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
+import { AppText } from "./AppText";
 import { Theme, radius } from "../theme/tokens";
 import { typography } from "../theme/typography";
 
@@ -12,14 +13,14 @@ export function Primary({ label, onPress, disabled }: { label: string; onPress: 
       onPress={onPress}
       style={({ pressed }) => [styles.b, { backgroundColor: disabled ? Theme.border.default : Theme.brand.primary }, pressed && { opacity: 0.85 }]}
     >
-      <Text style={[styles.t, { color: disabled ? Theme.text.muted : Theme.text.onAccent }]}>{label}</Text>
+      <AppText role="control" style={[styles.t, { color: disabled ? Theme.text.muted : Theme.text.onAccent }]}>{label}</AppText>
     </Pressable>
   );
 }
 export function LinkButton({ label, onPress }: { label: string; onPress: () => void }) {
   return (
     <Pressable accessibilityRole="link" onPress={onPress} style={styles.link}>
-      <Text style={styles.linkT}>{label}</Text>
+      <AppText style={styles.linkT}>{label}</AppText>
     </Pressable>
   );
 }

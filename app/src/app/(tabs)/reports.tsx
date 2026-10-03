@@ -1,6 +1,7 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, Share, StyleSheet, View } from "react-native";
+import { AppText } from "../../components/AppText";
 import { MatchesSheet } from "../../components/MatchesSheet";
 import { MyReportStatusCard } from "../../components/MyReportStatusCard";
 import { MySightingCard } from "../../components/myreports/MySightingCard";
@@ -84,10 +85,10 @@ export default function Reports() {
   return (
     <TabScreen title="My Reports" subtitle="Manage your active alerts and logged sightings">
       {loading ? <ActivityIndicator style={{ marginTop: 24 }} color={Theme.brand.primary} /> : error ? (
-        <Text style={styles.err}>Couldn't load your reports: {error}</Text>
+        <AppText style={styles.err}>Couldn't load your reports: {error}</AppText>
       ) : (
         <>
-          <Text style={styles.h}>Your lost pets</Text>
+          <AppText style={styles.h}>Your lost pets</AppText>
           {!hasActive ? <Placeholder text="No active reports. When you publish an alert it shows up here." /> : (
             <View style={styles.list}>
               {lost.map((r) => (
@@ -102,12 +103,12 @@ export default function Reports() {
                   <ReportRow photoUrl={r.photo_url} focusX={r.photo_focus_x} focusY={r.photo_focus_y} species={r.species}
                     title={r.name?.trim() || `Unknown ${r.species}`} badge="reunited"
                     timeText={`Reunited ${agoShort(r.reunited_at ?? r.created_at)}`} locationText={shortAddress(r.location_label) ?? "Location not shared"} />
-                  <Text style={styles.closed}>Case closed — thanks for updating it.</Text>
+                  <AppText style={styles.closed}>Case closed — thanks for updating it.</AppText>
                 </Pressable>
               ))}
             </View>
           )}
-          <Text style={[styles.h, { marginTop: 20 }]}>Sightings you've logged</Text>
+          <AppText style={[styles.h, { marginTop: 20 }]}>Sightings you've logged</AppText>
           {buckets.sightings.length === 0 ? <Placeholder text="Sightings you report will show up here." /> : (
             <View style={styles.list}>
               {buckets.sightings.map((r) => { const n = nearby(r); return n ? (

@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { Theme } from "../theme/tokens";
 import { typography } from "../theme/typography";
 
@@ -13,8 +14,8 @@ import { typography } from "../theme/typography";
 export function ScreenTitle({ title, subtitle, variant = "title" }: { title: string; subtitle?: string; variant?: "display" | "title" }) {
   return (
     <View>
-      <Text style={[variant === "display" ? typography.display28 : typography.title24, styles.h]} accessibilityRole="header">{title}</Text>
-      {subtitle ? <Text style={styles.s}>{subtitle}</Text> : null}
+      <AppText role="title" style={[variant === "display" ? typography.display28 : typography.title24, styles.h]} accessibilityRole="header">{title}</AppText>
+      {subtitle ? <AppText style={styles.s}>{subtitle}</AppText> : null}
     </View>
   );
 }

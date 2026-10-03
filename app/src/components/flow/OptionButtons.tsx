@@ -1,5 +1,6 @@
 import { Cat, CircleHelp, Dog, HeartPulse, Smile, TriangleAlert, type LucideIcon } from "lucide-react-native";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "../AppText";
 import type { Species } from "../../lib/database.types";
 import { Theme, radius } from "../../theme/tokens";
 import { typography } from "../../theme/typography";
@@ -18,7 +19,7 @@ export function TypeButtons({ value, onChange }: { value: Species | null; onChan
           <Pressable key={v} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(v)}
             style={[styles.type, { borderColor: on ? Theme.brand.primary : Theme.border.default, backgroundColor: on ? Theme.brand.tint : Theme.surface.card }]}>
             <Icon size={22} color={on ? Theme.brand.primary : Theme.text.muted} />
-            <Text style={[styles.typeT, { color: on ? Theme.brand.primary : Theme.text.muted }]}>{label}</Text>
+            <AppText role="control" style={[styles.typeT, { color: on ? Theme.brand.primary : Theme.text.muted }]}>{label}</AppText>
           </Pressable>
         );
       })}
@@ -42,7 +43,7 @@ export function ConditionGrid({ value, onChange }: { value: Condition | null; on
           <Pressable key={v} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(v)}
             style={[styles.cond, { borderColor: on ? Theme.status.sighted.bg : Theme.border.default, backgroundColor: on ? Theme.status.sighted.tint : Theme.surface.card }]}>
             <Icon size={20} color={Theme.text.primary} />
-            <Text style={styles.condT}>{label}</Text>
+            <AppText role="control" style={styles.condT}>{label}</AppText>
           </Pressable>
         );
       })}

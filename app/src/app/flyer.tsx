@@ -3,7 +3,8 @@ import * as Sharing from "expo-sharing";
 import { router, useLocalSearchParams } from "expo-router";
 import { X } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { AppText } from "../components/AppText";
 import { captureRef } from "react-native-view-shot";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "../components/Button";
@@ -63,24 +64,24 @@ export default function FlyerScreen() {
   return (
     <View style={[styles.root, { paddingTop: Math.max(insets.top, 12) }]}>
       <View style={styles.top}>
-        <Text style={styles.h} accessibilityRole="header">{data ? title : "Flyer"}</Text>
+        <AppText role="title" style={styles.h} accessibilityRole="header">{data ? title : "Flyer"}</AppText>
         <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => router.back()} style={styles.close}><X size={22} color={Theme.text.primary} /></Pressable>
       </View>
 
       {error ? (
-        <View style={styles.center}><Text style={styles.err}>{error}</Text></View>
+        <View style={styles.center}><AppText style={styles.err}>{error}</AppText></View>
       ) : !data ? (
         <View style={styles.center}><ActivityIndicator color={Theme.brand.primary} /></View>
       ) : data.report.status === "reunited" ? (
-        <View style={styles.center}><Text style={styles.err}>This case is closed — there's no flyer to share.</Text></View>
+        <View style={styles.center}><AppText style={styles.err}>This case is closed — there's no flyer to share.</AppText></View>
       ) : (
         <>
           <ScrollView contentContainerStyle={{ alignItems: "center", paddingVertical: 12, gap: 12 }}>
             <View ref={shot} collapsable={false} style={styles.shadow}>
               <FlyerTemplate report={data.report} contact={data.contact} url={url} onPhotoReady={() => setPhotoReady(true)} />
             </View>
-            {!url ? <Text style={styles.warn}>Web page URL not set (EXPO_PUBLIC_WEB_BASE_URL), so this flyer has no QR code yet.</Text> : null}
-            {isLost && !data.contact ? <Text style={styles.note}>The owner's phone number only appears on flyers created by the owner.</Text> : null}
+            {!url ? <AppText style={styles.warn}>Web page URL not set (EXPO_PUBLIC_WEB_BASE_URL), so this flyer has no QR code yet.</AppText> : null}
+            {isLost && !data.contact ? <AppText style={styles.note}>The owner's phone number only appears on flyers created by the owner.</AppText> : null}
           </ScrollView>
           <View style={[styles.actions, { paddingBottom: Math.max(insets.bottom, 16) }]}>
             <Primary label={busy === "share" ? "Preparing…" : "Share"} onPress={share} disabled={!photoReady || !!busy} />

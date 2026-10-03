@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { Theme, radius } from "../theme/tokens";
 import { typography } from "../theme/typography";
 
@@ -6,8 +7,8 @@ import { typography } from "../theme/typography";
 export function SetupNotice({ what = "Supabase", vars = "EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY" }: { what?: string; vars?: string }) {
   return (
     <View style={styles.box}>
-      <Text style={styles.t}>{what} isn't connected yet</Text>
-      <Text style={styles.s}>Add {vars} to app/.env, then restart the dev server.</Text>
+      <AppText style={styles.t}>{what} isn't connected yet</AppText>
+      <AppText style={styles.s}>Add {vars} to app/.env, then restart the dev server.</AppText>
     </View>
   );
 }

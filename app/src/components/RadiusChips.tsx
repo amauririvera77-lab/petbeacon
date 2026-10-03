@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { RADIUS_OPTIONS, type RadiusMi } from "../lib/radius";
 import { Theme, MIN_HIT, radius } from "../theme/tokens";
 import { typography } from "../theme/typography";
@@ -11,7 +12,7 @@ export function RadiusChips({ value, onChange }: { value: number; onChange: (v: 
         const on = o === value;
         return (
           <Pressable key={o} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(o)} style={[styles.chip, on && styles.on]}>
-            <Text style={[styles.t, on && { color: Theme.text.onAccent }]}>{o} mi</Text>
+            <AppText role="control" style={[styles.t, on && { color: Theme.text.onAccent }]}>{o} mi</AppText>
           </Pressable>
         );
       })}

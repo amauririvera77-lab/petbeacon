@@ -1,5 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { AppText } from "../AppText";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
 import type { ReportNearby, ResourceNearby } from "../../lib/database.types";
 import { Theme } from "../../theme/tokens";
@@ -81,8 +82,8 @@ export const MapboxWebView = forwardRef<MapHandle, Props>(function MapboxWebView
       {!ready && !error ? <View style={styles.overlay}><ActivityIndicator color={Theme.brand.primary} /></View> : null}
       {error ? (
         <View style={[styles.overlay, { padding: 24 }]}>
-          <Text style={styles.errT}>The map couldn't load</Text>
-          <Text style={styles.errS}>{error}</Text>
+          <AppText style={styles.errT}>The map couldn't load</AppText>
+          <AppText style={styles.errS}>{error}</AppText>
         </View>
       ) : null}
     </View>

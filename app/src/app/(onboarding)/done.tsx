@@ -1,5 +1,5 @@
 // 5 · Done — con intención lost/seen abre el flujo de Report, no el feed vacío. Círculo con check ARRIBA del título.
-import { Text } from "react-native";
+import { AppText } from "../../components/AppText";
 import { Cta } from "../../components/Cta";
 import { OnboardingScreen } from "../../components/Screen";
 import { SuccessBlock, successText } from "../../components/layout/Success";
@@ -18,7 +18,7 @@ export default function Done() {
   return (
     <OnboardingScreen cta={<Cta label="Go to Home" onPress={() => finishOnboarding(s, preview)} />}>
       <SuccessBlock title="You're all set">
-        <Text style={successText.p}>{subtitle}</Text>
+        <AppText style={successText.p}>{subtitle}</AppText>
       </SuccessBlock>
     </OnboardingScreen>
   );

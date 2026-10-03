@@ -1,7 +1,8 @@
 import { router } from "expo-router";
 import { Cat, Check, Dog, Eye, MapPin, Palette, Share2, Sparkles, StickyNote, X } from "lucide-react-native";
 import { useState } from "react";
-import { Alert, Modal, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { Alert, Modal, Pressable, ScrollView, Share, StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ReportNearby } from "../lib/database.types";
 import { MIN_HIT, Theme, radius } from "../theme/tokens";
@@ -91,32 +92,32 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited, matchCou
               </View>
 
               <WrappingTitleBadge title={title} status={r.status} textStyle={styles.h} style={styles.titleRow} />
-              {(() => { const b = breedLabel(r.breed, r.breed_id); return b && b !== title ? <Text style={styles.breed}>{b}</Text> : <View style={{ height: 24 }} />; })()}
+              {(() => { const b = breedLabel(r.breed, r.breed_id); return b && b !== title ? <AppText style={styles.breed}>{b}</AppText> : <View style={{ height: 24 }} />; })()}
 
               <View style={{ gap: 16, marginBottom: 24 }}>
                 <View style={styles.row}>
                   <View style={{ marginTop: 2 }}><MapPin size={18} color={color} /></View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.strong}>{whenLabel(activityAt(r))}{r.location_label ? ` · ${shortAddress(r.location_label)}` : ""}</Text>
-                    <Text style={styles.muted}>{r.distance_mi.toFixed(1)} mi from you</Text>
+                    <AppText style={styles.strong}>{whenLabel(activityAt(r))}{r.location_label ? ` · ${shortAddress(r.location_label)}` : ""}</AppText>
+                    <AppText style={styles.muted}>{r.distance_mi.toFixed(1)} mi from you</AppText>
                   </View>
                 </View>
                 {colorLabel(r.color) || sizeLabel(r.size) ? (
                   <View style={styles.row}>
                     <View style={{ marginTop: 2 }}><Palette size={18} color={Theme.text.muted} /></View>
-                    <Text style={styles.features}>{[colorLabel(r.color), sizeLabel(r.size)].filter(Boolean).join(" · ")}</Text>
+                    <AppText style={styles.features}>{[colorLabel(r.color), sizeLabel(r.size)].filter(Boolean).join(" · ")}</AppText>
                   </View>
                 ) : null}
                 {r.condition ? (
                   <View style={styles.row}>
                     <View style={{ marginTop: 2 }}><Eye size={18} color={Theme.text.muted} /></View>
-                    <Text style={styles.features}>Condition: {CONDITION_LABEL[r.condition]}</Text>
+                    <AppText style={styles.features}>Condition: {CONDITION_LABEL[r.condition]}</AppText>
                   </View>
                 ) : null}
                 {cleanFeatures(r.features_description) ? (
                   <View style={styles.row}>
                     <View style={{ marginTop: 2 }}><StickyNote size={18} color={Theme.text.muted} /></View>
-                    <Text style={styles.features}>{cleanFeatures(r.features_description)}</Text>
+                    <AppText style={styles.features}>{cleanFeatures(r.features_description)}</AppText>
                   </View>
                 ) : null}
               </View>
@@ -124,7 +125,7 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited, matchCou
               {status === "reunited" ? (
                 <View style={styles.closed}>
                   <Check size={20} color={Theme.status.reunited.text} />
-                  <Text style={styles.closedT}>Great news — this case is closed.</Text>
+                  <AppText style={styles.closedT}>Great news — this case is closed.</AppText>
                 </View>
               ) : (
                 <View style={{ gap: 8 }}>
@@ -137,7 +138,7 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited, matchCou
                     {ownLost
                       ? (hasMatches ? <Sparkles size={18} color={Theme.text.onAccent} /> : <Share2 size={18} color={Theme.text.onAccent} />)
                       : status === "lost" ? <Eye size={18} color={Theme.text.onAccent} /> : <Share2 size={18} color={Theme.text.onAccent} />}
-                    <Text style={styles.ctaT}>{ownLost ? (hasMatches ? "Review matches" : "Share alert") : status === "lost" ? "I've seen this pet" : "Report to network"}</Text>
+                    <AppText role="control" style={styles.ctaT}>{ownLost ? (hasMatches ? "Review matches" : "Share alert") : status === "lost" ? "I've seen this pet" : "Report to network"}</AppText>
                   </Pressable>
                   {ownLost ? (
                     // Modo dueño: cerrar el caso. "Share flyer" se oculta mientras el flyer no funcione (FLYERS_READY).
@@ -146,23 +147,23 @@ export function PinDetailSheet({ report, onClose, mine, onMarkReunited, matchCou
                       {onMarkReunited ? (
                         <Pressable accessibilityRole="button" onPress={confirmReunited} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: Theme.status.reunited.tint }]}>
                           <Check size={16} color={Theme.status.reunited.bg} />
-                          <Text style={styles.secondaryT}>Mark as reunited</Text>
+                          <AppText role="control" style={styles.secondaryT}>Mark as reunited</AppText>
                         </Pressable>
                       ) : null}
                       {FLYERS_READY ? (
                         <Pressable accessibilityRole="button" onPress={openFlyer} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: Theme.surface.page }]}>
-                          <Share2 size={16} color={Theme.text.primary} /><Text style={styles.secondaryT}>Share flyer</Text>
+                          <Share2 size={16} color={Theme.text.primary} /><AppText role="control" style={styles.secondaryT}>Share flyer</AppText>
                         </Pressable>
                       ) : null}
                       <Pressable accessibilityRole="button" onPress={editOwn} style={styles.tertiary}>
-                        <Text style={styles.tertiaryT}>Edit report</Text>
+                        <AppText style={styles.tertiaryT}>Edit report</AppText>
                       </Pressable>
                     </>
                   ) : FLYERS_READY ? (
                     // "Share flyer" / "Share sighting" abren el flyer: se ocultan en TODOS los detalles mientras FLYERS_READY sea false.
                     <Pressable accessibilityRole="button" onPress={openFlyer} style={({ pressed }) => [styles.secondary, pressed && { backgroundColor: Theme.surface.page }]}>
                       <Share2 size={16} color={Theme.text.primary} />
-                      <Text style={styles.secondaryT}>{status === "sighted" ? "Share sighting" : "Share flyer"}</Text>
+                      <AppText role="control" style={styles.secondaryT}>{status === "sighted" ? "Share sighting" : "Share flyer"}</AppText>
                     </Pressable>
                   ) : null}
                 </View>

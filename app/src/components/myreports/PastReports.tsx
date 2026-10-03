@@ -1,6 +1,7 @@
 import { ChevronDown } from "lucide-react-native";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "../AppText";
 import type { MyReport } from "../../hooks/useMyReports";
 import { pastDate, pastResult } from "../../lib/myReports";
 import { REPORT_KIND_LABEL, reportKind, reportTitle } from "../../lib/reportText";
@@ -19,7 +20,7 @@ export function PastReports({ reports }: { reports: MyReport[] }) {
   return (
     <View style={{ marginTop: 20 }}>
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen((o) => !o)} style={styles.head}>
-        <Text style={styles.h}>Past reports ({reports.length})</Text>
+        <AppText style={styles.h}>Past reports ({reports.length})</AppText>
         <View style={open && { transform: [{ rotate: "180deg" }] }}><ChevronDown size={20} color={Theme.text.muted} /></View>
       </Pressable>
       {open ? (
@@ -28,10 +29,10 @@ export function PastReports({ reports }: { reports: MyReport[] }) {
             <View key={r.id} style={styles.row}>
               {r.photo_url ? <FocusImage uri={r.photo_url} focusX={r.photo_focus_x} focusY={r.photo_focus_y} style={styles.thumb} /> : <SpeciesPlaceholder species={r.species} size={48} />}
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={styles.title} numberOfLines={1}>{reportTitle(r)}</Text>
+                <AppText style={styles.title} numberOfLines={1}>{reportTitle(r)}</AppText>
                 <View style={styles.resultRow}>
-                  <View style={styles.kindTag}><Text style={styles.kindT}>{REPORT_KIND_LABEL[reportKind(r.status)]}</Text></View>
-                  <Text style={styles.result} numberOfLines={1}>{pastResult(r)} · {fmt(pastDate(r))}</Text>
+                  <View style={styles.kindTag}><AppText role="control" style={styles.kindT}>{REPORT_KIND_LABEL[reportKind(r.status)]}</AppText></View>
+                  <AppText style={styles.result} numberOfLines={1}>{pastResult(r)} · {fmt(pastDate(r))}</AppText>
                 </View>
               </View>
             </View>

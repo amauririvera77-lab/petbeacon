@@ -1,7 +1,8 @@
 import * as Location from "expo-location";
 import { LocateFixed, MapPin, Navigation } from "lucide-react-native";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "../AppText";
 import { LatLng } from "../../lib/geo";
 import { geocode, Place, reverseGeocode } from "../../lib/geocode";
 import { Theme, MIN_HIT, radius } from "../../theme/tokens";
@@ -50,18 +51,18 @@ export function LocationPicker({ value, onChange, city, center, variant = "defau
       <View>
         {value ? (
           <View accessibilityLabel={`Selected location: ${value.label}`}>
-            <View style={fl.addrRow}><Navigation size={16} color={Theme.brand.primary} /><Text style={fl.addr}>{value.label}</Text></View>
-            <Text style={fl.caption}>{value.source === "manual" ? "Entered manually" : "Auto-detected from your current location"}</Text>
+            <View style={fl.addrRow}><Navigation size={16} color={Theme.brand.primary} /><AppText style={fl.addr}>{value.label}</AppText></View>
+            <AppText style={fl.caption}>{value.source === "manual" ? "Entered manually" : "Auto-detected from your current location"}</AppText>
             <Pressable accessibilityRole="button" onPress={() => { onChange(null); setResults(null); setManual(value.source !== "manual"); }} style={fl.link}>
-              <Text style={fl.linkT}>{value.source === "manual" ? "Use my current location instead" : "Can't find the right spot? Enter it manually"}</Text>
+              <AppText style={fl.linkT}>{value.source === "manual" ? "Use my current location instead" : "Can't find the right spot? Enter it manually"}</AppText>
             </Pressable>
           </View>
         ) : !manual ? (
           <View>
             <Button label={busy ? "Locating…" : "Use my current location"} variant="secondary" onPress={useGps} disabled={busy} />
-            <Pressable accessibilityRole="button" onPress={() => setManual(true)} style={fl.link}><Text style={fl.linkT}>Can't find the right spot? Enter it manually</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => setManual(true)} style={fl.link}><AppText style={fl.linkT}>Can't find the right spot? Enter it manually</AppText></Pressable>
             {busy ? <ActivityIndicator color={Theme.brand.primary} /> : null}
-            {error ? <Text style={styles.err} accessibilityRole="alert">{error}</Text> : null}
+            {error ? <AppText style={styles.err} accessibilityRole="alert">{error}</AppText> : null}
           </View>
         ) : (
           <View>
@@ -72,13 +73,13 @@ export function LocationPicker({ value, onChange, city, center, variant = "defau
             <View style={{ gap: 8, marginTop: results?.length ? 12 : 0 }}>
               {results?.map((p, i) => (
                 <Pressable key={i} accessibilityRole="button" onPress={() => onChange({ ...p, source: "manual" })} style={styles.result}>
-                  <LocateFixed size={18} color={Theme.text.secondary} /><Text style={styles.resultT}>{p.label}</Text>
+                  <LocateFixed size={18} color={Theme.text.secondary} /><AppText style={styles.resultT}>{p.label}</AppText>
                 </Pressable>
               ))}
             </View>
             {busy ? <ActivityIndicator color={Theme.brand.primary} /> : null}
-            {error ? <Text style={styles.err} accessibilityRole="alert">{error}</Text> : null}
-            <Pressable accessibilityRole="button" onPress={() => setManual(false)} style={fl.link}><Text style={fl.linkT}>Use my current location instead</Text></Pressable>
+            {error ? <AppText style={styles.err} accessibilityRole="alert">{error}</AppText> : null}
+            <Pressable accessibilityRole="button" onPress={() => setManual(false)} style={fl.link}><AppText style={fl.linkT}>Use my current location instead</AppText></Pressable>
           </View>
         )}
       </View>
@@ -91,17 +92,17 @@ export function LocationPicker({ value, onChange, city, center, variant = "defau
         <View style={styles.picked} accessibilityLabel={`Selected location: ${value.label}`}>
           <MapPin size={20} color={Theme.status.reunited.bg} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.pickedT}>{value.label}</Text>
-            <Text style={styles.pickedS}>Saved with this report</Text>
+            <AppText style={styles.pickedT}>{value.label}</AppText>
+            <AppText style={styles.pickedS}>Saved with this report</AppText>
           </View>
-          <Pressable accessibilityRole="button" onPress={() => { onChange(null); setResults(null); }} style={styles.change}><Text style={styles.changeT}>Change</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => { onChange(null); setResults(null); }} style={styles.change}><AppText style={styles.changeT}>Change</AppText></Pressable>
         </View>
       ) : (
         <>
           <Button label={busy && !manual ? "Locating…" : "Use my current location"} variant="secondary" onPress={useGps} disabled={busy} />
           {!manual ? (
             <Pressable accessibilityRole="button" onPress={() => setManual(true)} style={styles.link}>
-              <Text style={styles.linkT}>Can't find the right spot? Enter it manually</Text>
+              <AppText style={styles.linkT}>Can't find the right spot? Enter it manually</AppText>
             </Pressable>
           ) : (
             <View style={{ gap: 12 }}>
@@ -110,13 +111,13 @@ export function LocationPicker({ value, onChange, city, center, variant = "defau
               <Button label={busy ? "Searching…" : "Find this spot"} variant="secondary" onPress={search} disabled={busy || !query.trim()} />
               {results?.map((p, i) => (
                 <Pressable key={i} accessibilityRole="button" onPress={() => onChange(p)} style={styles.result}>
-                  <LocateFixed size={18} color={Theme.text.secondary} /><Text style={styles.resultT}>{p.label}</Text>
+                  <LocateFixed size={18} color={Theme.text.secondary} /><AppText style={styles.resultT}>{p.label}</AppText>
                 </Pressable>
               ))}
             </View>
           )}
           {busy ? <ActivityIndicator color={Theme.brand.primary} /> : null}
-          {error ? <Text style={styles.err} accessibilityRole="alert">{error}</Text> : null}
+          {error ? <AppText style={styles.err} accessibilityRole="alert">{error}</AppText> : null}
         </>
       )}
     </View>

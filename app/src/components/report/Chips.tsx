@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "../AppText";
 import { Theme, MIN_HIT, radius } from "../../theme/tokens";
 import { typography } from "../../theme/typography";
 
@@ -7,14 +8,14 @@ export function Chips<T extends string>({ label, options, value, onChange }: {
 }) {
   return (
     <View style={{ gap: 8 }}>
-      <Text style={styles.label}>{label}</Text>
+      <AppText style={styles.label}>{label}</AppText>
       <View style={styles.row} accessibilityRole="radiogroup">
         {options.map((o) => {
           const on = o.value === value;
           return (
             <Pressable key={o.value} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(o.value)}
               style={[styles.chip, on && styles.on]}>
-              <Text style={[styles.t, on && { color: Theme.text.onAccent }]}>{o.label}</Text>
+              <AppText role="control" style={[styles.t, on && { color: Theme.text.onAccent }]}>{o.label}</AppText>
             </Pressable>
           );
         })}

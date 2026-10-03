@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OfflineBanner } from "./OfflineBanner";
 import { ScreenTitle } from "./ScreenTitle";
@@ -34,7 +35,7 @@ export function TabScreen({ title, subtitle, children, scroll = true, footer }: 
   );
 }
 export function Placeholder({ text }: { text: string }) {
-  return <View style={styles.ph}><Text style={styles.phT}>{text}</Text></View>;
+  return <View style={styles.ph}><AppText style={styles.phT}>{text}</AppText></View>;
 }
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Theme.surface.card },

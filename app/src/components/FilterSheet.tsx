@@ -1,4 +1,5 @@
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { activeFilterCount } from "../lib/homeFilters";
 import { RADIUS_OPTIONS } from "../lib/radius";
@@ -11,14 +12,14 @@ import { Toggle } from "./Toggle";
 function Pills<T extends string | number>({ label, options, value, onChange }: { label: string; options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
   return (
     <View style={{ gap: 8 }}>
-      <Text style={styles.label}>{label}</Text>
+      <AppText style={styles.label}>{label}</AppText>
       <View style={styles.pills} accessibilityRole="radiogroup">
         {options.map((o) => {
           const on = o.value === value;
           return (
             <Pressable key={String(o.value)} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(o.value)}
               style={[styles.pill, on && styles.pillOn]}>
-              <Text style={[styles.pillT, { color: on ? Theme.text.onAccent : Theme.text.primary }]}>{o.label}</Text>
+              <AppText role="control" style={[styles.pillT, { color: on ? Theme.text.onAccent : Theme.text.primary }]}>{o.label}</AppText>
             </Pressable>
           );
         })}
@@ -42,8 +43,8 @@ export function FilterSheet({ visible, prefs, onChange, onReset, onClose }: {
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.handleWrap}><View style={styles.handle} /></View>
           <View style={styles.head}>
-            <Text style={styles.title} accessibilityRole="header">Filters</Text>
-            <Pressable accessibilityRole="button" onPress={onReset} style={styles.reset}><Text style={styles.resetT}>Reset filters</Text></Pressable>
+            <AppText style={styles.title} accessibilityRole="header">Filters</AppText>
+            <Pressable accessibilityRole="button" onPress={onReset} style={styles.reset}><AppText style={styles.resetT}>Reset filters</AppText></Pressable>
           </View>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 24 }}>
             <Pills<SpeciesFilter> label="Species" value={prefs.species} onChange={(species) => onChange({ species })}
@@ -54,15 +55,15 @@ export function FilterSheet({ visible, prefs, onChange, onReset, onClose }: {
               options={[{ value: "24h", label: "Last 24h" }, { value: "7d", label: "Last 7 days" }, { value: "all", label: "All" }]} />
             <View style={styles.toggleRow}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.toggleT}>Show reunited</Text>
-                <Text style={styles.toggleS}>Include cases that were closed in the last 24h.</Text>
+                <AppText style={styles.toggleT}>Show reunited</AppText>
+                <AppText style={styles.toggleS}>Include cases that were closed in the last 24h.</AppText>
               </View>
               <Toggle value={prefs.showReunited} onValueChange={(showReunited) => onChange({ showReunited })} label="Show reunited" />
             </View>
           </ScrollView>
           <View style={styles.footer}>
             <Pressable accessibilityRole="button" onPress={onClose} style={styles.done}>
-              <Text style={styles.doneT}>Done{count > 0 ? ` · ${count} active` : ""}</Text>
+              <AppText role="control" style={styles.doneT}>Done{count > 0 ? ` · ${count} active` : ""}</AppText>
             </Pressable>
           </View>
         </View>

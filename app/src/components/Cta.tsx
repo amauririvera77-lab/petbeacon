@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
+import { AppText } from "./AppText";
 import { Theme, radius } from "../theme/tokens";
 import { typography } from "../theme/typography";
 
@@ -16,7 +17,7 @@ export function Cta({ label, onPress, disabled, tone = "ink", loading, icon }: {
       style={({ pressed }) => [styles.b, { backgroundColor: disabled ? Theme.border.default : BG[tone] }, pressed && { opacity: 0.9 }, loading && { opacity: 0.75 }]}
     >
       {loading ? <ActivityIndicator size="small" color={Theme.text.onAccent} /> : icon}
-      <Text style={[styles.t, { color: disabled ? Theme.text.muted : Theme.text.onAccent }]}>{label}</Text>
+      <AppText role="control" style={[styles.t, { color: disabled ? Theme.text.muted : Theme.text.onAccent }]}>{label}</AppText>
     </Pressable>
   );
 }

@@ -1,7 +1,8 @@
 import { Clock, Globe, Info, MapPin, MessageCircle, Navigation, Phone, ChevronRight, HeartHandshake, X, type LucideIcon } from "lucide-react-native";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Alert, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ResourceNearby } from "../lib/database.types";
 import { directionsUrl, isSample, phoneDigits, resourceAction, webUrl, whatsappUrl } from "../lib/resources";
@@ -49,8 +50,8 @@ function Sample({ bottom, onClose }: { bottom: number; onClose: () => void }) {
     <View style={[styles.sheet, { paddingBottom: bottom }]}>
       <Handle />
       <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20, gap: 8 }}>
-        <Text style={styles.sampleTitle} accessibilityRole="header">Sample resource</Text>
-        <Text style={styles.sampleBody}>This is example data while we add real local resources. Contact details aren't real yet.</Text>
+        <AppText style={styles.sampleTitle} accessibilityRole="header">Sample resource</AppText>
+        <AppText style={styles.sampleBody}>This is example data while we add real local resources. Contact details aren't real yet.</AppText>
         <View style={{ marginTop: 8 }}><Button label="Got it" onPress={onClose} /></View>
       </View>
     </View>
@@ -84,8 +85,8 @@ function Detail({ r, bottom, onClose, onContact, onSample }: { r: ResourceNearby
               onError={(e) => { console.warn("resource photo failed:", e.nativeEvent.error, r.photo_url); setPhotoFailed(true); }} />
           ) : <HeartHandshake size={36} color={Theme.text.muted} />}
         </View>
-        <View style={styles.titleRow}><HeartHandshake size={20} color={Theme.info.bg} /><Text style={styles.h}>{r.name}</Text></View>
-        <Text style={styles.kind}>Community resource</Text>
+        <View style={styles.titleRow}><HeartHandshake size={20} color={Theme.info.bg} /><AppText role="title" style={styles.h}>{r.name}</AppText></View>
+        <AppText style={styles.kind}>Community resource</AppText>
         <View style={{ gap: 16, marginBottom: 24 }}>
           {when ? <Row Icon={Clock} tone={Theme.info.bg} strong>{when}</Row> : !event && r.opening_hours ? <View style={styles.row}><View style={{ marginTop: 2 }}><Clock size={18} color={Theme.info.bg} /></View><OpenNow r={r} now={now} /></View> : r.hours ? <Row Icon={Clock} tone={Theme.info.bg} strong>{r.hours}</Row> : null}
           <Row Icon={MapPin} tone={Theme.info.bg} strong>{place}</Row>
@@ -96,7 +97,7 @@ function Detail({ r, bottom, onClose, onContact, onSample }: { r: ResourceNearby
       <View style={{ paddingHorizontal: 20, gap: 8 }}>
         <Button Icon={action.Icon} label={action.label} onPress={run} />
         <Pressable accessibilityRole="link" onPress={() => { onClose(); setTimeout(() => router.navigate("/(tabs)/support"), 400); }} style={styles.viewAll}>
-          <Text style={styles.viewAllT}>View all local resources</Text><ChevronRight size={14} color={Theme.text.muted} />
+          <AppText style={styles.viewAllT}>View all local resources</AppText><ChevronRight size={14} color={Theme.text.muted} />
         </Pressable>
       </View>
     </View>
@@ -107,7 +108,7 @@ function Row({ Icon, tone, strong, children }: { Icon: LucideIcon; tone: string;
   return (
     <View style={styles.row}>
       <View style={{ marginTop: 2 }}><Icon size={18} color={tone} /></View>
-      <Text style={[styles.rowT, strong && styles.rowStrong]}>{children}</Text>
+      <AppText style={[styles.rowT, strong && styles.rowStrong]}>{children}</AppText>
     </View>
   );
 }
@@ -127,14 +128,14 @@ function Contact({ r, bottom, onSample }: { r: ResourceNearby; bottom: number; o
     <View style={[styles.sheet, { paddingBottom: bottom }]}>
       <Handle />
       <View style={styles.contactHead}>
-        <Text style={styles.contactName}>{r.name}</Text>
-        {r.address ? <Text style={styles.contactAddr}>{r.address}</Text> : null}
+        <AppText style={styles.contactName}>{r.name}</AppText>
+        {r.address ? <AppText style={styles.contactAddr}>{r.address}</AppText> : null}
       </View>
       <View style={{ padding: 8 }}>
         {actions.map(({ key, label, Icon, tint, color, run }) => (
           <Pressable key={key} accessibilityRole="button" onPress={sample ? onSample : run} style={({ pressed }) => [styles.action, pressed && { backgroundColor: Theme.surface.page }]}>
             <View style={[styles.actionIcon, { backgroundColor: tint }]}><Icon size={20} color={color} /></View>
-            <Text style={styles.actionT}>{label}</Text>
+            <AppText style={styles.actionT}>{label}</AppText>
           </Pressable>
         ))}
       </View>

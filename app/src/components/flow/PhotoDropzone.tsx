@@ -1,5 +1,6 @@
 import { Camera } from "lucide-react-native";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "../AppText";
 import { choosePhotoSource, pickPhoto } from "../../lib/pickPhoto";
 import { Theme } from "../../theme/tokens";
 import { typography } from "../../theme/typography";
@@ -15,13 +16,13 @@ export function PhotoDropzone({ uri, onChange }: { uri: string | null; onChange:
         {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : (
           <View style={styles.empty}>
             <Camera size={32} color={Theme.text.muted} />
-            <Text style={styles.tap}>Tap to add photo</Text>
-            <Text style={styles.opt}>Optional</Text>
+            <AppText style={styles.tap}>Tap to add photo</AppText>
+            <AppText style={styles.opt}>Optional</AppText>
           </View>
         )}
       </Pressable>
       {uri ? (
-        <Pressable accessibilityRole="button" onPress={() => onChange(null)} style={styles.remove}><Text style={styles.removeT}>Remove photo</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => onChange(null)} style={styles.remove}><AppText style={styles.removeT}>Remove photo</AppText></Pressable>
       ) : null}
     </View>
   );

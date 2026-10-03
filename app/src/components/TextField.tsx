@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, TextInputProps, View } from "react-native";
+import { StyleSheet, TextInput, TextInputProps, View } from "react-native";
+import { AppText } from "./AppText";
 import { Theme, radius } from "../theme/tokens";
 import { typography } from "../theme/typography";
 
@@ -15,7 +16,7 @@ export function TextField({ label, helper, disabled, style, variant = "default",
     const ds = variant === "ds";
     return (
       <View style={{ gap: ds ? 6 : 0 }}>
-        <Text style={ds ? v.dsLabel : v.formLabel}>{label}{labelSuffix ? <Text style={v.suffix}> {labelSuffix}</Text> : null}</Text>
+        <AppText style={ds ? v.dsLabel : v.formLabel}>{label}{labelSuffix ? <AppText style={v.suffix}> {labelSuffix}</AppText> : null}</AppText>
         <TextInput
           {...rest}
           editable={!disabled}
@@ -25,13 +26,13 @@ export function TextField({ label, helper, disabled, style, variant = "default",
           onBlur={(e) => { setFocused(false); rest.onBlur?.(e); }}
           style={[ds ? v.dsInput : v.formInput, rest.multiline && (ds ? v.dsMulti : v.formMulti), focused && v.focus, !!error && v.errBorder, disabled && v.disabled, style]}
         />
-        {error ? <Text style={[v.hint, v.errT]} accessibilityRole="alert">{error}</Text> : helper ? <Text style={v.hint}>{helper}</Text> : null}
+        {error ? <AppText style={[v.hint, v.errT]} accessibilityRole="alert">{error}</AppText> : helper ? <AppText style={v.hint}>{helper}</AppText> : null}
       </View>
     );
   }
   return (
     <View style={styles.wrap}>
-      <Text style={styles.label}>{label}{labelSuffix ? <Text style={styles.suffix}> {labelSuffix}</Text> : null}</Text>
+      <AppText style={styles.label}>{label}{labelSuffix ? <AppText style={styles.suffix}> {labelSuffix}</AppText> : null}</AppText>
       <TextInput
         {...rest}
         editable={!disabled}
@@ -41,7 +42,7 @@ export function TextField({ label, helper, disabled, style, variant = "default",
         onBlur={(e) => { setFocused(false); rest.onBlur?.(e); }}
         style={[styles.input, focused && styles.focus, disabled && styles.disabled, style]}
       />
-      {helper ? <Text style={styles.helper}>{helper}</Text> : null}
+      {helper ? <AppText style={styles.helper}>{helper}</AppText> : null}
     </View>
   );
 }

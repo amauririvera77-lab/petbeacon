@@ -1,5 +1,6 @@
 import { Eye, Dog, Siren, X } from "lucide-react-native";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NotifItem } from "../hooks/useNotificationsFeed";
 import { Theme, radius } from "../theme/tokens";
@@ -31,20 +32,20 @@ export function NotificationsSheet({ visible, items, onClose, onPick }: {
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           <View style={styles.handleWrap}><View style={styles.handle} /></View>
           <View style={styles.head}>
-            <Text style={styles.title} accessibilityRole="header">Notifications</Text>
+            <AppText style={styles.title} accessibilityRole="header">Notifications</AppText>
             <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={styles.close}><X size={16} color={Theme.text.secondary} /></Pressable>
           </View>
           <ScrollView contentContainerStyle={{ padding: 8 }}>
             {items.length === 0 ? (
-              <Text style={styles.empty}>You're all caught up. New sightings and matches near you will show up here.</Text>
+              <AppText style={styles.empty}>You're all caught up. New sightings and matches near you will show up here.</AppText>
             ) : items.map((n) => {
               const { Icon, tint, color } = STYLE[n.kind];
               return (
                 <Pressable key={n.id} accessibilityRole="button" onPress={() => onPick(n)} style={({ pressed }) => [styles.item, pressed && { backgroundColor: Theme.surface.page }]}>
                   <View style={[styles.icon, { backgroundColor: tint }]}><Icon size={20} color={color} /></View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.itemT}>{n.title}</Text>
-                    <Text style={styles.itemS}>{ago(n.at)}{n.dismissed ? " · Dismissed" : ""}</Text>
+                    <AppText style={styles.itemT}>{n.title}</AppText>
+                    <AppText style={styles.itemS}>{ago(n.at)}{n.dismissed ? " · Dismissed" : ""}</AppText>
                   </View>
                 </Pressable>
               );

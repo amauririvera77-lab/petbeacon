@@ -1,5 +1,6 @@
 import { MapPinOff, X } from "lucide-react-native";
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, StyleSheet, View } from "react-native";
+import { AppText } from "./AppText";
 import { Theme, MIN_HIT } from "../theme/tokens";
 import { typography } from "../theme/typography";
 
@@ -9,11 +10,11 @@ export function LocationOffStrip({ onSetZone, onDismiss }: { onSetZone: () => vo
     <View style={styles.box}>
       <MapPinOff size={20} color={Theme.text.secondary} style={{ marginTop: 2 }} />
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={styles.t}>Location is off</Text>
-        <Text style={styles.s}>We can't show where you are on the map. You still see reports around your saved area.</Text>
+        <AppText style={styles.t}>Location is off</AppText>
+        <AppText style={styles.s}>We can't show where you are on the map. You still see reports around your saved area.</AppText>
         <View style={styles.row}>
-          <Pressable accessibilityRole="button" onPress={() => Linking.openSettings().catch(() => {})} style={styles.btn}><Text style={styles.btnT}>Open settings</Text></Pressable>
-          <Pressable accessibilityRole="button" onPress={onSetZone} style={styles.btn}><Text style={styles.btnT}>Set area manually</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => Linking.openSettings().catch(() => {})} style={styles.btn}><AppText style={styles.btnT}>Open settings</AppText></Pressable>
+          <Pressable accessibilityRole="button" onPress={onSetZone} style={styles.btn}><AppText style={styles.btnT}>Set area manually</AppText></Pressable>
         </View>
       </View>
       <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" onPress={onDismiss} style={styles.x}><X size={18} color={Theme.text.muted} /></Pressable>
