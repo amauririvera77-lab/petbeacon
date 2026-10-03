@@ -8,13 +8,16 @@ export function agoShort(iso: string, now = Date.now()): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-// Duración desde una fecha, sin "ago": "25m", "3h", "2d" (para "Missing for 3h").
+// Duración desde una fecha, sin "ago" y sin abreviar (fase de congelación, Fase 11 — "Missing for 3 hours", "Missing
+// for 1 day", nunca "3h"/"1d"; agoShort() de arriba SÍ se queda abreviado, es una convención de metadatos distinta).
 export function elapsedShort(iso: string, now = Date.now()): string {
   const m = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60_000));
   if (m < 1) return "under a minute";
-  if (m < 60) return `${m}m`;
+  if (m < 60) return `${m} ${m === 1 ? "minute" : "minutes"}`;
   const h = Math.floor(m / 60);
-  return h < 24 ? `${h}h` : `${Math.floor(h / 24)}d`;
+  if (h < 24) return `${h} ${h === 1 ? "hour" : "hours"}`;
+  const d = Math.floor(h / 24);
+  return `${d} ${d === 1 ? "day" : "days"}`;
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
