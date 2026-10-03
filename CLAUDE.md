@@ -418,7 +418,8 @@ y aprobación).
 - **Ajustes finales antes de congelar (2026-10-02):** la hoja "Sample resource" ya muestra su título (Heading/18; antes
   usaba un estilo con `flex: 1` que lo colapsaba a altura 0). El header de Pet profile en edición dice "Edit {nombre}"
   ("Add pet" si es nueva). La descripción de las tarjetas de recurso usa `CardDescription` (`components/resources/
-  parts.tsx`): mide el ancho real de su contenedor y se lo da al `Text` como `width` explícito, con `numberOfLines={2}`.
+  parts.tsx`): mide el ancho real de su contenedor y se lo da al `Text` como `width` explícito, con `numberOfLines={2}`
+  (REVISADO 2026-10-03: ver abajo, `numberOfLines` se quitó).
   Motivo: en iOS, con el ancho intrínseco, la descripción de Riverside Animal Sanctuary se medía a 2 líneas pero se
   pintaba en una sola, cortada a media palabra; ni quitar el wrapper del grupo "rehoming" ni cambiar `numberOfLines`
   por `maxHeight` lo arreglaron. Si aparece el mismo síntoma en otro `Text` multilínea dentro de una columna `flex: 1`,
@@ -446,7 +447,10 @@ reemplaza la decisión de §7 sobre el FAB de 73 px.
   Profile, y la base de los controles flotantes: `Snackbar` (siempre por encima de la barra), y en el mapa la tarjeta de
   vista previa, el botón de recentrar y el estado vacío. El mapa se extiende hasta el borde inferior, por detrás de la barra;
   `MapboxWebView` recibe `bottomInset` y `mapHtml.ts` sube `.mapboxgl-ctrl-bottom-left/right` (atribución y logo de Mapbox,
-  obligatorios por sus términos) ese tanto, y el `fitBounds` automático deja libre ese espacio.
+  obligatorios por sus términos) ese tanto, y el `fitBounds` automático deja libre ese espacio. Con la tarjeta inferior del mapa
+  abierta (vista previa de un pin o aviso de estado vacío) Home mide su alto real con `onLayout` y envía
+  `TAB_BAR_CLEARANCE + alto + 8`; el inset inicial va en el HTML y los cambios se inyectan con `window.__setInset(px)` (nunca
+  se recarga el mapa), de modo que el logo y la "i" quedan visibles con y sin tarjeta.
 - **FAB retirado:** se eliminaron `ExtendedFab`, `state/fab.tsx` (`FabProvider`), `useFabScroll`, `useFabHidden`,
   `FAB_SIZE` y `FAB_CLEARANCE`. La búsqueda de Home que se ocultaba al bajar usaba el estado del FAB; ahora usa un estado
   local de dirección de scroll solo en Home (`onListScroll`/`scrollingDown`), independiente de la barra.
@@ -467,3 +471,8 @@ reemplaza la decisión de §7 sobre el FAB de 73 px.
   Android). Las pantallas del Stack raíz (`pet`, `report/*`, `help`, `edit-*`, `privacy`, `delete-account`, `flyer`) no la
   muestran porque no están dentro de `(tabs)`; no hizo falta código extra. En Android < 9 `boxShadow` no dibuja sombra
   (aceptado).
+- **`CardDescription` sin `numberOfLines` (2026-10-03):** la descripción de Riverside volvió a cortarse en la rama v1.1 ("counseling b…" con la
+  segunda línea en blanco) aunque `ResourceCard` y `CardDescription` no habían cambiado — el truncado nativo de iOS de
+  `numberOfLines` es lo que falla, de forma intermitente. Ahora el texto lleva ancho explícito medido, envuelve natural y el tope
+  de 2 líneas lo pone el contenedor (`maxHeight = 2 × lineHeight`, `overflow: hidden`): una tercera línea se recorta en el límite de
+  línea, sin ellipsis. La lista de Support usa un `contentContainerStyle` estable (`useMemo`) en vez de un array nuevo por render.
