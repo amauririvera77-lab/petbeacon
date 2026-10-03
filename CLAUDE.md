@@ -475,8 +475,9 @@ reemplaza la decisión de §7 sobre el FAB de 73 px.
   — la misma del tag `v1.0-case-study`, con la que Riverside se veía completa. Se revirtieron DOS intentos posteriores que
   no resolvieron el corte: quitar `numberOfLines` con `maxHeight = 2 × lineHeight` (recortaba la segunda línea por la mitad: el
   `lineHeight` nominal de Body-Sm/13, 19, es menor que la altura real de la línea de Manrope, ≈ 1.366 em) y una versión con
-  `onTextLayout` (líneas reales + "…" propia). Si Riverside sigue cortada en el iPhone, el plan es acortar su descripción de
-  muestra a "No-kill shelter with surrender counseling." en `seed.sql` y `seed_demo_reset.sql` (y correr el reset en Supabase).
+  `onTextLayout` (líneas reales + "…" propia). Riverside siguió cortada en el iPhone con esta versión, así que su descripción de
+  muestra se acortó a "No-kill shelter with surrender counseling." en `seed.sql` y `seed_demo_reset.sql` (paso 5b; hay que
+  correr el reset en Supabase para que la base la tome). La causa del corte en la tarjeta sigue sin entenderse.
   La lista de Support usa un `contentContainerStyle` estable (`useMemo`) en vez de un array nuevo por render.
 
 ## Nota adicional — texto dinámico: pendiente para la etapa B (2026-10-03)

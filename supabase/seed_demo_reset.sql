@@ -263,6 +263,11 @@ begin
     where name = 'Crisis Boarding Program';
   update resources set description = 'Consultations on housing and pet-related legal questions.'
     where name = 'Animal Welfare Legal Aid';
+  -- Riverside Animal Sanctuary: descripción acortada a una línea y media. En iOS la original ("Verified no-kill shelter with
+  -- surrender counseling before intake.") se pintaba cortada a media palabra en la tarjeta de Support (ver CLAUDE.md,
+  -- CardDescription); con el texto corto no depende de que el truncado de 2 líneas funcione.
+  update resources set description = 'No-kill shelter with surrender counseling.'
+    where name = 'Riverside Animal Sanctuary';
   -- "Free microchip day" (Fase 8): descripción exacta del ticket, y tags/in_person por si esta fila viene de una
   -- instalación vieja (seed.sql ya la crea con el nombre nuevo, pero la migración 0022 solo mapeó por el nombre
   -- viejo cuando se aplicó — esto lo deja bien sin importar cuándo se creó la fila).
