@@ -214,7 +214,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         <Text style={[st.h2, { marginBottom: 24 }]}>Tell us about your pet</Text>
         <View style={st.field}><TextField variant="form" label="Pet's name" placeholder="Max" value={petName} onChangeText={setPetName} /></View>
         <Text style={st.label}>Type</Text>
-        <View style={st.field}><TypeButtons value={species} onChange={changeSpecies} /></View>
+        <View style={st.field}><TypeButtons value={species} onChange={changeSpecies} tone="lost" /></View>
         <View style={st.field}><BreedPicker optional species={species} value={breed} onChange={setBreed} /></View>
         <TextField variant="form" label="Distinctive features" labelSuffix="(optional)" placeholder="Blue collar, limps on left leg"
           value={features} onChangeText={setFeatures} multiline maxLength={100} />
