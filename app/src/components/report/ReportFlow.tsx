@@ -250,7 +250,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         <Text style={[st.h2, { marginBottom: 24 }]}>How do they seem?</Text>
         {/* "Type" no está en el prototipo, pero el matching exige especie exacta: se conserva con el mismo estilo de botones. */}
         <Text style={st.label}>Type</Text>
-        <View style={st.field}><TypeButtons value={species} onChange={changeSpecies} /></View>
+        <View style={st.field}><TypeButtons value={species} onChange={changeSpecies} tone="sighted" /></View>
         <View style={st.field}><BreedPicker optional species={species} value={breed} onChange={setBreed} /></View>
         <View style={{ marginBottom: 32 }}><ConditionGrid value={condition} onChange={setCondition} /></View>
         <View style={st.field}>

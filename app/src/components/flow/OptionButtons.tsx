@@ -4,21 +4,32 @@ import type { Species } from "../../lib/database.types";
 import { Theme, radius } from "../../theme/tokens";
 import { typography } from "../../theme/typography";
 
-// Tipo: 3 botones grandes con el ícono ENCIMA (prototipo). Seleccionado: borde brand.primary 1.5, fondo brand.tint, texto brand.primary.
+// Tono del estado seleccionado de un selector del flujo de reporte. "brand" = el de siempre (borde brand.primary, fondo brand.tint, ícono y
+// texto brand.primary). "sighted" / "lost" = EXACTAMENTE los tokens de los chips de estado de ese flujo (los mismos que ConditionGrid en
+// "Report a Sighting"): borde `status.*.bg`, fondo `status.*.tint`, ícono y texto `text.primary`. Un único lugar para los tres, así no se desfasan.
+export type OptionTone = "brand" | "sighted" | "lost";
+const SELECTED: Record<OptionTone, { border: string; bg: string; fg: string }> = {
+  brand: { border: Theme.brand.primary, bg: Theme.brand.tint, fg: Theme.brand.primary },
+  sighted: { border: Theme.status.sighted.bg, bg: Theme.status.sighted.tint, fg: Theme.text.primary },
+  lost: { border: Theme.status.lost.bg, bg: Theme.status.lost.tint, fg: Theme.text.primary },
+};
+
+// Tipo: 3 botones grandes con el ícono ENCIMA (prototipo). Seleccionado: según `tone` (por defecto "brand"; ver SELECTED).
 const TYPES: { value: Species; label: string; Icon: LucideIcon }[] = [
   { value: "dog", label: "Dog", Icon: Dog }, { value: "cat", label: "Cat", Icon: Cat }, { value: "other", label: "Other", Icon: CircleHelp },
 ];
 
-export function TypeButtons({ value, onChange }: { value: Species | null; onChange: (v: Species) => void }) {
+export function TypeButtons({ value, onChange, tone = "brand" }: { value: Species | null; onChange: (v: Species) => void; tone?: OptionTone }) {
+  const sel = SELECTED[tone];
   return (
     <View style={styles.typeRow} accessibilityRole="radiogroup">
       {TYPES.map(({ value: v, label, Icon }) => {
         const on = v === value;
         return (
           <Pressable key={v} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(v)}
-            style={[styles.type, { borderColor: on ? Theme.brand.primary : Theme.border.default, backgroundColor: on ? Theme.brand.tint : Theme.surface.card }]}>
-            <Icon size={22} color={on ? Theme.brand.primary : Theme.text.muted} />
-            <Text style={[styles.typeT, { color: on ? Theme.brand.primary : Theme.text.muted }]}>{label}</Text>
+            style={[styles.type, { borderColor: on ? sel.border : Theme.border.default, backgroundColor: on ? sel.bg : Theme.surface.card }]}>
+            <Icon size={22} color={on ? sel.fg : Theme.text.muted} />
+            <Text style={[styles.typeT, { color: on ? sel.fg : Theme.text.muted }]}>{label}</Text>
           </Pressable>
         );
       })}
@@ -40,7 +51,7 @@ export function ConditionGrid({ value, onChange }: { value: Condition | null; on
         const on = v === value;
         return (
           <Pressable key={v} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(v)}
-            style={[styles.cond, { borderColor: on ? Theme.status.sighted.bg : Theme.border.default, backgroundColor: on ? Theme.status.sighted.tint : Theme.surface.card }]}>
+            style={[styles.cond, { borderColor: on ? SELECTED.sighted.border : Theme.border.default, backgroundColor: on ? SELECTED.sighted.bg : Theme.surface.card }]}>
             <Icon size={20} color={Theme.text.primary} />
             <Text style={styles.condT}>{label}</Text>
           </Pressable>
