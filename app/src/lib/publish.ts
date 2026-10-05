@@ -30,7 +30,9 @@ export async function publishReport(input: PublishInput): Promise<PublishResult>
   if (!supabase) throw new Error("Supabase isn't configured.");
   const uid = await ensureAccount(input.profile);
 
-  await registerPush(uid, input.profile.home); // best-effort: el perfil ya existe; guarda token y ubicación base del usuario
+  // Best-effort: el perfil ya existe; guarda token y ubicación base del usuario. Con tope de 4 s: si el token de push tarda o nunca
+  // responde (permiso, red, Expo Go), publicar NO debe quedarse esperando — el botón se quedaría en "Publishing…" sin llegar a la confirmación.
+  await Promise.race([registerPush(uid, input.profile.home), new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000))]);
 
   const photo_url = input.photoUri ? await uploadPhoto(uid, input.photoUri) : (input.photoUrl ?? null);
 

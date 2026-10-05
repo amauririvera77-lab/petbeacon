@@ -120,6 +120,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
     const c = checkContact();
     if (!c.ok || !place || !species) return;
     setPublishing(true);
+    if (__DEV__) console.log(`[report] publishing ${kind}`);
     try {
       const { id, petCreated } = await publishReport({
         status: kind,
@@ -141,15 +142,22 @@ export function ReportFlow({ kind }: { kind: Kind }) {
       if (petCreated) snackbar.show({ message: `${petName.trim() || "Your pet"} was added to your pets` });
       setPublishedId(id);
       setI(steps.indexOf("done"));
+      if (__DEV__) console.log(`[report] published ${kind} ${id} → confirmation`);
     } catch (e) {
+      if (__DEV__) console.log("[report] publish failed:", e instanceof Error ? e.message : e);
       Alert.alert("We couldn't publish your report", e instanceof Error ? e.message : "Something went wrong. Please try again.");
     } finally {
       setPublishing(false);
     }
   };
 
-  const chooserActive = kind === "lost" && !petIdParam && !petId && !chooserDone;
-  if (petLoading || (chooserActive && (petsLoading || mineLoading))) {
+  // Publicado = la confirmación manda: ni el selector "Which pet is missing?" ni el spinner de carga pueden taparla. `usePets` y
+  // `useMyReports` son del propio flujo y se recargan cuando cambia la sesión (p. ej. la primera vez, `ensureAccount` crea la cuenta al
+  // publicar): con el Lost nuevo ya guardado pero `myReports` aún sin él, la mascota recién creada contaba como "en casa" y el selector
+  // reaparecía en lugar de "Your alert is live". El selector solo existe en el primer paso, antes de que el usuario haga nada.
+  const finished = publishedId !== null;
+  const chooserActive = kind === "lost" && !petIdParam && !petId && !chooserDone && !finished && i === 0;
+  if (!finished && (petLoading || (chooserActive && (petsLoading || mineLoading)))) {
     return <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: Theme.surface.card }}><ActivityIndicator color={Theme.brand.primary} /></View>;
   }
 
