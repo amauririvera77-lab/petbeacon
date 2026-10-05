@@ -10,6 +10,10 @@
 -- (report-photos/demo/, no hotlink externo — ver PHOTO_CREDITS.md para la atribución de cada una). El único caso SIN
 -- foto que queda en todo el seed (silueta de gato en Past reports) vive en seed_edge_cases.sql, a propósito.
 --
+-- VIGENCIA (reglas de la app, no se tocan aquí): un avistamiento vive 48 h desde su última actividad, un reunido 24 h
+-- desde su cierre, un Lost no vence, y un evento vence al pasar su hora de fin. Todo lo de este script es relativo a now(),
+-- así que SE VUELVE A CORRER antes de cada sesión de capturas: los datos "envejecen" con el reloj, no por una fecha fija.
+--
 -- QUÉ HACE
 --   1. Borra SOLO las filas de demo, por ID fijo: los reportes '20000000-0000-0000-0000-0000000000NN' y los del seed antiguo
 --      '10000000-0000-0000-0000-00000000000N' (sus coincidencias caen en cascada). No toca nada más: ni tus reportes reales,
@@ -20,9 +24,9 @@
 --                  Schnauzenberg (Miniature Schnauzer, 48 h, 3.2 mi) · Whiskers (gatita Persian, 80 h, 4.5 mi)
 --        Sighted   Golden Retriever #1 (30 min, 0.2 mi de Max → STRONG) · Golden Retriever #2 (2 h, 0.4 mi → STRONG
 --                  también) · Beagle mix (1 h, 0.9 mi → NO coincide con Max: tamaños incompatibles) · gato tabby
---                  (6 h, 1.1 mi → 'possible' para Luna: raza distinta) · Labrador mix (40 h → NO coincide con Max: es
+--                  (26 h, 1.1 mi → 'possible' para Luna: raza distinta) · Labrador mix (30 h → NO coincide con Max: es
 --                  anterior a su pérdida)
---        Reunited  Biscuit (perro Labrador mix, reunido hace 5 h, 1.6 mi)
+--        Reunited  Biscuit (perro Labrador mix, reunido hace 2 h, 1.6 mi)
 --   3. Pone la fecha del evento "Free microchip day" en el próximo sábado (si la columna event_date existe, 0011) y, si existe
 --      alerted_count (0010), un valor de demostración (14) en el Lost de Max. Ese 14 es DATO DE DEMO, no un conteo real.
 --
@@ -156,7 +160,7 @@ begin
       'https://images.unsplash.com/photo-1585588640338-2c3dc723e638', 56, 25, 190,
       'Reunited with owner within 3 hours of the alert going live.',
       null,
-      st_setsrid(st_makepoint(-74.022272, 40.781078), 4326)::geography, 'Bergenline Ave & 47th St, Union City', '(201) 555-0100', now() - interval '18 hours', now() - interval '5 hours', '30000000-0000-0000-0000-000000000006');
+      st_setsrid(st_makepoint(-74.022272, 40.781078), 4326)::geography, 'Bergenline Ave & 47th St, Union City', '(201) 555-0100', now() - interval '5 hours', now() - interval '2 hours', '30000000-0000-0000-0000-000000000006');
 
   -- Lazy (tu mascota registrada): una mascota solo puede tener UN Lost activo (índice único, 0015). Si ya tienes un reporte Lost REAL de Lazy
   -- (creado desde la app), se respeta y NO se añade el de demo — ese reporte real no se toca (ni su foto ni su color).
@@ -195,27 +199,31 @@ begin
       'https://images.unsplash.com/photo-1557735802-ef14538b00a4', 43, 35, 240,
       'Skittish — seen hiding under a porch, did not approach.',
       'scared',
-      st_setsrid(st_makepoint(-74.014293, 40.799959), 4326)::geography, 'Kennedy Blvd & 73rd St, North Bergen', null, now() - interval '6 hours', null),
+      st_setsrid(st_makepoint(-74.014293, 40.799959), 4326)::geography, 'Kennedy Blvd & 73rd St, North Bergen', null, now() - interval '26 hours', null),
     ('20000000-0000-0000-0000-000000000009', demo_reporter, 'sighted', 'dog', null, 'Labrador mix',
       'https://ovrsyxyhtoaeymuowllv.supabase.co/storage/v1/object/public/report-photos/demo/labrador-mix-sighting.jpg', 52, 21, 210,
       'Black lab mix wearing a collar, no tag visible, drinking from a puddle.',
       'unsure',
-      st_setsrid(st_makepoint(-74.011318, 40.795557), 4326)::geography, 'Bergenline Ave & 69th St, West New York', null, now() - interval '40 hours', null);
+      st_setsrid(st_makepoint(-74.011318, 40.795557), 4326)::geography, 'Bergenline Ave & 69th St, West New York', null, now() - interval '30 hours', null);
 
   -- 3. Evento con fecha concreta (0011) y conteo de demostración (0010), solo si esas columnas existen.
   select exists (select 1 from information_schema.columns where table_name = 'resources' and column_name = 'event_date') into has_event;
   if has_event then
-    execute $q$update resources set event_date = current_date + ((6 - extract(dow from current_date)::int + 7) % 7)
+    -- Próximo sábado ESTRICTAMENTE posterior a hoy (si hoy es sábado, el de la semana siguiente) y con "hoy" en hora de Nueva York,
+    -- que es la zona del evento (event_starts_at/ends_at, abajo) — Supabase corre en UTC y de noche daría el sábado equivocado.
+    execute $q$update resources
+               set event_date = (now() at time zone 'America/New_York')::date
+                                + (((6 - extract(dow from (now() at time zone 'America/New_York'))::int + 6) % 7) + 1)
                where name in ('Free pet food pantry', 'Free microchip day')$q$;
   end if;
   -- Horas del evento (0013), solo si esas columnas existen. Las horas 'live' / 'later_today' / 'ended' se fijan respecto a ahora.
   if exists (select 1 from information_schema.columns where table_name = 'resources' and column_name = 'event_ends_at') then
     if v_event_mode = 'live' then
-      update resources set event_date = current_date, event_starts_at = now() - interval '1 hour', event_ends_at = now() + interval '2 hours' where name in ('Free pet food pantry', 'Free microchip day');
+      update resources set event_date = (now() at time zone 'America/New_York')::date, event_starts_at = now() - interval '1 hour', event_ends_at = now() + interval '2 hours' where name in ('Free pet food pantry', 'Free microchip day');
     elsif v_event_mode = 'later_today' then
-      update resources set event_date = current_date, event_starts_at = now() + interval '2 hours', event_ends_at = now() + interval '5 hours' where name in ('Free pet food pantry', 'Free microchip day');
+      update resources set event_date = (now() at time zone 'America/New_York')::date, event_starts_at = now() + interval '2 hours', event_ends_at = now() + interval '5 hours' where name in ('Free pet food pantry', 'Free microchip day');
     elsif v_event_mode = 'ended' then
-      update resources set event_date = current_date, event_starts_at = now() - interval '4 hours', event_ends_at = now() - interval '1 hour' where name in ('Free pet food pantry', 'Free microchip day');
+      update resources set event_date = (now() at time zone 'America/New_York')::date, event_starts_at = now() - interval '4 hours', event_ends_at = now() - interval '1 hour' where name in ('Free pet food pantry', 'Free microchip day');
     else
       update resources set event_starts_at = (event_date::timestamp + time '09:00') at time zone 'America/New_York',
                            event_ends_at   = (event_date::timestamp + time '13:00') at time zone 'America/New_York' where name in ('Free pet food pantry', 'Free microchip day');

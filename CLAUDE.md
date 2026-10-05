@@ -512,3 +512,22 @@ crezcan con el texto en vez de recortarlo.
 3. **`TextInput`** (búsqueda y formularios) no tiene tope de escala propio.
 4. Las etiquetas de la tab bar (Micro/11, alto fijo 65) y el flyer (`FlyerTemplate`, pieza impresa) tampoco tienen
    tratamiento de escala.
+
+## Nota adicional — datos de demo para capturas (2026-10-05)
+
+- **Ejecutar `seed_demo_reset.sql` (y después `seed_edge_cases.sql`) antes de cada sesión de capturas.** Los datos de demo no
+  tienen fechas fijas: todo es relativo a `now()`, y la app los hace vencer con sus reglas de siempre — avistamiento 48 h desde
+  su última actividad (`SIGHTING_LIFE` en `lib/myReports.ts`, `active_reports`/`reports_nearby()` en SQL), reunido 24 h desde
+  `reunited_at`, Lost sin vencimiento, evento al pasar `event_ends_at` (`lib/events.ts`). Si pasaron más de ~1–2 días desde la
+  última corrida, los avistamientos y el evento ya habrán vencido: volver a correr el script. La lógica de vencimiento NO se cambia
+  para la demo.
+- **Edades que deja el reset:** avistamientos de coincidencia recientes (Golden 30 min y 2 h, Siamese de Luna 2 h — una
+  coincidencia exige `sighted.created_at >= lost.created_at`, así que NO pueden tener "1d"; Max se perdió hace 3 h), avistamientos sin
+  coincidencia más viejos para que se vean "1d ago" (gato tabby 26 h, Labrador mix 30 h; les quedan ≥ 18 h de vigencia), el
+  Husky y el Terrier propios (5 h / 4 h), Biscuit reunido hace 2 h (queda ~22 h en el feed), Buddy reunido hace 3 días y el gato
+  de 60 h ya "Expired" (historial de My Reports). Lost: Max 3 h, Lazy 20 h, Luna 30 h, Barty 48 h, Whiskers 80 h.
+- **Evento "Free microchip day":** el próximo sábado ESTRICTAMENTE posterior a hoy (si hoy es sábado, el de la semana siguiente),
+  9am–1pm hora de Nueva York, calculado con la fecha de Nueva York (no la UTC de Supabase).
+- **Flags para capturas:** `EXPO_PUBLIC_HIDE_SAMPLE_NOTICE=true` (oculta el banner de datos de muestra) y
+  `EXPO_PUBLIC_SHOW_DESIGN_TOOLS` desactivado (sin la sección "Design tools" en Profile). Se pasan al arrancar Expo por línea de
+  comandos, sin tocar `.env` (el entorno del proceso manda sobre `.env`); nunca en un build real.
