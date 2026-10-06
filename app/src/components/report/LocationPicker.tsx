@@ -11,8 +11,8 @@ import { TextField } from "../TextField";
 import { toneAccent, type OptionTone } from "../flow/OptionButtons";
 
 // GPS con fallback manual. Label específico del flujo de Report (distinto del "City or ZIP code" del onboarding).
-// variant "flow": estilo del prototipo para Report lost / Report a sighting (fila de dirección con ícono, texto auxiliar y enlaces rojos).
-// tone: acento del flujo (ícono de la ubicación elegida, spinner, foco del campo manual) — ver TextField.
+// variant "flow": estilo del prototipo para Report lost / Report a sighting (fila de dirección con ícono, texto auxiliar y enlaces de acción).
+// tone: acento del flujo (ícono de la ubicación elegida, spinner, foco del campo manual, enlaces) — ver TextField.
 export function LocationPicker({ value, onChange, city, center, variant = "default", tone = "brand" }: { value: Place | null; onChange: (p: Place | null) => void; city?: string; center: LatLng; variant?: "default" | "flow"; tone?: OptionTone }) {
   const [manual, setManual] = useState(false);
   const [query, setQuery] = useState("");
@@ -55,13 +55,13 @@ export function LocationPicker({ value, onChange, city, center, variant = "defau
             <View style={fl.addrRow}><Navigation size={16} color={toneAccent(tone)} /><Text style={fl.addr}>{value.label}</Text></View>
             <Text style={fl.caption}>{value.source === "manual" ? "Entered manually" : "Auto-detected from your current location"}</Text>
             <Pressable accessibilityRole="button" onPress={() => { onChange(null); setResults(null); setManual(value.source !== "manual"); }} style={fl.link}>
-              <Text style={fl.linkT}>{value.source === "manual" ? "Use my current location instead" : "Can't find the right spot? Enter it manually"}</Text>
+              <Text style={[fl.linkT, { color: toneAccent(tone) }]}>{value.source === "manual" ? "Use my current location instead" : "Can't find the right spot? Enter it manually"}</Text>
             </Pressable>
           </View>
         ) : !manual ? (
           <View>
             <Button label={busy ? "Locating…" : "Use my current location"} variant="secondary" onPress={useGps} disabled={busy} />
-            <Pressable accessibilityRole="button" onPress={() => setManual(true)} style={fl.link}><Text style={fl.linkT}>Can't find the right spot? Enter it manually</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => setManual(true)} style={fl.link}><Text style={[fl.linkT, { color: toneAccent(tone) }]}>Can't find the right spot? Enter it manually</Text></Pressable>
             {busy ? <ActivityIndicator color={toneAccent(tone)} /> : null}
             {error ? <Text style={styles.err} accessibilityRole="alert">{error}</Text> : null}
           </View>
@@ -80,7 +80,7 @@ export function LocationPicker({ value, onChange, city, center, variant = "defau
             </View>
             {busy ? <ActivityIndicator color={toneAccent(tone)} /> : null}
             {error ? <Text style={styles.err} accessibilityRole="alert">{error}</Text> : null}
-            <Pressable accessibilityRole="button" onPress={() => setManual(false)} style={fl.link}><Text style={fl.linkT}>Use my current location instead</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => setManual(false)} style={fl.link}><Text style={[fl.linkT, { color: toneAccent(tone) }]}>Use my current location instead</Text></Pressable>
           </View>
         )}
       </View>
@@ -130,7 +130,7 @@ const fl = StyleSheet.create({
   addr: { flex: 1, ...typography.label14, color: Theme.text.primary },
   caption: { ...typography.caption12, color: Theme.text.muted, marginTop: 4 },
   link: { alignSelf: "flex-start", marginTop: 16, paddingVertical: 8, minHeight: MIN_HIT, justifyContent: "center" },
-  linkT: { ...typography.label14, color: Theme.status.lost.bgStrong },
+  linkT: typography.label14, // color: el acento del tono del flujo (contraste ≥ 4.5:1 sobre blanco en los tres)
 });
 
 const styles = StyleSheet.create({

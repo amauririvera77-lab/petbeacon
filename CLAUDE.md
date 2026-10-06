@@ -281,10 +281,20 @@ Se agregó una sección discreta **"Design tools"** al final de Profile, con una
   destructivos ("Remove photo"). Existía de antes reutilizando `status.lost.bgStrong` por el mismo tono; ahora está
   separado: `status.lost.*` significa "este reporte está perdido", `danger.*` significa "esto es un error o una
   acción irreversible". Ninguno de los dos es el fondo de un botón de acción normal.
-- **Caso NO tocado, deliberado:** el enlace rojo "Can't find the right spot? Enter it manually" de
-  `LocationPicker.tsx` (variant "flow") — es una elección de estilo del prototipo original ("enlaces rojos" en el
-  comentario del componente), no un error ni un indicador de estado; no encaja en ninguna de las dos categorías de
-  arriba, así que se deja igual salvo que se pida lo contrario.
+- **Regla completa del tono de flujo (2026-10-06):** "Dentro de un flujo de reporte, todo estado activo y toda acción
+  (selección, foco, cursor, selección de texto, progreso, botones y enlaces de acción, incluidas las hojas que se abren
+  desde el flujo) usa el tono del flujo. Fuera de los flujos, se usa brand." Tono del flujo: `lost` en Report Lost Pet,
+  `sighted` en Report a Sighting. Un solo lugar para el color: `toneAccent(tone)` / `toneInputColors(tone)` en
+  `components/flow/OptionButtons.tsx` (`brand` → `brand.primary`, `lost` → `status.lost.bg`, `sighted` →
+  `status.sighted.bg`); los componentes compartidos con el resto de la app reciben una prop `tone` con `"brand"` por
+  defecto — `TextField` (borde en foco, cursor y selección; en Android el resaltado va al 25 %), `TypeButtons`,
+  `BreedPicker` (cursor de sus campos y el botón "Done" de la hoja), `LocationPicker` variant "flow" (ícono de la
+  ubicación elegida, spinners, campo manual y los enlaces "Can't find the right spot? Enter it manually" / "Use my
+  current location instead"), además de `Cta`. El campo de contacto del avistamiento (un `TextInput` propio, no un
+  `TextField`) aplica lo mismo a mano. Los enlaces de `LocationPicker` ya NO son rojos fijos (antes
+  `status.lost.bgStrong` en ambos flujos, también en Report a Sighting): siguen el tono, con contraste ≥ 4.5:1 sobre
+  blanco en los tres. Este es el mismo caso que la excepción de arriba, ampliado: dentro de un flujo, el color del
+  flujo ES la acción.
 
 ## Nota adicional — raza siempre por su etiqueta canónica, nunca el texto libre crudo (2026-09-30)
 

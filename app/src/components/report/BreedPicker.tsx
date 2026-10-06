@@ -7,11 +7,11 @@ import type { Species } from "../../lib/database.types";
 import { Theme, MIN_HIT, radius } from "../../theme/tokens";
 import { elevation } from "../../theme/elevation";
 import { typography } from "../../theme/typography";
-import { toneInputColors, type OptionTone } from "../flow/OptionButtons";
+import { toneAccent, toneInputColors, type OptionTone } from "../flow/OptionButtons";
 
 // Selector de raza con búsqueda y autocompletado (evaluación de Pet profile 2.1): reemplaza el texto libre. Lista de razas según la especie,
 // más "Mixed / Not sure" y, como último recurso, "Other" con texto libre. Guarda el id canónico (y el texto para mostrarlo).
-// tone: cursor y selección de los campos de la hoja (búsqueda y "Other") con el acento del flujo que la abre — ver TextField.
+// tone: acento del flujo que abre la hoja — cursor y selección de sus campos (búsqueda y "Other") y el botón "Done" — ver TextField.
 export function BreedPicker({ label = "Breed", optional, species, value, onChange, tone = "brand" }: {
   label?: string; optional?: boolean; species: Species | null; value: BreedValue; onChange: (v: BreedValue) => void; tone?: OptionTone;
 }) {
@@ -62,7 +62,7 @@ export function BreedPicker({ label = "Breed", optional, species, value, onChang
                 <TextInput {...inputColors} value={otherText} onChangeText={setOtherText} placeholder="e.g. Chiweenie" placeholderTextColor={Theme.text.muted} autoFocus maxLength={40}
                   accessibilityLabel="Other breed" style={styles.input} />
                 <Pressable accessibilityRole="button" disabled={!otherText.trim()} onPress={() => pick({ id: OTHER_ID, text: otherText.trim() })}
-                  style={[styles.done, !otherText.trim() && { backgroundColor: Theme.border.default }]}>
+                  style={[styles.done, { backgroundColor: otherText.trim() ? toneAccent(tone) : Theme.border.default }]}>
                   <Text style={[styles.doneT, !otherText.trim() && { color: Theme.text.muted }]}>Done</Text>
                 </Pressable>
               </View>
@@ -114,6 +114,6 @@ const styles = StyleSheet.create({
   clearT: { ...typography.label14, color: Theme.text.secondary, textDecorationLine: "underline" },
   help: { ...typography.body14, color: Theme.text.secondary },
   input: { minHeight: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: Theme.border.strong, paddingHorizontal: 14, ...typography.bodyLg16, color: Theme.text.primary },
-  done: { height: 52, borderRadius: radius.md, backgroundColor: Theme.brand.primary, alignItems: "center", justifyContent: "center" },
+  done: { height: 52, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
   doneT: { ...typography.button16, color: Theme.text.onAccent },
 });
