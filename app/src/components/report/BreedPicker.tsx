@@ -7,12 +7,15 @@ import type { Species } from "../../lib/database.types";
 import { Theme, MIN_HIT, radius } from "../../theme/tokens";
 import { elevation } from "../../theme/elevation";
 import { typography } from "../../theme/typography";
+import { toneInputColors, type OptionTone } from "../flow/OptionButtons";
 
 // Selector de raza con búsqueda y autocompletado (evaluación de Pet profile 2.1): reemplaza el texto libre. Lista de razas según la especie,
 // más "Mixed / Not sure" y, como último recurso, "Other" con texto libre. Guarda el id canónico (y el texto para mostrarlo).
-export function BreedPicker({ label = "Breed", optional, species, value, onChange }: {
-  label?: string; optional?: boolean; species: Species | null; value: BreedValue; onChange: (v: BreedValue) => void;
+// tone: cursor y selección de los campos de la hoja (búsqueda y "Other") con el acento del flujo que la abre — ver TextField.
+export function BreedPicker({ label = "Breed", optional, species, value, onChange, tone = "brand" }: {
+  label?: string; optional?: boolean; species: Species | null; value: BreedValue; onChange: (v: BreedValue) => void; tone?: OptionTone;
 }) {
+  const inputColors = toneInputColors(tone);
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -56,7 +59,7 @@ export function BreedPicker({ label = "Breed", optional, species, value, onChang
             {otherMode ? (
               <View style={{ padding: 16, gap: 12 }}>
                 <Text style={styles.help}>Describe the breed in your own words.</Text>
-                <TextInput value={otherText} onChangeText={setOtherText} placeholder="e.g. Chiweenie" placeholderTextColor={Theme.text.muted} autoFocus maxLength={40}
+                <TextInput {...inputColors} value={otherText} onChangeText={setOtherText} placeholder="e.g. Chiweenie" placeholderTextColor={Theme.text.muted} autoFocus maxLength={40}
                   accessibilityLabel="Other breed" style={styles.input} />
                 <Pressable accessibilityRole="button" disabled={!otherText.trim()} onPress={() => pick({ id: OTHER_ID, text: otherText.trim() })}
                   style={[styles.done, !otherText.trim() && { backgroundColor: Theme.border.default }]}>
@@ -67,7 +70,7 @@ export function BreedPicker({ label = "Breed", optional, species, value, onChang
               <>
                 <View style={styles.search}>
                   <Search size={18} color={Theme.text.muted} />
-                  <TextInput value={q} onChangeText={setQ} placeholder="Search breeds" placeholderTextColor={Theme.text.muted} autoCorrect={false} autoFocus
+                  <TextInput {...inputColors} value={q} onChangeText={setQ} placeholder="Search breeds" placeholderTextColor={Theme.text.muted} autoCorrect={false} autoFocus
                     accessibilityLabel="Search breeds" style={styles.searchInput} />
                   {q ? <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setQ("")} hitSlop={8}><X size={16} color={Theme.text.muted} /></Pressable> : null}
                 </View>

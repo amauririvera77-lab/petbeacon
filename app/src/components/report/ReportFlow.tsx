@@ -24,7 +24,7 @@ import { FocusImage } from "../FocusImage";
 import { SpeciesPlaceholder } from "../SpeciesPlaceholder";
 import { useSnackbar } from "../Snackbar";
 import { TextField } from "../TextField";
-import { ConditionGrid, TypeButtons, type Condition } from "../flow/OptionButtons";
+import { ConditionGrid, TypeButtons, toneAccent, toneInputColors, type Condition } from "../flow/OptionButtons";
 import { PhotoDropzone } from "../flow/PhotoDropzone";
 import { BreedPicker } from "./BreedPicker";
 import { FlowHeader } from "../layout/Headers";
@@ -76,6 +76,7 @@ export function ReportFlow({ kind }: { kind: Kind }) {
   const [place, setPlace] = useState<Place | null>(null);
   const [contact, setContact] = useState("");
   const [contactError, setContactError] = useState<string | null>(null);
+  const [contactFocused, setContactFocused] = useState(false); // borde en foco del campo de contacto del avistamiento (no es un TextField)
   const [publishing, setPublishing] = useState(false);
   const [publishedId, setPublishedId] = useState<string | null>(null);
 
@@ -212,11 +213,11 @@ export function ReportFlow({ kind }: { kind: Kind }) {
     return (
       <ScreenLayout header={header} contentStyle={pad} cta={<Cta label="Continue" tone={tone} onPress={next} disabled={!petName.trim() || !species} />}>
         <Text style={[st.h2, { marginBottom: 24 }]}>Tell us about your pet</Text>
-        <View style={st.field}><TextField variant="form" label="Pet's name" placeholder="Max" value={petName} onChangeText={setPetName} /></View>
+        <View style={st.field}><TextField variant="form" label="Pet's name" tone="lost" placeholder="Max" value={petName} onChangeText={setPetName} /></View>
         <Text style={st.label}>Type</Text>
         <View style={st.field}><TypeButtons value={species} onChange={changeSpecies} tone="lost" /></View>
-        <View style={st.field}><BreedPicker optional species={species} value={breed} onChange={setBreed} /></View>
-        <TextField variant="form" label="Distinctive features" labelSuffix="(optional)" placeholder="Blue collar, limps on left leg"
+        <View style={st.field}><BreedPicker optional tone="lost" species={species} value={breed} onChange={setBreed} /></View>
+        <TextField variant="form" tone="lost" label="Distinctive features" labelSuffix="(optional)" placeholder="Blue collar, limps on left leg"
           value={features} onChangeText={setFeatures} multiline maxLength={100} />
         <Text style={st.counter}>{features.length}/100</Text>
       </ScreenLayout>
@@ -230,10 +231,10 @@ export function ReportFlow({ kind }: { kind: Kind }) {
           onPress={() => { if (isLost && !checkContact().ok) return; next(); }} />}>
         <Text style={[st.h2, { marginBottom: 8 }]}>{isLost ? "Where did you last see them?" : "Confirm the exact spot"}</Text>
         <Text style={st.sub}>{isLost ? "Use your location or enter the spot manually." : "Use your current location or enter the spot manually."}</Text>
-        <LocationPicker variant="flow" value={place} onChange={setPlace} city={city} center={center} />
+        <LocationPicker variant="flow" tone={tone} value={place} onChange={setPlace} city={city} center={center} />
         {isLost ? (
           <View style={{ marginTop: 24 }}>
-            <TextField variant="ds" label="Phone or email" placeholder="(914) 555-0142 or you@email.com" value={contact}
+            <TextField variant="ds" tone="lost" label="Phone or email" placeholder="(914) 555-0142 or you@email.com" value={contact}
               onChangeText={(t) => { setContact(t); setContactError(null); }} onBlur={() => contact.trim() && checkContact()}
               keyboardType="email-address" autoCapitalize="none" autoComplete="off"
               helper="This appears on your flyer so people can reach you directly." error={contactError ?? undefined} />
@@ -251,15 +252,15 @@ export function ReportFlow({ kind }: { kind: Kind }) {
         {/* "Type" no está en el prototipo, pero el matching exige especie exacta: se conserva con el mismo estilo de botones. */}
         <Text style={st.label}>Type</Text>
         <View style={st.field}><TypeButtons value={species} onChange={changeSpecies} tone="sighted" /></View>
-        <View style={st.field}><BreedPicker optional species={species} value={breed} onChange={setBreed} /></View>
+        <View style={st.field}><BreedPicker optional tone="sighted" species={species} value={breed} onChange={setBreed} /></View>
         <View style={{ marginBottom: 32 }}><ConditionGrid value={condition} onChange={setCondition} /></View>
         <View style={st.field}>
-          <TextField variant="form" label="Description" labelSuffix="(optional)" placeholder="No collar, white paws, very friendly" value={features} onChangeText={setFeatures} multiline />
+          <TextField variant="form" tone="sighted" label="Description" labelSuffix="(optional)" placeholder="No collar, white paws, very friendly" value={features} onChangeText={setFeatures} multiline />
         </View>
         <Text style={st.label}>Want updates on this pet? <Text style={st.optional}>(optional)</Text></Text>
-        <View style={[st.iconField, !!contactError && { borderColor: Theme.danger.border }]}>
+        <View style={[st.iconField, contactFocused && { borderColor: toneAccent("sighted") }, !!contactError && { borderColor: Theme.danger.border }]}>
           <Mail size={18} color={Theme.text.muted} />
-          <TextInput value={contact} onChangeText={(t) => { setContact(t); setContactError(null); }} placeholder="Phone or email" placeholderTextColor={Theme.text.muted}
+          <TextInput {...toneInputColors("sighted")} onFocus={() => setContactFocused(true)} onBlur={() => setContactFocused(false)} value={contact} onChangeText={(t) => { setContact(t); setContactError(null); }} placeholder="Phone or email" placeholderTextColor={Theme.text.muted}
             accessibilityLabel="Phone or email" keyboardType="email-address" autoCapitalize="none" autoComplete="off" style={st.iconInput} />
         </View>
         <Text style={[st.help, !!contactError && { color: Theme.danger.text }]}>{contactError ?? "No account needed — this just lets us notify you if there's a match."}</Text>

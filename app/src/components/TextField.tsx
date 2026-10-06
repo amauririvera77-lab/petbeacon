@@ -2,28 +2,34 @@ import { useState } from "react";
 import { StyleSheet, Text, TextInput, TextInputProps, View } from "react-native";
 import { Theme, radius } from "../theme/tokens";
 import { typography } from "../theme/typography";
+import { toneAccent, toneInputColors, type OptionTone } from "./flow/OptionButtons";
 
 // variant:
 //  - "default": el estilo actual (pantallas fuera del rediseño).
 //  - "ds": TextField del sistema del prototipo (onboarding y campos con hint): etiqueta 13, campo 46 px, fuente 14, borde 1.
 //  - "form": campos de los formularios de reporte: etiqueta 13/700, campo 52 px, fuente 16, borde 1.5; multilínea 88 px.
-type Props = TextInputProps & { label: string; helper?: string; disabled?: boolean; variant?: "default" | "ds" | "form"; labelSuffix?: string; error?: string };
+// tone: color del borde en foco, del cursor y de la selección — "lost"/"sighted" dentro de cada flujo de reporte (mismo acento que su
+// selector de tipo, ver OptionButtons), "brand" en el resto de la app.
+type Props = TextInputProps & { label: string; helper?: string; disabled?: boolean; variant?: "default" | "ds" | "form"; labelSuffix?: string; error?: string; tone?: OptionTone };
 
-export function TextField({ label, helper, disabled, style, variant = "default", labelSuffix, error, ...rest }: Props) {
+export function TextField({ label, helper, disabled, style, variant = "default", labelSuffix, error, tone = "brand", ...rest }: Props) {
   const [focused, setFocused] = useState(false);
+  const focus = { borderColor: toneAccent(tone) };
+  const inputColors = toneInputColors(tone);
   if (variant !== "default") {
     const ds = variant === "ds";
     return (
       <View style={{ gap: ds ? 6 : 0 }}>
         <Text style={ds ? v.dsLabel : v.formLabel}>{label}{labelSuffix ? <Text style={v.suffix}> {labelSuffix}</Text> : null}</Text>
         <TextInput
+          {...inputColors}
           {...rest}
           editable={!disabled}
           accessibilityLabel={label}
           placeholderTextColor={Theme.text.muted}
           onFocus={(e) => { setFocused(true); rest.onFocus?.(e); }}
           onBlur={(e) => { setFocused(false); rest.onBlur?.(e); }}
-          style={[ds ? v.dsInput : v.formInput, rest.multiline && (ds ? v.dsMulti : v.formMulti), focused && v.focus, !!error && v.errBorder, disabled && v.disabled, style]}
+          style={[ds ? v.dsInput : v.formInput, rest.multiline && (ds ? v.dsMulti : v.formMulti), focused && focus, !!error && v.errBorder, disabled && v.disabled, style]}
         />
         {error ? <Text style={[v.hint, v.errT]} accessibilityRole="alert">{error}</Text> : helper ? <Text style={v.hint}>{helper}</Text> : null}
       </View>
@@ -33,13 +39,14 @@ export function TextField({ label, helper, disabled, style, variant = "default",
     <View style={styles.wrap}>
       <Text style={styles.label}>{label}{labelSuffix ? <Text style={styles.suffix}> {labelSuffix}</Text> : null}</Text>
       <TextInput
+        {...inputColors}
         {...rest}
         editable={!disabled}
         accessibilityLabel={label}
         placeholderTextColor={Theme.text.muted}
         onFocus={(e) => { setFocused(true); rest.onFocus?.(e); }}
         onBlur={(e) => { setFocused(false); rest.onBlur?.(e); }}
-        style={[styles.input, focused && styles.focus, disabled && styles.disabled, style]}
+        style={[styles.input, focused && focus, disabled && styles.disabled, style]}
       />
       {helper ? <Text style={styles.helper}>{helper}</Text> : null}
     </View>
@@ -54,7 +61,6 @@ const styles = StyleSheet.create({
     minHeight: 52, borderRadius: radius.md, borderWidth: 1.5, borderColor: Theme.border.strong,
     backgroundColor: Theme.surface.card, paddingHorizontal: 14, ...typography.bodyLg16, color: Theme.text.primary,
   },
-  focus: { borderColor: Theme.brand.primary },
   disabled: { backgroundColor: Theme.surface.page, color: Theme.text.muted },
   helper: { ...typography.bodySm13, color: Theme.text.muted },
 });
@@ -68,7 +74,6 @@ const v = StyleSheet.create({
   formMulti: { height: 88, paddingVertical: 12, lineHeight: 24, textAlignVertical: "top" },
   suffix: { color: Theme.text.muted }, // mismo estilo que la etiqueta (Label/14), solo cambia el color
   hint: { ...typography.caption12, color: Theme.text.muted, marginTop: 6 },
-  focus: { borderColor: Theme.brand.primary },
   errBorder: { borderColor: Theme.danger.border },
   errT: { color: Theme.danger.text },
   disabled: { backgroundColor: Theme.surface.page, color: Theme.text.muted },

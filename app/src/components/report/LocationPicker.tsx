@@ -8,10 +8,12 @@ import { Theme, MIN_HIT, radius } from "../../theme/tokens";
 import { typography } from "../../theme/typography";
 import { Button } from "../Button";
 import { TextField } from "../TextField";
+import { toneAccent, type OptionTone } from "../flow/OptionButtons";
 
 // GPS con fallback manual. Label específico del flujo de Report (distinto del "City or ZIP code" del onboarding).
 // variant "flow": estilo del prototipo para Report lost / Report a sighting (fila de dirección con ícono, texto auxiliar y enlaces rojos).
-export function LocationPicker({ value, onChange, city, center, variant = "default" }: { value: Place | null; onChange: (p: Place | null) => void; city?: string; center: LatLng; variant?: "default" | "flow" }) {
+// tone: acento del flujo (ícono de la ubicación elegida, spinner, foco del campo manual) — ver TextField.
+export function LocationPicker({ value, onChange, city, center, variant = "default", tone = "brand" }: { value: Place | null; onChange: (p: Place | null) => void; city?: string; center: LatLng; variant?: "default" | "flow"; tone?: OptionTone }) {
   const [manual, setManual] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Place[] | null>(null);
@@ -50,7 +52,7 @@ export function LocationPicker({ value, onChange, city, center, variant = "defau
       <View>
         {value ? (
           <View accessibilityLabel={`Selected location: ${value.label}`}>
-            <View style={fl.addrRow}><Navigation size={16} color={Theme.brand.primary} /><Text style={fl.addr}>{value.label}</Text></View>
+            <View style={fl.addrRow}><Navigation size={16} color={toneAccent(tone)} /><Text style={fl.addr}>{value.label}</Text></View>
             <Text style={fl.caption}>{value.source === "manual" ? "Entered manually" : "Auto-detected from your current location"}</Text>
             <Pressable accessibilityRole="button" onPress={() => { onChange(null); setResults(null); setManual(value.source !== "manual"); }} style={fl.link}>
               <Text style={fl.linkT}>{value.source === "manual" ? "Use my current location instead" : "Can't find the right spot? Enter it manually"}</Text>
@@ -60,13 +62,13 @@ export function LocationPicker({ value, onChange, city, center, variant = "defau
           <View>
             <Button label={busy ? "Locating…" : "Use my current location"} variant="secondary" onPress={useGps} disabled={busy} />
             <Pressable accessibilityRole="button" onPress={() => setManual(true)} style={fl.link}><Text style={fl.linkT}>Can't find the right spot? Enter it manually</Text></Pressable>
-            {busy ? <ActivityIndicator color={Theme.brand.primary} /> : null}
+            {busy ? <ActivityIndicator color={toneAccent(tone)} /> : null}
             {error ? <Text style={styles.err} accessibilityRole="alert">{error}</Text> : null}
           </View>
         ) : (
           <View>
             <TextField variant="ds" label="Street address or nearest cross streets" helper="Use this if your location was detected incorrectly." placeholder="e.g. Elm St & Maple Ave"
-              value={query} onChangeText={setQuery} onSubmitEditing={search} returnKeyType="search" />
+              tone={tone} value={query} onChangeText={setQuery} onSubmitEditing={search} returnKeyType="search" />
             <View style={{ height: 12 }} />
             <Button label={busy ? "Searching…" : "Find this spot"} variant="secondary" onPress={search} disabled={busy || !query.trim()} />
             <View style={{ gap: 8, marginTop: results?.length ? 12 : 0 }}>
@@ -76,7 +78,7 @@ export function LocationPicker({ value, onChange, city, center, variant = "defau
                 </Pressable>
               ))}
             </View>
-            {busy ? <ActivityIndicator color={Theme.brand.primary} /> : null}
+            {busy ? <ActivityIndicator color={toneAccent(tone)} /> : null}
             {error ? <Text style={styles.err} accessibilityRole="alert">{error}</Text> : null}
             <Pressable accessibilityRole="button" onPress={() => setManual(false)} style={fl.link}><Text style={fl.linkT}>Use my current location instead</Text></Pressable>
           </View>

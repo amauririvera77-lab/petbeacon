@@ -1,5 +1,5 @@
 import { Cat, CircleHelp, Dog, HeartPulse, Smile, TriangleAlert, type LucideIcon } from "lucide-react-native";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import type { Species } from "../../lib/database.types";
 import { Theme, radius } from "../../theme/tokens";
 import { typography } from "../../theme/typography";
@@ -12,6 +12,15 @@ const SELECTED: Record<OptionTone, { border: string; bg: string; fg: string }> =
   brand: { border: Theme.brand.primary, bg: Theme.brand.tint, fg: Theme.brand.primary },
   sighted: { border: Theme.status.sighted.bg, bg: Theme.status.sighted.tint, fg: Theme.text.primary },
   lost: { border: Theme.status.lost.bg, bg: Theme.status.lost.tint, fg: Theme.text.primary },
+};
+// Color de acento de un tono: el borde de su estado seleccionado. Lo usan también los campos de texto del flujo (borde en foco, cursor,
+// selección — TextField `tone`) para que todo lo "activo" de un flujo comparta un solo color.
+export const toneAccent = (tone: OptionTone): string => SELECTED[tone].border;
+// Cursor y selección de un TextInput con el acento del tono. iOS tiñe cursor, asas y resaltado con `selectionColor` (el resaltado ya lo
+// aclara el sistema). Android pinta el resaltado con el color tal cual, encima del texto: ahí va al 25 % y el cursor/asas, opacos, aparte.
+export const toneInputColors = (tone: OptionTone) => {
+  const c = toneAccent(tone);
+  return Platform.OS === "android" ? { selectionColor: `${c}40`, cursorColor: c, selectionHandleColor: c } : { selectionColor: c };
 };
 
 // Tipo: 3 botones grandes con el ícono ENCIMA (prototipo). Seleccionado: según `tone` (por defecto "brand"; ver SELECTED).
