@@ -4,14 +4,15 @@ import type { Species } from "../../lib/database.types";
 import { Theme, radius } from "../../theme/tokens";
 import { typography } from "../../theme/typography";
 
-// Tono del estado seleccionado de un selector del flujo de reporte. "brand" = el de siempre (borde brand.primary, fondo brand.tint, ícono y
-// texto brand.primary). "sighted" / "lost" = EXACTAMENTE los tokens de los chips de estado de ese flujo (los mismos que ConditionGrid en
-// "Report a Sighting"): borde `status.*.bg`, fondo `status.*.tint`, ícono y texto `text.primary`. Un único lugar para los tres, así no se desfasan.
+// Tono del estado seleccionado de un selector (Figma, componente TypeOption). En LOS TRES tonos el ícono y la etiqueta son `text.primary`:
+// solo el fondo (tint) y el borde llevan el color del tono — brand: `brand.tint` + `brand.primary`; sighted: `status.sighted.tint` +
+// `status.sighted.bg`; lost: `status.lost.tint` + `status.lost.bg` (los mismos que los chips de condición de "Report a Sighting"). Un único
+// lugar para los tres, así no se desfasan.
 export type OptionTone = "brand" | "sighted" | "lost";
-const SELECTED: Record<OptionTone, { border: string; bg: string; fg: string }> = {
-  brand: { border: Theme.brand.primary, bg: Theme.brand.tint, fg: Theme.brand.primary },
-  sighted: { border: Theme.status.sighted.bg, bg: Theme.status.sighted.tint, fg: Theme.text.primary },
-  lost: { border: Theme.status.lost.bg, bg: Theme.status.lost.tint, fg: Theme.text.primary },
+const SELECTED: Record<OptionTone, { border: string; bg: string }> = {
+  brand: { border: Theme.brand.primary, bg: Theme.brand.tint },
+  sighted: { border: Theme.status.sighted.bg, bg: Theme.status.sighted.tint },
+  lost: { border: Theme.status.lost.bg, bg: Theme.status.lost.tint },
 };
 // Color de acento de un tono: el borde de su estado seleccionado. Lo usan también los campos de texto del flujo (borde en foco, cursor,
 // selección — TextField `tone`) para que todo lo "activo" de un flujo comparta un solo color.
@@ -23,7 +24,10 @@ export const toneInputColors = (tone: OptionTone) => {
   return Platform.OS === "android" ? { selectionColor: `${c}40`, cursorColor: c, selectionHandleColor: c } : { selectionColor: c };
 };
 
-// Tipo: 3 botones grandes con el ícono ENCIMA (prototipo). Seleccionado: según `tone` (por defecto "brand"; ver SELECTED).
+// Tipo: 3 botones grandes con el ícono ENCIMA (prototipo). Seleccionado: borde de 2 px + fondo del `tone` (por defecto "brand"; ver
+// SELECTED), ícono y etiqueta en text.primary. Sin seleccionar: borde de 1.5 px neutro e ícono/etiqueta en text.muted; el padding vertical
+// compensa los 0.5 px de diferencia de borde para que el botón no cambie de alto al seleccionarse.
+const TYPE_BORDER = 1.5, TYPE_BORDER_ON = 2;
 const TYPES: { value: Species; label: string; Icon: LucideIcon }[] = [
   { value: "dog", label: "Dog", Icon: Dog }, { value: "cat", label: "Cat", Icon: Cat }, { value: "other", label: "Other", Icon: CircleHelp },
 ];
@@ -36,9 +40,11 @@ export function TypeButtons({ value, onChange, tone = "brand" }: { value: Specie
         const on = v === value;
         return (
           <Pressable key={v} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(v)}
-            style={[styles.type, { borderColor: on ? sel.border : Theme.border.default, backgroundColor: on ? sel.bg : Theme.surface.card }]}>
-            <Icon size={22} color={on ? sel.fg : Theme.text.muted} />
-            <Text style={[styles.typeT, { color: on ? sel.fg : Theme.text.muted }]}>{label}</Text>
+            style={[styles.type, on
+              ? { borderColor: sel.border, borderWidth: TYPE_BORDER_ON, backgroundColor: sel.bg }
+              : { borderColor: Theme.border.default, paddingVertical: 16 + (TYPE_BORDER_ON - TYPE_BORDER) , backgroundColor: Theme.surface.card }]}>
+            <Icon size={22} color={on ? Theme.text.primary : Theme.text.muted} />
+            <Text style={[styles.typeT, { color: on ? Theme.text.primary : Theme.text.muted }]}>{label}</Text>
           </Pressable>
         );
       })}
@@ -74,7 +80,7 @@ export const CONDITION_LABEL: Record<Condition, string> = { calm: "Calm", scared
 
 const styles = StyleSheet.create({
   typeRow: { flexDirection: "row", gap: 12 },
-  type: { flex: 1, alignItems: "center", gap: 8, paddingVertical: 16, borderRadius: radius.md, borderWidth: 1.5 },
+  type: { flex: 1, alignItems: "center", gap: 8, paddingVertical: 16, borderRadius: radius.md, borderWidth: TYPE_BORDER },
   typeT: typography.button14,
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   cond: { flexBasis: "47%", flexGrow: 1, flexDirection: "row", alignItems: "center", gap: 8, padding: 16, borderRadius: radius.md, borderWidth: 1.5 },
